@@ -28,6 +28,16 @@ services:
       - traefik.http.routers.traefik-prod.tls.certresolver=le
       - traefik.http.routers.traefik-prod.service=api@internal
 
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower-prod
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.docker/config.json:/config.json:ro
+    command: --interval 300 --cleanup --label-enable
+    networks:
+      - proxy
   web:
     image: ${WEB_IMAGE}
     container_name: elikuren-web-prod
@@ -36,13 +46,17 @@ services:
       - .env.prod
     healthcheck:
       test:
-        ["CMD-SHELL", "curl -fsS http://localhost:3000/api/health || exit 1"]
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:3000/api/health >/dev/null 2>&1 || exit 1",
+        ]
       interval: 10s
       timeout: 3s
       retries: 5
       start_period: 20s
     networks:
       - proxy
+
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy
@@ -51,6 +65,7 @@ services:
       - traefik.http.routers.web-prod.tls=true
       - traefik.http.routers.web-prod.tls.certresolver=le
       - traefik.http.services.web-prod.loadbalancer.server.port=3000
+      - com.centurylinklabs.watchtower.enable=true
 
   api:
     image: ${API_IMAGE}
@@ -59,7 +74,11 @@ services:
     env_file:
       - .env.prod
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8000/health >/dev/null 2>&1 || exit 1",
+        ]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -74,6 +93,7 @@ services:
       - traefik.http.routers.api-prod.tls=true
       - traefik.http.routers.api-prod.tls.certresolver=le
       - traefik.http.services.api-prod.loadbalancer.server.port=8000
+      - com.centurylinklabs.watchtower.enable=true
 
 networks:
   proxy:
