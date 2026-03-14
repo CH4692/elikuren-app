@@ -32,7 +32,7 @@ write_files:
 
   - path: /home/deploy/.docker/config.json
     permissions: "0600"
-    owner: deploy:deploy
+    owner: root:root
     content: |
       {
         "auths": {
@@ -42,7 +42,7 @@ write_files:
         }
       }
 
-  - path: /opt/elikuren-app/deploy/.env.dev
+  - path: /tmp/.env.dev
     permissions: "0600"
     content: |
       WEB_IMAGE=ghcr.io/ch4692/elikuren-web:dev-latest
@@ -55,7 +55,7 @@ write_files:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${clerk_publishable_key_dev}
       CLERK_SECRET_KEY=${clerk_secret_key_dev}
 
-  - path: /opt/elikuren-app/deploy/.env.prod
+  - path: /tmp/.env.prod
     permissions: "0600"
     content: |
       WEB_IMAGE=ghcr.io/ch4692/elikuren-web:prod-latest
@@ -94,11 +94,18 @@ runcmd:
   # Clone repository
   - rm -rf /opt/elikuren-app
   - git clone https://github.com/${github_owner}/elikuren-app /opt/elikuren-app
+  - chown -R deploy:deploy /home/deploy/.docker
+  - chmod +x /opt/elikuren-app/deploy/update.sh
+  - git config --system --add safe.directory /opt/elikuren-app
+  - cp /tmp/.env.dev /opt/elikuren-app/deploy/.env.dev
+  - cp /tmp/.env.prod /opt/elikuren-app/deploy/.env.prod
+  - chown deploy:deploy /opt/elikuren-app/deploy/.env.dev /opt/elikuren-app/deploy/.env.prod
+  - chmod 600 /opt/elikuren-app/deploy/.env.dev /opt/elikuren-app/deploy/.env.prod
   - chown -R deploy:deploy /opt/elikuren-app
 
   # Install systemd updater
-  - cp /opt/elikuren-app/deploy/systemd/elikuren-update.service /etc/systemd/system/elikuren-update@.service
-  - cp /opt/elikuren-app/deploy/systemd/elikuren-update.timer /etc/systemd/system/elikuren-update@.timer
+  - cp /opt/elikuren-app/deploy/systemd/elikuren-update@.service /etc/systemd/system/
+  - cp /opt/elikuren-app/deploy/systemd/elikuren-update@.timer /etc/systemd/system/
   - systemctl daemon-reload
   - systemctl enable --now elikuren-update@${stack}.timer
 
