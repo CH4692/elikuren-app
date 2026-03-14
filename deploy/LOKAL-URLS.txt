@@ -1,0 +1,7 @@
+Lokal testen – diese URLs im Browser öffnen (Port 8081 nicht vergessen):
+
+  Web:     http://elikuren.local:8081
+  API:     http://api.elikuren.local:8081/health
+  Traefik: http://localhost:8080/dashboard/
+
+Stack starten: docker compose -f docker-compose.local.yml --env-file .env.local up -d

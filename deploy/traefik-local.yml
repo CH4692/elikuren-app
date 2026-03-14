@@ -1,0 +1,17 @@
+# Traefik nur für lokales Testen – nur HTTP, kein TLS
+# Dashboard ohne Auth: http://localhost:8080/dashboard/
+api:
+  dashboard: true
+  insecure: true
+
+log:
+  level: DEBUG
+
+providers:
+  docker:
+    exposedByDefault: false
+    network: proxy
+
+entryPoints:
+  web:
+    address: ":80"

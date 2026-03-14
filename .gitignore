@@ -1,0 +1,95 @@
+# ----------------------------
+# macOS
+# ----------------------------
+.DS_Store
+
+# ----------------------------
+# Node / Next.js
+# ----------------------------
+node_modules/
+.next/
+out/
+dist/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ----------------------------
+# Python
+# ----------------------------
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ----------------------------
+# Environment / Secrets
+# ----------------------------
+.env
+.env.*
+!.env.example
+!.env.dev.example
+!.env.prod.example
+
+# ----------------------------
+# IDE / Editor
+# ----------------------------
+.vscode/
+.idea/
+
+# ----------------------------
+# Terraform
+# ----------------------------
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+infra/hetzner-infra/deploy_key
+infra/hetzner-infra/*.pem
+infra/hetzner-infra/terraform.tfvars
+infra/hetzner-infra/*.auto.tfvars
+infra/github-infra/terraform.tfvars
+infra/github-infra/*.auto.tfvars
+
+# ----------------------------
+# Cloud-init / local deploy artifacts
+# ----------------------------
+deploy/letsencrypt/acme.json
+
+# root / nested git safety
+**/.git
+
+# logs
+*.log
+
+# env files in deploy
+deploy/.env
+deploy/.env.*
+!deploy/.env.example
+!deploy/.env.dev.example
+!deploy/.env.prod.example
+
+# local docker / compose overrides
+docker-compose.override.yml
+
+# python tooling
+.coverage
+htmlcov/
+.eggs/
+*.egg-info/
+
+# node lock/debug leftovers
+.npm/

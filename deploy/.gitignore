@@ -1,0 +1,5 @@
+.env
+.env.prod
+.env.dev
+.env.local
+letsencrypt/acme.json
