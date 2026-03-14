@@ -80,33 +80,41 @@ locals {
   ghcr_auth = base64encode("${var.ghcr_username}:${var.ghcr_token}")
 
   cloudinit_prod = templatefile("${path.module}/cloudinit.yaml.tftpl", {
-    deploy_public_key      = trimspace(tls_private_key.prod_deploy.public_key_openssh)
-    tailscale_authkey      = var.tailscale_authkey_prod
-    hostname               = "prod-1"
-    stack                  = "prod"
-    acme_email             = var.acme_email
-    traefik_dashboard_host = var.traefik_dashboard_host_prod
-    github_owner           = var.github_owner
-    prod_web_host          = var.prod_web_host
-    prod_api_host          = var.prod_api_host
-    dev_web_host           = var.dev_web_host
-    dev_api_host           = var.dev_api_host
-    ghcr_auth              = local.ghcr_auth
+    deploy_public_key          = trimspace(tls_private_key.prod_deploy.public_key_openssh)
+    tailscale_authkey          = var.tailscale_authkey_prod
+    hostname                   = "prod-1"
+    stack                      = "prod"
+    acme_email                 = var.acme_email
+    traefik_dashboard_host     = var.traefik_dashboard_host_prod
+    github_owner               = var.github_owner
+    prod_web_host              = var.prod_web_host
+    prod_api_host              = var.prod_api_host
+    dev_web_host               = var.dev_web_host
+    dev_api_host               = var.dev_api_host
+    ghcr_auth                  = local.ghcr_auth
+    clerk_publishable_key_dev  = var.clerk_publishable_key_dev
+    clerk_secret_key_dev       = var.clerk_secret_key_dev
+    clerk_publishable_key_prod = var.clerk_publishable_key_prod
+    clerk_secret_key_prod      = var.clerk_secret_key_prod
   })
 
   cloudinit_dev = templatefile("${path.module}/cloudinit.yaml.tftpl", {
-    deploy_public_key      = trimspace(tls_private_key.dev_deploy.public_key_openssh)
-    tailscale_authkey      = var.tailscale_authkey_dev
-    hostname               = "dev-1"
-    stack                  = "dev"
-    acme_email             = var.acme_email
-    traefik_dashboard_host = var.traefik_dashboard_host_dev
-    github_owner           = var.github_owner
-    prod_web_host          = var.prod_web_host
-    prod_api_host          = var.prod_api_host
-    dev_web_host           = var.dev_web_host
-    dev_api_host           = var.dev_api_host
-    ghcr_auth              = local.ghcr_auth
+    deploy_public_key          = trimspace(tls_private_key.dev_deploy.public_key_openssh)
+    tailscale_authkey          = var.tailscale_authkey_dev
+    hostname                   = "dev-1"
+    stack                      = "dev"
+    acme_email                 = var.acme_email
+    traefik_dashboard_host     = var.traefik_dashboard_host_dev
+    github_owner               = var.github_owner
+    prod_web_host              = var.prod_web_host
+    prod_api_host              = var.prod_api_host
+    dev_web_host               = var.dev_web_host
+    dev_api_host               = var.dev_api_host
+    ghcr_auth                  = local.ghcr_auth
+    clerk_publishable_key_prod = var.clerk_publishable_key_prod
+    clerk_secret_key_prod      = var.clerk_secret_key_prod
+    clerk_publishable_key_dev  = var.clerk_publishable_key_dev
+    clerk_secret_key_dev       = var.clerk_secret_key_dev
   })
 }
 resource "hcloud_server" "prod" {

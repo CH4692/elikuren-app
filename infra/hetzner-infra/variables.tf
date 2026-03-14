@@ -79,3 +79,25 @@ variable "ghcr_token" {
   type      = string
   sensitive = true
 }
+
+variable "clerk_secret_key_dev" {
+  type      = string
+  sensitive = true
+}
+
+variable "clerk_publishable_key_dev" {
+  type      = string
+  sensitive = true
+}
+
+variable "clerk_secret_key_prod" {
+  type      = string
+  sensitive = true
+}
+
+variable "clerk_publishable_key_prod" {
+  type      = string
+  sensitive = true
+}
+
+
