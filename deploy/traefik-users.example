@@ -1,3 +1,0 @@
-# Traefik-Dashboard Basic Auth
-# Vor dem ersten Start ausführen: htpasswd -nb admin IhrPasswort > traefik-users
-# (htpasswd kommt mit Apache oder z. B. dem Paket apache2-utils)

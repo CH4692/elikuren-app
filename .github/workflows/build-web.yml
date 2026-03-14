@@ -58,6 +58,10 @@ jobs:
             NEXT_PUBLIC_CLERK_SIGN_IN_URL=${{ vars.NEXT_PUBLIC_CLERK_SIGN_IN_URL }}
             NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=${{ vars.NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL }}
             NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=${{ vars.NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.run_id }}
           tags: |
-            ghcr.io/ch4692/elikuren-web:${{ steps.tag.outputs.TAG }}
-            ghcr.io/ch4692/elikuren-web:git-${{ steps.sha.outputs.SHORT_SHA }}
+            ghcr.io/${{ github.repository_owner }}/elikuren-web:${{ steps.tag.outputs.TAG }}
+            ghcr.io/${{ github.repository_owner }}/elikuren-web:git-${{ steps.sha.outputs.SHORT_SHA }}

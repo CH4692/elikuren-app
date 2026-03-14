@@ -13,262 +13,6 @@ users:
 ssh_pwauth: false
 
 write_files:
-  - path: /opt/bootstrap.sh
-    permissions: "0755"
-    owner: root:root
-    content: |
-      #!/usr/bin/env bash
-      set -euxo pipefail
-
-      # Grundstruktur
-      mkdir -p /opt/traefik/letsencrypt
-      mkdir -p /opt/traefik/users
-      mkdir -p /opt/elikuren-app/deploy
-      mkdir -p /root/.docker
-      mkdir -p /home/deploy/.docker
-
-      # ACME Datei
-      touch /opt/traefik/letsencrypt/acme.json
-      chmod 600 /opt/traefik/letsencrypt/acme.json
-
-      # Docker Netzwerk
-      docker network create proxy || true
-      chown -R deploy:deploy /home/deploy/.docker
-      chmod 700 /home/deploy/.docker
-      chmod 600 /home/deploy/.docker/config.json || true
-      chown -R deploy:deploy /opt/elikuren-app
-
-  - path: /opt/traefik/docker-compose.yml
-    permissions: "0644"
-    owner: root:root
-    content: |
-      services:
-        traefik:
-          image: traefik:v3.6
-          container_name: traefik
-          restart: unless-stopped
-          command:
-            - --api.dashboard=true
-            - --api.insecure=false
-            - --providers.docker=true
-            - --providers.docker.exposedbydefault=false
-            - --entrypoints.web.address=:80
-            - --entrypoints.websecure.address=:443
-            - --entrypoints.web.http.redirections.entrypoint.to=websecure
-            - --entrypoints.web.http.redirections.entrypoint.scheme=https
-            - --certificatesresolvers.le.acme.email=${acme_email}
-            - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
-            - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
-          ports:
-            - "80:80"
-            - "443:443"
-          volumes:
-            - /var/run/docker.sock:/var/run/docker.sock:ro
-            - /opt/traefik/letsencrypt:/letsencrypt
-          networks:
-            - proxy
-          labels:
-            - traefik.enable=true
-            - traefik.docker.network=proxy
-            - traefik.http.routers.traefik.rule=Host(`${traefik_dashboard_host}`)
-            - traefik.http.routers.traefik.entrypoints=websecure
-            - traefik.http.routers.traefik.tls=true
-            - traefik.http.routers.traefik.tls.certresolver=le
-            - traefik.http.routers.traefik.service=api@internal
-
-      networks:
-        proxy:
-          external: true
-
-  - path: /opt/elikuren-app/deploy/docker-compose.dev.yml
-    permissions: "0644"
-    owner: root:root
-    content: |
-      services:
-        watchtower:
-          image: containrrr/watchtower:latest
-          container_name: watchtower-dev
-          restart: unless-stopped
-          volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
-            - /root/.docker/config.json:/config.json:ro
-          environment:
-            - DOCKER_API_VERSION=1.44
-          command: --interval 60 --cleanup --label-enable
-          networks:
-            - proxy
-
-        web:
-          image: $${WEB_IMAGE}
-          container_name: elikuren-web-dev
-          restart: unless-stopped
-          env_file:
-            - .env.dev
-          healthcheck:
-            test:
-              [
-                "CMD-SHELL",
-                "wget -qO- http://localhost:3000/api/health >/dev/null 2>&1 || exit 1",
-              ]
-            interval: 10s
-            timeout: 3s
-            retries: 5
-            start_period: 20s
-          networks:
-            - proxy
-          labels:
-            - traefik.enable=true
-            - traefik.docker.network=proxy
-            - traefik.http.routers.web-dev.rule=Host(`${dev_web_host}`)
-            - traefik.http.routers.web-dev.entrypoints=websecure
-            - traefik.http.routers.web-dev.tls=true
-            - traefik.http.routers.web-dev.tls.certresolver=le
-            - traefik.http.services.web-dev.loadbalancer.server.port=3000
-            - com.centurylinklabs.watchtower.enable=true
-
-        api:
-          image: $${API_IMAGE}
-          container_name: elikuren-api-dev
-          restart: unless-stopped
-          env_file:
-            - .env.dev
-          healthcheck:
-            test:
-              [
-                "CMD-SHELL",
-                "wget -qO- http://localhost:8000/health >/dev/null 2>&1 || exit 1",
-              ]
-            interval: 10s
-            timeout: 3s
-            retries: 5
-            start_period: 20s
-          networks:
-            - proxy
-          labels:
-            - traefik.enable=true
-            - traefik.docker.network=proxy
-            - traefik.http.routers.api-dev.rule=Host(`${dev_api_host}`)
-            - traefik.http.routers.api-dev.entrypoints=websecure
-            - traefik.http.routers.api-dev.tls=true
-            - traefik.http.routers.api-dev.tls.certresolver=le
-            - traefik.http.services.api-dev.loadbalancer.server.port=8000
-            - com.centurylinklabs.watchtower.enable=true
-
-      networks:
-        proxy:
-          external: true
-  - path: /opt/elikuren-app/deploy/docker-compose.prod.yml
-    permissions: "0644"
-    owner: root:root
-    content: |
-      services:
-        watchtower:
-          image: containrrr/watchtower:latest
-          container_name: watchtower-prod
-          restart: unless-stopped
-          volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
-            - /root/.docker/config.json:/config.json:ro
-          environment:
-            - DOCKER_API_VERSION=1.44
-          command: --interval 300 --cleanup --label-enable
-          networks:
-            - proxy
-
-        web:
-          image: $${WEB_IMAGE}
-          container_name: elikuren-web-prod
-          restart: unless-stopped
-          env_file:
-            - .env.prod
-          healthcheck:
-            test:
-              [
-                "CMD-SHELL",
-                "wget -qO- http://localhost:3000/api/health >/dev/null 2>&1 || exit 1",
-              ]
-            interval: 10s
-            timeout: 3s
-            retries: 5
-            start_period: 20s
-          networks:
-            - proxy
-          labels:
-            - traefik.enable=true
-            - traefik.docker.network=proxy
-            - traefik.http.routers.web-prod.rule=Host(`${prod_web_host}`)
-            - traefik.http.routers.web-prod.entrypoints=websecure
-            - traefik.http.routers.web-prod.tls=true
-            - traefik.http.routers.web-prod.tls.certresolver=le
-            - traefik.http.services.web-prod.loadbalancer.server.port=3000
-            - com.centurylinklabs.watchtower.enable=true
-
-        api:
-          image: $${API_IMAGE}
-          container_name: elikuren-api-prod
-          restart: unless-stopped
-          env_file:
-            - .env.prod
-          healthcheck:
-            test:
-              [
-                "CMD-SHELL",
-                "wget -qO- http://localhost:8000/health >/dev/null 2>&1 || exit 1",
-              ]
-            interval: 10s
-            timeout: 3s
-            retries: 5
-            start_period: 20s
-          networks:
-            - proxy
-          labels:
-            - traefik.enable=true
-            - traefik.docker.network=proxy
-            - traefik.http.routers.api-prod.rule=Host(`${prod_api_host}`)
-            - traefik.http.routers.api-prod.entrypoints=websecure
-            - traefik.http.routers.api-prod.tls=true
-            - traefik.http.routers.api-prod.tls.certresolver=le
-            - traefik.http.services.api-prod.loadbalancer.server.port=8000
-            - com.centurylinklabs.watchtower.enable=true
-
-      networks:
-        proxy:
-          external: true
-
-  - path: /opt/elikuren-app/deploy/.env.dev
-    permissions: "0600"
-    owner: root:root
-    content: |
-      WEB_IMAGE=ghcr.io/${github_owner}/elikuren-web:dev-latest
-      API_IMAGE=ghcr.io/${github_owner}/elikuren-api:dev-latest
-      NODE_ENV=production
-      WEB_HOST=${dev_web_host}
-      API_HOST=${dev_api_host}
-      TRAEFIK_DASHBOARD_HOST=${traefik_dashboard_host}
-      NEXT_PUBLIC_API_URL=https://${dev_api_host}
-      # NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-      # CLERK_SECRET_KEY=
-      # NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-      # NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/profile
-      # NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/profile
-
-  - path: /opt/elikuren-app/deploy/.env.prod
-    permissions: "0600"
-    owner: root:root
-    content: |
-      WEB_IMAGE=ghcr.io/${github_owner}/elikuren-web:prod-latest
-      API_IMAGE=ghcr.io/${github_owner}/elikuren-api:prod-latest
-      NODE_ENV=production
-      WEB_HOST=${prod_web_host}
-      API_HOST=${prod_api_host}
-      TRAEFIK_DASHBOARD_HOST=${traefik_dashboard_host}
-      NEXT_PUBLIC_API_URL=https://${prod_api_host}
-      # NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-      # CLERK_SECRET_KEY=
-      # NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-      # NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/profile
-      # NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/profile
-
   - path: /root/.docker/config.json
     permissions: "0600"
     owner: root:root
@@ -282,8 +26,8 @@ write_files:
       }
 
   - path: /home/deploy/.docker/config.json
-    permissions: "0644"
-    owner: root:root
+    permissions: "0600"
+    owner: deploy:deploy
     content: |
       {
         "auths": {
@@ -292,66 +36,6 @@ write_files:
           }
         }
       }
-
-  - path: /opt/elikuren-app/deploy/deploy.sh
-    permissions: "0755"
-    owner: root:root
-    content: |
-      #!/usr/bin/env bash
-      set -euo pipefail
-
-      if [ "$#" -ne 3 ]; then
-        echo "Usage: $0 <dev|prod> <web_image> <api_image>"
-        exit 1
-      fi
-
-      ENVIRONMENT="$1"
-      WEB_IMAGE_VALUE="$2"
-      API_IMAGE_VALUE="$3"
-
-      if [ "$ENVIRONMENT" != "dev" ] && [ "$ENVIRONMENT" != "prod" ]; then
-        echo "Environment must be 'dev' or 'prod'"
-        exit 1
-      fi
-
-      ENV_FILE="/opt/elikuren-app/deploy/.env.$${ENVIRONMENT}"
-      COMPOSE_FILE="/opt/elikuren-app/deploy/docker-compose.$${ENVIRONMENT}.yml"
-
-      if [ ! -f "$ENV_FILE" ]; then
-        echo "Missing env file: $ENV_FILE"
-        exit 1
-      fi
-
-      if [ ! -f "$COMPOSE_FILE" ]; then
-        echo "Missing compose file: $COMPOSE_FILE"
-        exit 1
-      fi
-
-      update_env_var() {
-        local key="$1"
-        local value="$2"
-        local file="$3"
-
-        if grep -q "^$${key}=" "$file"; then
-          sed -i.bak "s|^$${key}=.*|$${key}=$${value}|" "$file"
-        else
-          echo "$${key}=$${value}" >> "$file"
-        fi
-      }
-
-      echo "Deploying environment: $ENVIRONMENT"
-      echo "Web image: $WEB_IMAGE_VALUE"
-      echo "API image: $API_IMAGE_VALUE"
-
-      update_env_var "WEB_IMAGE" "$WEB_IMAGE_VALUE" "$ENV_FILE"
-      update_env_var "API_IMAGE" "$API_IMAGE_VALUE" "$ENV_FILE"
-
-      docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" pull
-      docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
-
-      rm -f "$${ENV_FILE}.bak"
-
-      echo "Deploy finished for $ENVIRONMENT"
 
 runcmd:
   - hostnamectl set-hostname ${hostname}
@@ -364,8 +48,16 @@ runcmd:
   - systemctl start docker
   - usermod -aG docker deploy
 
-  # Grundstruktur + Dateien
-  - bash /opt/bootstrap.sh
+  # Basis-Verzeichnisse
+  - mkdir -p /opt/elikuren-app
+  - mkdir -p /root/.docker
+  - mkdir -p /home/deploy/.docker
+  - docker network create proxy || true
+  - chown -R deploy:deploy /home/deploy/.docker
+
+  # Git
+  - apt-get update
+  - apt-get install -y git
 
   # Tailscale
   - curl -fsSL https://tailscale.com/install.sh | sh
@@ -374,18 +66,22 @@ runcmd:
   - bash -c 'until systemctl is-active --quiet tailscaled; do sleep 1; done'
   - tailscale up --authkey=${tailscale_authkey} --ssh --advertise-tags=tag:server --hostname=${hostname} --accept-dns=false --accept-routes=false
 
-  # Traefik direkt starten
-  - cd /opt/traefik && docker compose up -d
-  - chmod +x /opt/elikuren-app/deploy/deploy.sh
+  # Repo holen
+  - rm -rf /opt/elikuren-app
+  - git clone https://github.com/${github_owner}/elikuren-app /opt/elikuren-app
   - chown -R deploy:deploy /opt/elikuren-app
+  - cp /opt/elikuren-app/deploy/systemd/elikuren-update.service /etc/systemd/system/elikuren-update@.service
+  - cp /opt/elikuren-app/deploy/systemd/elikuren-update.timer /etc/systemd/system/elikuren-update@.timer
+  - systemctl daemon-reload
+  - systemctl enable --now elikuren-update@${stack}.timer
 
-  - |
-    if [ "${stack}" = "dev" ]; then
-      cd /opt/elikuren-app/deploy
-      docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
-    else
-      cd /opt/elikuren-app/deploy
-      docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
-    fi
+  # ACME Datei für Traefik
+  - mkdir -p /opt/elikuren-app/deploy/traefik/letsencrypt
+  - touch /opt/elikuren-app/deploy/traefik/letsencrypt/acme.json
+  - chmod 600 /opt/elikuren-app/deploy/traefik/letsencrypt/acme.json
+
+  # Richtigen Stack starten
+  - cd /opt/elikuren-app/deploy/traefik && docker compose --env-file .env.${stack} up -d
+  - cd /opt/elikuren-app/deploy && docker compose -f docker-compose.${stack}.yml --env-file .env.${stack} up -d
 
 final_message: "cloud-init finished for ${hostname}"
