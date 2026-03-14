@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 app = FastAPI()
-
+# New
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "elikuren-api"}
