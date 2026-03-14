@@ -199,7 +199,7 @@ resource "github_actions_environment_secret" "prod_clerk_publishable_key" {
 }
 
 resource "github_actions_environment_secret" "dev_host" {
-  count           = 0
+  count           = local.dev_deploy_enabled ? 1 : 0
   repository      = github_repository.this.name
   environment     = github_repository_environment.dev[0].environment
   secret_name     = "DEV_HOST"
@@ -207,7 +207,7 @@ resource "github_actions_environment_secret" "dev_host" {
 }
 
 resource "github_actions_environment_secret" "dev_user" {
-  count           = 0
+  count           = local.dev_deploy_enabled ? 1 : 0
   repository      = github_repository.this.name
   environment     = github_repository_environment.dev[0].environment
   secret_name     = "DEV_USER"
@@ -215,7 +215,7 @@ resource "github_actions_environment_secret" "dev_user" {
 }
 
 resource "github_actions_environment_secret" "dev_ssh_key" {
-  count           = 0
+  count           = local.dev_deploy_enabled ? 1 : 0
   repository      = github_repository.this.name
   environment     = github_repository_environment.dev[0].environment
   secret_name     = "DEV_SSH_KEY"
@@ -223,7 +223,7 @@ resource "github_actions_environment_secret" "dev_ssh_key" {
 }
 
 resource "github_actions_environment_secret" "prod_host" {
-  count           = 0
+  count           = local.dev_deploy_enabled ? 1 : 0
   repository      = github_repository.this.name
   environment     = github_repository_environment.prod[0].environment
   secret_name     = "PROD_HOST"
@@ -231,7 +231,7 @@ resource "github_actions_environment_secret" "prod_host" {
 }
 
 resource "github_actions_environment_secret" "prod_user" {
-  count           = 0
+  count           = local.dev_deploy_enabled ? 1 : 0
   repository      = github_repository.this.name
   environment     = github_repository_environment.prod[0].environment
   secret_name     = "PROD_USER"
@@ -239,7 +239,7 @@ resource "github_actions_environment_secret" "prod_user" {
 }
 
 resource "github_actions_environment_secret" "prod_ssh_key" {
-  count           = 0
+  count           = local.dev_deploy_enabled ? 1 : 0
   repository      = github_repository.this.name
   environment     = github_repository_environment.prod[0].environment
   secret_name     = "PROD_SSH_KEY"
