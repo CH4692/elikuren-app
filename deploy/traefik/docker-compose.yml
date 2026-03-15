@@ -3,32 +3,27 @@ services:
     image: traefik:v3.6
     container_name: traefik
     restart: unless-stopped
+
     command:
-      - --api.dashboard=true
-      - --api.insecure=false
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
-      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
-      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+      - --configFile=/etc/traefik/traefik.yml
+
     ports:
       - "80:80"
       - "443:443"
+
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /opt/elikuren-data/letsencrypt:/letsencrypt
+      - ./traefik.yml:/etc/traefik/traefik.yml
+
     networks:
       - proxy
+
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy
       - traefik.http.routers.traefik.rule=Host(`${TRAEFIK_DASHBOARD_HOST}`)
       - traefik.http.routers.traefik.entrypoints=websecure
-      - traefik.http.routers.traefik.tls=true
       - traefik.http.routers.traefik.tls.certresolver=le
       - traefik.http.routers.traefik.service=api@internal
 
