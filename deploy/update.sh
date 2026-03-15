@@ -16,7 +16,6 @@ cd "$REPO_DIR"
 
 git fetch origin
 git reset --hard "origin/$STACK"
-git clean -fd
 
 cd "$TRAEFIK_DIR"
 docker compose --env-file ".env.$STACK" pull
