@@ -17,3 +17,11 @@ def user():
             "user_id": "123456"
         }
     }
+
+@app.get("/testing")
+def user():
+    return {
+        "message": {
+            "test_user": "charles"
+        }
+    }
