@@ -64,5 +64,5 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.created=${{ github.run_id }}
           tags: |
-            ghcr.io/ch4692/elikuren-api:${{ steps.tag.outputs.TAG }}
-            ghcr.io/ch4692/elikuren-api:git-${{ steps.sha.outputs.SHORT_SHA }}
+            ghcr.io/ch4692/elikuren-web:${{ steps.tag.outputs.TAG }}
+            ghcr.io/ch4692/elikuren-web:git-${{ steps.sha.outputs.SHORT_SHA }}
