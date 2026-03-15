@@ -21,7 +21,7 @@ entryPoints:
 certificatesResolvers:
   le:
     acme:
-      email: ${ACME_EMAIL}
+      email: charles.heller@hotmail.de
       storage: /letsencrypt/acme.json
       httpChallenge:
         entryPoint: web
