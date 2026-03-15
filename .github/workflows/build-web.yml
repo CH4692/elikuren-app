@@ -5,6 +5,7 @@ on:
     branches: [dev, prod]
     paths:
       - "app-elikuren-web/**"
+      - "deploy/**"
       - ".github/workflows/build-web.yml"
 
 permissions:
