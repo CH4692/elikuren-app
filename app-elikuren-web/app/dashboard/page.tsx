@@ -1,20 +1,29 @@
-import Link from "next/link";
+"use client";
 
-export default function Home() {
+import { useAuth } from "@clerk/nextjs";
+
+export default function DashboardPage() {
+  const { isLoaded, isSignedIn, userId, sessionId, getToken } = useAuth();
+
+  const test = async () => {
+    console.log({ isLoaded, isSignedIn, userId, sessionId });
+
+    if (!isLoaded) return;
+    if (!isSignedIn) return;
+
+    const token = await getToken();
+    console.log("TOKEN:", token);
+    const res = await fetch("http://localhost:8000/users/me", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log(await res.json());
+  };
+
   return (
-    <main className="flex flex-col gap-6 min-h-screen w-full justify-center items-center ">
-      <h1 className=" text-3xl"> Dashboard</h1>
-      <ul className="flex flex-col gap-3">
-        <li>
-          <Link href="/profile">Profile</Link>
-        </li>
-        <li>
-          <Link href="/">Homepage</Link>
-        </li>
-        <li>
-          <Link href="/admin">Admin</Link>
-        </li>
-      </ul>
-    </main>
+    <div className="flex flex-col gap-6 min-h-screen w-full justify-center items-center">
+      <button onClick={test}>Token holen</button>
+    </div>
   );
 }

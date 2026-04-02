@@ -1,70 +1,56 @@
-# Lokal testen (ohne TLS, nur HTTP)
-# Start: docker compose -f docker-compose.local.yml --env-file .env.local up -d
-# Vorher: .env.local anlegen (siehe .env.example) und ggf. /etc/hosts eintragen
-
 services:
-  traefik:
-    image: traefik:v3.6.8
-    container_name: traefik-local
+  db:
+    image: postgres:16
+    container_name: elikuren-db-dev
     restart: unless-stopped
-    ports:
-      - "8081:80"
-      - "8080:8080"
+    environment:
+      POSTGRES_DB: elikuren
+      POSTGRES_USER: elikuren
+      POSTGRES_PASSWORD: imgalluspark
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik-local.yml:/etc/traefik/traefik.yml:ro
-    networks:
-      - proxy
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.traefik-local.rule=Host(`${TRAEFIK_DASHBOARD_HOST}`)
-      - traefik.http.routers.traefik-local.entrypoints=web
-      - traefik.http.routers.traefik-local.service=api@internal
+      - ./data/postgres-dev:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U elikuren -d elikuren"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   web:
     build:
       context: ../app-elikuren-web
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-        - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
-        - NEXT_PUBLIC_CLERK_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_URL:-/sign-in}
-        - NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL:-/profile}
-        - NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=${NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL:-/profile}
-        - NEXT_PUBLIC_CLERK_PROXY_URL=${NEXT_PUBLIC_CLERK_PROXY_URL:-}
-    image: elikuren-web:local
-    container_name: elikuren-web-local
+      dockerfile: Dockerfile.dev
+    container_name: elikuren-web-dev
     restart: unless-stopped
     env_file:
       - .env.local
-    networks:
-      - proxy
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.web-local.rule=Host(`${WEB_HOST}`)
-      - traefik.http.routers.web-local.entrypoints=web
-      - traefik.http.services.web-local.loadbalancer.server.port=3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../app-elikuren-web:/app
+      - /app/node_modules
+      - ./keys:/app/keys
+    environment:
+      NODE_ENV: development
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    depends_on:
+      db:
+        condition: service_healthy
 
   api:
     build:
       context: ../app-elikuren-api
-      dockerfile: Dockerfile
-    image: elikuren-api:local
-    container_name: elikuren-api-local
+    container_name: elikuren-api-dev
     restart: unless-stopped
     env_file:
       - .env.local
-    networks:
-      - proxy
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.api-local.rule=Host(`${API_HOST}`)
-      - traefik.http.routers.api-local.entrypoints=web
-      - traefik.http.services.api-local.loadbalancer.server.port=8000
-
-networks:
-  proxy:
-    external: true
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../app-elikuren-api:/app
+      - ../app-elikuren-api/keys:/app/keys
+    depends_on:
+      db:
+        condition: service_healthy
