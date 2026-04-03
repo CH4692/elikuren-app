@@ -50,9 +50,16 @@ module "app_elikuren" {
   clerk_publishable_key_dev  = var.clerk_publishable_key_dev
   clerk_publishable_key_prod = var.clerk_publishable_key_prod
 
+  clerk_issuer_dev  = var.clerk_issuer_dev
+  clerk_issuer_prod = var.clerk_issuer_prod
+
+  clerk_webhook_secret_prod = var.clerk_webhook_secret_prod
+  clerk_webhook_secret_dev  = var.clerk_webhook_secret_dev
+
   clerk_sign_in_url                   = var.clerk_sign_in_url
   clerk_sign_in_fallback_redirect_url = var.clerk_sign_in_fallback_redirect_url
   clerk_sign_up_fallback_redirect_url = var.clerk_sign_up_fallback_redirect_url
+
 
   clerk_proxy_url_dev  = var.clerk_proxy_url_dev
   clerk_proxy_url_prod = var.clerk_proxy_url_prod

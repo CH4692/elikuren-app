@@ -99,6 +99,26 @@ variable "clerk_publishable_key_prod" {
   sensitive = true
 }
 
+variable "clerk_issuer_dev" {
+  type    = string
+  default = ""
+}
+
+variable "clerk_webhook_secret_dev" {
+  type    = string
+  default = ""
+}
+
+variable "clerk_issuer_prod" {
+  type    = string
+  default = ""
+}
+
+variable "clerk_webhook_secret_prod" {
+  type    = string
+  default = ""
+}
+
 variable "clerk_sign_in_url" {
   type    = string
   default = "/sign-in"

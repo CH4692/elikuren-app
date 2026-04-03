@@ -198,6 +198,38 @@ resource "github_actions_environment_secret" "prod_clerk_publishable_key" {
   plaintext_value = var.clerk_publishable_key_prod
 }
 
+resource "github_actions_environment_secret" "clerk_issuer_dev" {
+  count           = local.clerk_enabled != "" ? 1 : 0
+  repository      = github_repository.this.name
+  environment     = github_repository_environment.dev[0].environment
+  secret_name     = "CLERK_ISSUER"
+  plaintext_value = var.clerk_issuer_dev
+}
+
+resource "github_actions_environment_secret" "clerk_issuer_prod" {
+  count           = local.clerk_enabled != "" ? 1 : 0
+  repository      = github_repository.this.name
+  environment     = github_repository_environment.prod[0].environment
+  secret_name     = "CLERK_ISSUER"
+  plaintext_value = var.clerk_issuer_prod
+}
+
+resource "github_actions_environment_secret" "clerk_webhook_secret_dev" {
+  count           = local.clerk_enabled != "" ? 1 : 0
+  repository      = github_repository.this.name
+  environment     = github_repository_environment.dev[0].environment
+  secret_name     = "CLERK_WEBHOOK_SECRET"
+  plaintext_value = var.clerk_webhook_secret_dev
+}
+
+resource "github_actions_environment_secret" "clerk_webhook_secret_prod" {
+  count           = local.clerk_enabled != "" ? 1 : 0
+  repository      = github_repository.this.name
+  environment     = github_repository_environment.prod[0].environment
+  secret_name     = "CLERK_WEBHOOK_SECRET"
+  plaintext_value = var.clerk_webhook_secret_prod
+}
+
 resource "github_actions_environment_secret" "dev_host" {
   count           = local.dev_deploy_enabled ? 1 : 0
   repository      = github_repository.this.name
