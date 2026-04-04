@@ -1,8 +1,16 @@
 import { Inter } from "next/font/google";
 import { ChevronDown } from "lucide-react";
-import MenuLink from "./menu_link";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  NavigationMenuContent,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
 import Logo from "./logo";
 import Link from "next/link";
+import { Button } from "./ui/button";
 
 export const inter = Inter({
   variable: "--font-inter",
@@ -16,42 +24,54 @@ export default function Navbar() {
       className={`${inter.variable} flex justify-around items-center p-4 bg-background h-20`}
     >
       <Logo />
-      <ul className="flex text-foreground text-base gap-5">
-        <li className="flex gap-1">
-          <MenuLink className={MenuLinkClass} href="/home/about">
-            Über Uns
-            <ChevronDown />
-          </MenuLink>
-        </li>
-        <li>
-          <MenuLink className={MenuLinkClass} href="/concerts">
-            Konzerte
-          </MenuLink>
-        </li>
-        <li>
-          <MenuLink className={MenuLinkClass} href="/joinus">
-            Mitsingen
-          </MenuLink>
-        </li>
-        <li>
-          <MenuLink className={MenuLinkClass} href="/support">
-            Unterstützen
-          </MenuLink>
-        </li>
-      </ul>
+      <NavigationMenu>
+        <NavigationMenuList>
+          {/* Über Uns (Dropdown) */}
+          <NavigationMenuItem>
+            <NavigationMenuTrigger>Über Uns</NavigationMenuTrigger>
+
+            <NavigationMenuContent>
+              <ul className="grid w-[220px] gap-2 p-4 bg-background">
+                <li className="hover:text-primary hover:cursor-pointer transition-all">
+                  <Link href="/home/about">Über den Chor</Link>
+                </li>
+                <li className="hover:text-primary hover:cursor-pointer">
+                  <Link href="/home/conductor">Dirigent</Link>
+                </li>
+                <li className="hover:text-primary hover:cursor-pointer">
+                  <Link href="/home/history">Geschichte</Link>
+                </li>
+              </ul>
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+
+          {/* Normale Links */}
+          <NavigationMenuItem>
+            <Link href="/concerts" className={navigationMenuTriggerStyle()}>
+              Konzerte
+            </Link>
+          </NavigationMenuItem>
+
+          <NavigationMenuItem>
+            <Link href="/joinus" className={navigationMenuTriggerStyle()}>
+              Mitsingen
+            </Link>
+          </NavigationMenuItem>
+
+          <NavigationMenuItem>
+            <Link href="/support" className={navigationMenuTriggerStyle()}>
+              Unterstützen
+            </Link>
+          </NavigationMenuItem>
+        </NavigationMenuList>
+      </NavigationMenu>
       <div className="flex items-center gap-3">
-        <Link
-          href="/sign-in"
-          className={`border border-foreground py-2 px-4 text-base rounded-lg ${inter.variable}`}
-        >
-          Mitglieder Login
-        </Link>
-        <Link
-          href="/sign-up"
-          className={`border border-primary py-2 px-4 rounded-lg text-base bg-primary text-background ${inter.variable}`}
-        >
-          Mitglieder werden
-        </Link>
+        <Button size="xl" variant="outline" asChild>
+          <Link href="/sign-in">Mitglieder Login</Link>
+        </Button>
+        <Button size="xl" asChild>
+          <Link href="/sign-up">Mitglieder werden</Link>
+        </Button>
       </div>
     </header>
   );

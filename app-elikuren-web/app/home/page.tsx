@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Inter } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,12 +27,9 @@ export default function Home() {
         <p className="text-4xl text-second-background">
           Musik, die verbindet. Stimmen, die berühren.
         </p>
-        <Link
-          href="/sign-up"
-          className={`border border-primary py-2 px-4 rounded-lg text-base bg-primary text-background mt-8 ${inter.variable}`}
-        >
-          Konzerte entdecken
-        </Link>
+        <Button size="xl" asChild className="mt-8">
+          <Link href="/concerts">Konzerte entdecken</Link>
+        </Button>
       </div>
     </main>
   );
