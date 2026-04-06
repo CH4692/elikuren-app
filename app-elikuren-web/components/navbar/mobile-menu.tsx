@@ -27,7 +27,7 @@ export default function NavbarMobile() {
     "text-lg hover:text-primary flex items-center bg-second-background/5 p-3 rounded-lg shadow-md";
   return (
     <header
-      className={`${inter.variable} flex sticky top-0 z-50 lg:hidden justify-around items-center p-4 bg-background/80 backdrop-blur-md border-b-second-background h-20`}
+      className={`${inter.variable} flex fixed top-0 left-0 w-full z-50 lg:hidden justify-around items-center p-2 backdrop-blur-md border-b-second-background`}
     >
       <Logo setOpen={setOpen} />
       <div className="flex items-center gap-3">

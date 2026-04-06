@@ -19,7 +19,7 @@ export const inter = Inter({
 export default function Navbar() {
   return (
     <header
-      className={`${inter.variable} sticky hidden lg:flex top-0 z-50 justify-around items-center p-4 bg-background/80 backdrop-blur-md border-b-second-background h-20`}
+      className={`${inter.variable} fixed left-0 w-full hidden lg:flex top-0 z-50 justify-around items-center p-2 bg-background/80 backdrop-blur-md border-b-second-background`}
     >
       <Logo />
       <NavigationMenu>
