@@ -23,6 +23,8 @@ export const inter = Inter({
 
 export default function NavbarMobile() {
   const [open, setOpen] = useState(false);
+  const linksClass =
+    "text-lg hover:text-primary flex items-center bg-second-background/5 p-3 rounded-lg shadow-md";
   return (
     <header
       className={`${inter.variable} flex sticky top-0 z-50 lg:hidden justify-around items-center p-4 bg-background/80 backdrop-blur-md border-b-second-background h-20`}
@@ -42,51 +44,69 @@ export default function NavbarMobile() {
           >
             <ClosMenu open={open} setOpen={setOpen} />
 
-            <nav className="mt-8 flex text-center flex-col gap-4">
+            <nav className="lg:mt-8 flex flex-col gap-4 px-2 py-4">
               <Link
                 href="/about"
                 onClick={() => setOpen(false)}
-                className="text-lg hover:text-primary"
+                className={linksClass}
               >
                 Über den Verein
               </Link>
               <Link
                 href="/home#chorleitung"
                 onClick={() => setOpen(false)}
-                className="text-lg hover:text-primary"
+                className={linksClass}
               >
                 Chorleitung
               </Link>
               <Link
                 href="/history"
                 onClick={() => setOpen(false)}
-                className="text-lg hover:text-primary"
+                className={linksClass}
               >
                 Geschichte
               </Link>
               <Link
                 href="/home#concerts"
                 onClick={() => setOpen(false)}
-                className="text-lg hover:text-primary"
+                className={linksClass}
               >
                 Konzerte
               </Link>
               <Link
                 href="/home#joinus"
                 onClick={() => setOpen(false)}
-                className="text-lg hover:text-primary"
+                className={linksClass}
               >
                 Mitsingen
               </Link>
               <Link
                 href="/home#support"
                 onClick={() => setOpen(false)}
-                className="text-lg hover:text-primary"
+                className={linksClass}
               >
                 Unterstützen
               </Link>
+              <Link
+                href="/auth/sign-in"
+                onClick={() => setOpen(false)}
+                className={
+                  "text-lg hover:text-primary flex items-center border border-second-background p-3 rounded-lg shadow-md lg:hidden"
+                }
+              >
+                Mitglieder Login
+              </Link>
+              <Link
+                href="/auth/sign-up"
+                onClick={() => setOpen(false)}
+                className={
+                  "text-lg hover:text-foreground text-background flex items-center bg-primary p-3 rounded-lg shadow-md lg:hidden "
+                }
+              >
+                Mitglieder werden
+              </Link>
 
-              <div className="mt-6 flex flex-col gap-3">
+              <div className="lg:mt-6 flex flex-col gap-3 hidden">
                 <Button variant="outline" asChild>
                   <Link href="/auth/sign-in" onClick={() => setOpen(false)}>
                     Mitglieder Login
