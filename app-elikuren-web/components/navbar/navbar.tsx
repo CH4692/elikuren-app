@@ -1,5 +1,4 @@
 import { Inter } from "next/font/google";
-import { ChevronDown } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -8,9 +7,9 @@ import {
   NavigationMenuContent,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import Logo from "./logo";
+import Logo from "../logo";
 import Link from "next/link";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 
 export const inter = Inter({
   variable: "--font-inter",
@@ -21,7 +20,7 @@ export default function Navbar() {
   const MenuLinkClass = `${inter.variable}`;
   return (
     <header
-      className={`${inter.variable} flex justify-around items-center p-4 bg-background h-20`}
+      className={`${inter.variable} sticky hidden lg:flex top-0 z-50 justify-around items-center p-4 bg-background/80 backdrop-blur-md border-b-second-background h-20`}
     >
       <Logo />
       <NavigationMenu>
@@ -33,13 +32,13 @@ export default function Navbar() {
             <NavigationMenuContent>
               <ul className="grid w-[220px] gap-2 p-4 bg-background">
                 <li className="hover:text-primary hover:cursor-pointer transition-all">
-                  <Link href="/home/about">Über den Chor</Link>
+                  <Link href="/about">Über den Verein</Link>
                 </li>
                 <li className="hover:text-primary hover:cursor-pointer">
-                  <Link href="/home/conductor">Dirigent</Link>
+                  <Link href="/home#chorleitung">Chorleitung</Link>
                 </li>
                 <li className="hover:text-primary hover:cursor-pointer">
-                  <Link href="/home/history">Geschichte</Link>
+                  <Link href="/history">Geschichte</Link>
                 </li>
               </ul>
             </NavigationMenuContent>
@@ -47,19 +46,22 @@ export default function Navbar() {
 
           {/* Normale Links */}
           <NavigationMenuItem>
-            <Link href="/concerts" className={navigationMenuTriggerStyle()}>
+            <Link
+              href="/home#concerts"
+              className={navigationMenuTriggerStyle()}
+            >
               Konzerte
             </Link>
           </NavigationMenuItem>
 
           <NavigationMenuItem>
-            <Link href="/joinus" className={navigationMenuTriggerStyle()}>
+            <Link href="/home#joinus" className={navigationMenuTriggerStyle()}>
               Mitsingen
             </Link>
           </NavigationMenuItem>
 
           <NavigationMenuItem>
-            <Link href="/support" className={navigationMenuTriggerStyle()}>
+            <Link href="/home#support" className={navigationMenuTriggerStyle()}>
               Unterstützen
             </Link>
           </NavigationMenuItem>
@@ -67,10 +69,10 @@ export default function Navbar() {
       </NavigationMenu>
       <div className="flex items-center gap-3">
         <Button size="xl" variant="outline" asChild>
-          <Link href="/sign-in">Mitglieder Login</Link>
+          <Link href="/auth/sign-in">Mitglieder Login</Link>
         </Button>
         <Button size="xl" asChild>
-          <Link href="/sign-up">Mitglieder werden</Link>
+          <Link href="/auth/sign-up">Mitglieder werden</Link>
         </Button>
       </div>
     </header>

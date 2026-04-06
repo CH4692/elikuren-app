@@ -1,3 +1,4 @@
+"use client";
 import { Roboto } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
@@ -7,9 +8,13 @@ const roboto = Roboto({
   subsets: ["latin"],
 });
 
-export default function Logo() {
+export default function Logo({
+  setOpen,
+}: {
+  setOpen?: (open: boolean) => void;
+}) {
   return (
-    <Link href="/">
+    <Link href="/home" onClick={() => setOpen?.(false)}>
       <div className="flex items-center gap-3">
         <Image src="/Logo.svg" alt="Logo" width={70} height={70} priority />
         <div className="flex flex-col">
