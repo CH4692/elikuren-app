@@ -1,10 +1,48 @@
+import Image from "next/image";
+import { Button } from "../ui/button";
+import Link from "next/link";
+
 export default function ChorleitungPage() {
   return (
     <section
       id="chorleitung"
-      className="h-screen w-screen flex bg-second-primary justify-center items-center"
+      className="h-screen w-screen flex gap-41 justify-center items-center bg-second-primary"
     >
-      <h1 className="text-4xl font-bold">Chorleitung</h1>
+      <div className="mx-auto grid max-w-7xl p-4 pt-16 items-center gap-12 lg:grid-cols-2">
+        <div className="flex justify-center">
+          <div className="relative h-72 w-72 overflow-hidden rounded-full lg:h-[28rem] md:w-[28rem]">
+            <Image
+              src="/chorleitung.jpg"
+              alt="Christiane Kampe"
+              fill
+              className="object-cover"
+            />
+          </div>
+        </div>
+
+        <div className="text-white">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-white/80">
+            Chorleitung
+          </p>
+
+          <h2 className="mb-6 text-4xl font-bold lg:text-5xl">
+            Christiane Kampe
+          </h2>
+
+          <p className="max-w-xl text-lg leading-8 text-foreground/90">
+            Seit vielen Jahren prägt Christiane Kampe die musikalische Identität
+            unseres Chores mit Leidenschaft, Erfahrung und musikalischer Tiefe.
+            Sie war über Jahrzehnte als engagierte Musikpädagogin an der
+            Musikschule Wunstorf tätig und führte zahlreiche Chöre und Ensembles
+            zu künstlerischen Höhepunkten – von anspruchsvollen Konzerten bis
+            hin zu festlichen Auftritten in der Region.
+          </p>
+
+          <Button className="mt-10" size="xl" asChild>
+            <Link href="/chorleitung">Mehr erfahren</Link>
+          </Button>
+        </div>
+      </div>
     </section>
   );
 }

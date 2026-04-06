@@ -90,7 +90,7 @@ function NavigationMenuContent({
     <NavigationMenuPrimitive.Content
       data-slot="navigation-menu-content"
       className={cn(
-        "origin-top-center relative mt-2 h-(--radix-navigation-menu-viewport-height) w-full overflow-hidden rounded-lg bg-background text-white shadow-xl duration-200 ease-out md:w-(--radix-navigation-menu-viewport-width) data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-open:slide-in-from-top-1 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:slide-out-to-top-1",
+        "origin-top-center relative h-(--radix-navigation-menu-viewport-height) w-full overflow-hidden rounded-lg bg-background text-white shadow-xl duration-200 ease-out md:w-(--radix-navigation-menu-viewport-width) data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-open:slide-in-from-top-1 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:slide-out-to-top-1",
         className,
       )}
       {...props}
