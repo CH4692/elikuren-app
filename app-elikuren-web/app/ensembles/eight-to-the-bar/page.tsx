@@ -1,0 +1,7 @@
+export default function EightToTheBarPage() {
+  return (
+    <main className="h-screen w-screen flex justify-center items-center">
+      <h1 className="text-4xl font-bold">Eight-to-the-bar Page</h1>
+    </main>
+  );
+}
