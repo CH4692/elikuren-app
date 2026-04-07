@@ -6,7 +6,7 @@ export default function ChorleitungPage() {
   return (
     <section
       id="chorleitung"
-      className="lg:h-min-screen w-full flex lg:gap-41 justify-center items-center bg-second-primary"
+      className="min-h-screen w-full flex lg:gap-41 justify-center items-center bg-second-primary"
     >
       <div className="mx-auto grid max-w-7xl p-4 pt-25 items-center gap-8 lg:grid-cols-2">
         <div className="flex justify-center">
