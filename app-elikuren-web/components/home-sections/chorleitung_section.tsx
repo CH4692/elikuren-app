@@ -6,9 +6,9 @@ export default function ChorleitungPage() {
   return (
     <section
       id="chorleitung"
-      className="h-screen w-screen flex gap-41 justify-center items-center bg-second-primary"
+      className="lg:h-min-screen w-full flex lg:gap-41 justify-center items-center bg-second-primary"
     >
-      <div className="mx-auto grid max-w-7xl p-4 pt-16 items-center gap-12 lg:grid-cols-2">
+      <div className="mx-auto grid max-w-7xl p-4 pt-25 items-center gap-8 lg:grid-cols-2">
         <div className="flex justify-center">
           <div className="relative h-72 w-72 overflow-hidden rounded-full lg:h-[28rem] md:w-[28rem]">
             <Image
@@ -38,7 +38,7 @@ export default function ChorleitungPage() {
             hin zu festlichen Auftritten in der Region.
           </p>
 
-          <Button className="mt-10" size="xl" asChild>
+          <Button className="mt-4" size="xl" asChild>
             <Link href="/chorleitung">Mehr erfahren</Link>
           </Button>
         </div>
