@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function LandingPage() {
   return (
-    <section id="landing" className="relative h-screen w-full">
+    <section id="landing" className="relative h-svh min-h-svh w-full">
       <Image
         src="/kammerchor.jpg"
         alt="Background"
@@ -15,7 +15,7 @@ export default function LandingPage() {
 
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 lg:from-black/40 to-black/90" />
 
-      <div className="relative z-10 flex flex-col items-center justify-end lg:pb-24 pb-56 h-full text-white">
+      <div className="relative z-10 flex flex-col items-center justify-center h-full text-white">
         <Image src="/Logo.svg" alt="Logo" width={180} height={180} priority />
         <p className="lg:text-6xl text-4xl text-primary ">
           Kammerchor Elikuren
