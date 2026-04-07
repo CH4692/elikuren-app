@@ -14,7 +14,7 @@ export default function Logo({
   setOpen?: (open: boolean) => void;
 }) {
   return (
-    <Link href="/home" onClick={() => setOpen?.(false)}>
+    <Link href="/home" onNavigate={() => setOpen?.(false)}>
       <div className="flex items-center gap-3">
         <Image src="/Logo.svg" alt="Logo" width={70} height={70} priority />
         <div className="flex flex-col">

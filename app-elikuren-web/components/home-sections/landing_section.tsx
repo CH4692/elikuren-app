@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function LandingPage() {
   return (
-    <section id="landing" className="relative h-svh min-h-svh w-full">
+    <section id="landing" className="relative h-dvh min-h-dvh w-full">
       <Image
         src="/kammerchor.jpg"
         alt="Background"

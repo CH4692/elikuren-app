@@ -1,6 +1,5 @@
 "use client";
 import { Inter } from "next/font/google";
-import { Menu, X } from "lucide-react";
 import Logo from "../logo";
 
 import {
@@ -25,6 +24,7 @@ export default function NavbarMobile() {
   const [open, setOpen] = useState(false);
   const linksClass =
     "text-lg hover:text-primary flex items-center bg-second-background/5 p-3 rounded-lg shadow-md";
+
   return (
     <header
       className={`${inter.variable} flex fixed top-0 left-0 w-full z-50 lg:hidden justify-around items-center p-2 backdrop-blur-md border-b-second-background`}
@@ -47,49 +47,50 @@ export default function NavbarMobile() {
             <nav className="lg:mt-8 flex flex-col gap-4 px-2 py-4">
               <Link
                 href="/about"
-                onClick={() => setOpen(false)}
+                onNavigate={() => setOpen(false)}
                 className={linksClass}
               >
                 Über den Verein
               </Link>
+
               <Link
                 href="/home#chorleitung"
-                onClick={() => setOpen(false)}
+                onNavigate={() => setOpen(false)}
                 className={linksClass}
               >
                 Chorleitung
               </Link>
               <Link
                 href="/history"
-                onClick={() => setOpen(false)}
+                onNavigate={() => setOpen(false)}
                 className={linksClass}
               >
                 Geschichte
               </Link>
               <Link
                 href="/home#concerts"
-                onClick={() => setOpen(false)}
+                onNavigate={() => setOpen(false)}
                 className={linksClass}
               >
                 Konzerte
               </Link>
               <Link
                 href="/home#joinus"
-                onClick={() => setOpen(false)}
+                onNavigate={() => setOpen(false)}
                 className={linksClass}
               >
                 Mitsingen
               </Link>
               <Link
                 href="/home#support"
-                onClick={() => setOpen(false)}
+                onNavigate={() => setOpen(false)}
                 className={linksClass}
               >
                 Unterstützen
               </Link>
               <Link
                 href="/auth/sign-in"
-                onClick={() => setOpen(false)}
+                onNavigate={() => setOpen(false)}
                 className={
                   "text-lg hover:text-primary flex items-center border border-second-background p-3 rounded-lg shadow-md lg:hidden"
                 }
@@ -98,7 +99,7 @@ export default function NavbarMobile() {
               </Link>
               <Link
                 href="/auth/sign-up"
-                onClick={() => setOpen(false)}
+                onNavigate={() => setOpen(false)}
                 className={
                   "text-lg hover:text-foreground text-background flex items-center bg-primary p-3 rounded-lg shadow-md lg:hidden "
                 }
@@ -108,12 +109,12 @@ export default function NavbarMobile() {
 
               <div className="lg:mt-6 flex flex-col gap-3 hidden">
                 <Button variant="outline" asChild>
-                  <Link href="/auth/sign-in" onClick={() => setOpen(false)}>
+                  <Link href="/auth/sign-in" onNavigate={() => setOpen(false)}>
                     Mitglieder Login
                   </Link>
                 </Button>
                 <Button asChild>
-                  <Link href="/auth/sign-up" onClick={() => setOpen(false)}>
+                  <Link href="/auth/sign-up" onNavigate={() => setOpen(false)}>
                     Mitglieder werden
                   </Link>
                 </Button>
