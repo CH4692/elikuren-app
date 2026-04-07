@@ -40,7 +40,7 @@ export default function NavbarMobile() {
 
           <SheetContent
             side="top"
-            className="bg-background h-full text-foreground"
+            className="bg-background border-background h-full text-foreground"
           >
             <ClosMenu open={open} setOpen={setOpen} />
 
