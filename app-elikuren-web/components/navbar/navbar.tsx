@@ -10,6 +10,7 @@ import {
 import Logo from "../logo";
 import Link from "next/link";
 import { Button } from "../ui/button";
+import { flags } from "@/lib/flags";
 
 export const inter = Inter({
   variable: "--font-inter",
@@ -67,11 +68,19 @@ export default function Navbar() {
         </NavigationMenuList>
       </NavigationMenu>
       <div className="flex items-center gap-3">
-        <Button disabled size="xl" variant="outline" asChild>
-          <Link href="/auth/sign-in">Mitglieder Login</Link>
+        <Button size="xl" variant="outline" asChild>
+          {flags.authDisbled ? (
+            "Mitglieder werden"
+          ) : (
+            <Link href="/auth/sign-in">Mitglieder Login</Link>
+          )}
         </Button>
         <Button disabled size="xl" asChild>
-          <Link href="/auth/sign-up">Mitglieder werden</Link>
+          {flags.authDisbled ? (
+            "Mitglieder werden"
+          ) : (
+            <Link href="/auth/sign-up">Mitglieder werden</Link>
+          )}
         </Button>
       </div>
     </header>

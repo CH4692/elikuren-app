@@ -8,13 +8,14 @@ import Link from "next/link";
 import { useState } from "react";
 import MenuToggle from "./menu-toggle";
 import ClosMenu from "./menu-close";
+import { flags } from "@/lib/flags";
 
 export const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
 
-export default function NavbarMobileContent() {
+export default function NavbarMobileContent({}) {
   const [open, setOpen] = useState(false);
   const linksClass =
     "text-lg hover:text-primary flex items-center bg-second-background/5 p-3 rounded-lg shadow-md";
@@ -80,37 +81,32 @@ export default function NavbarMobileContent() {
               >
                 Unterstützen
               </Link>
-              <Link
-                href="/auth/sign-in"
-                onClick={() => setOpen(false)}
-                className={
-                  "text-lg hover:text-primary flex items-center border border-second-background p-3 rounded-lg shadow-md lg:hidden"
-                }
-              >
-                Mitglieder Login
-              </Link>
-              <Link
-                href="/auth/sign-up"
-                onClick={() => setOpen(false)}
-                className={
-                  "text-lg hover:text-foreground text-background flex items-center bg-primary p-3 rounded-lg shadow-md lg:hidden "
-                }
-              >
-                Mitglieder werden
-              </Link>
-
-              <div className="lg:mt-6 flex flex-col gap-3 hidden">
-                <Button disabled variant="outline" asChild>
-                  <Link href="/auth/sign-in" onClick={() => setOpen(false)}>
-                    Mitglieder Login
-                  </Link>
-                </Button>
-                <Button disabled asChild>
-                  <Link href="/auth/sign-up" onClick={() => setOpen(false)}>
-                    Mitglieder werden
-                  </Link>
-                </Button>
-              </div>
+              {flags.authDisbled ? (
+                ""
+              ) : (
+                <Link
+                  href="/auth/sign-in"
+                  onClick={() => setOpen(false)}
+                  className={
+                    "text-lg hover:text-primary flex items-center border border-second-background p-3 rounded-lg shadow-md lg:hidden"
+                  }
+                >
+                  Mitglieder Login
+                </Link>
+              )}
+              {flags.authDisbled ? (
+                ""
+              ) : (
+                <Link
+                  href="/auth/sign-up"
+                  onClick={() => setOpen(false)}
+                  className={
+                    "text-lg hover:text-foreground text-background flex items-center bg-primary p-3 rounded-lg shadow-md lg:hidden "
+                  }
+                >
+                  Mitglieder werden
+                </Link>
+              )}
             </nav>
           </SheetContent>
         </Sheet>
