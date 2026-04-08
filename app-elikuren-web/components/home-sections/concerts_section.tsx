@@ -19,9 +19,9 @@ export default function ConcertPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-lg text-white/85 sm:text-xl">
-              Der Kammerchor Elikuren und das Musical Team laden herzlich zu
-              einem besonderen Konzertabend ein: Franz Schuberts „Winterreise“
-              in einer eindrucksvollen Chorfassung – als Uraufführung von Martin
+              Der Kammerchor Elikuren und das musical team laden herzlich zu
+              einem besonderen Konzert ein: Franz Schuberts „Winterreise“ in
+              einer eindrucksvollen Chorfassung – als Uraufführung von Martin
               Kirchner, ehemaliger Professor für Neue Musik in Leipzig.
             </p>
 
@@ -76,9 +76,9 @@ export default function ConcertPage() {
                       Franz Schuberts „Winterreise“ zählt zu den bedeutendsten
                       Liedzyklen der Musikgeschichte. In dieser
                       außergewöhnlichen Fassung für Chor, komponiert von{" "}
-                      <Link className="text-primary font-bold" href="Martin">
+                      <span className="text-primary font-bold">
                         Martin Kirchner
-                      </Link>
+                      </span>
                       , entfaltet das Werk eine neue klangliche Dimension.
                     </p>
                   </div>
