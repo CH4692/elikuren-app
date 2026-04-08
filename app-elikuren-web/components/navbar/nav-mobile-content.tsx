@@ -100,12 +100,12 @@ export default function NavbarMobileContent() {
               </Link>
 
               <div className="lg:mt-6 flex flex-col gap-3 hidden">
-                <Button variant="outline" asChild>
+                <Button disabled variant="outline" asChild>
                   <Link href="/auth/sign-in" onClick={() => setOpen(false)}>
                     Mitglieder Login
                   </Link>
                 </Button>
-                <Button asChild>
+                <Button disabled asChild>
                   <Link href="/auth/sign-up" onClick={() => setOpen(false)}>
                     Mitglieder werden
                   </Link>
