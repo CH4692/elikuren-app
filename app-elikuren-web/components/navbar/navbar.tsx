@@ -31,15 +31,19 @@ export default function Navbar() {
 
             <NavigationMenuContent>
               <ul className="grid w-[220px] gap-2 p-4 bg-background">
-                <li className="hover:text-primary hover:cursor-pointer transition-all">
-                  <Link href="/about">Über den Verein</Link>
-                </li>
+                {!flags.aboutDisbled && (
+                  <li className="hover:text-primary hover:cursor-pointer transition-all">
+                    <Link href="/about">Über den Verein</Link>
+                  </li>
+                )}
                 <li className="hover:text-primary hover:cursor-pointer">
                   <Link href="/home#chorleitung">Chorleitung</Link>
                 </li>
-                <li className="hover:text-primary hover:cursor-pointer">
-                  <Link href="/history">Geschichte</Link>
-                </li>
+                {!flags.historyDisbled && (
+                  <li className="hover:text-primary hover:cursor-pointer">
+                    <Link href="/history">Geschichte</Link>
+                  </li>
+                )}
               </ul>
             </NavigationMenuContent>
           </NavigationMenuItem>

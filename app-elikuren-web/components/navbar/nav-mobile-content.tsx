@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import Logo from "../logo";
 
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
-import { Button } from "../ui/button";
 import Link from "next/link";
 import { useState } from "react";
 import MenuToggle from "./menu-toggle";
@@ -38,13 +37,15 @@ export default function NavbarMobileContent({}) {
             <ClosMenu open={open} setOpen={setOpen} />
 
             <nav className="lg:mt-8 flex flex-col gap-4 px-2 py-4">
-              <Link
-                href="/about"
-                onClick={() => setOpen(false)}
-                className={linksClass}
-              >
-                Über den Verein
-              </Link>
+              {!flags.aboutDisbled && (
+                <Link
+                  href="/about"
+                  onClick={() => setOpen(false)}
+                  className={linksClass}
+                >
+                  Über den Verein
+                </Link>
+              )}
 
               <Link
                 href="/home#chorleitung"
@@ -53,13 +54,17 @@ export default function NavbarMobileContent({}) {
               >
                 Chorleitung
               </Link>
-              <Link
-                href="/history"
-                onClick={() => setOpen(false)}
-                className={linksClass}
-              >
-                Geschichte
-              </Link>
+
+              {!flags.historyDisbled && (
+                <Link
+                  href="/history"
+                  onClick={() => setOpen(false)}
+                  className={linksClass}
+                >
+                  Geschichte
+                </Link>
+              )}
+
               <Link
                 href="/home#concerts"
                 onClick={() => setOpen(false)}
@@ -67,6 +72,7 @@ export default function NavbarMobileContent({}) {
               >
                 Konzerte
               </Link>
+
               <Link
                 href="/home#joinus"
                 onClick={() => setOpen(false)}
@@ -74,6 +80,7 @@ export default function NavbarMobileContent({}) {
               >
                 Mitsingen
               </Link>
+
               <Link
                 href="/home#support"
                 onClick={() => setOpen(false)}
