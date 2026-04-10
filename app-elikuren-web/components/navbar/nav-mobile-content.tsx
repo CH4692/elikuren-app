@@ -16,6 +16,7 @@ export const inter = Inter({
 
 export default function NavbarMobileContent({}) {
   const [open, setOpen] = useState(false);
+  const handleClose = () => setTimeout(() => setOpen(false), 150);
   const linksClass =
     "text-lg hover:text-primary flex items-center bg-second-background/5 p-3 rounded-lg shadow-md";
 
@@ -24,11 +25,13 @@ export default function NavbarMobileContent({}) {
       <Logo setOpen={setOpen} />
       <div className="flex items-center gap-3">
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <button type="button" aria-label="Menü öffnen">
-              <MenuToggle open={open} />
-            </button>
-          </SheetTrigger>
+          <button
+            type="button"
+            aria-label="Menü öffnen"
+            onClick={() => setOpen(true)}
+          >
+            <MenuToggle open={open} />
+          </button>
 
           <SheetContent
             side="top"
@@ -40,7 +43,7 @@ export default function NavbarMobileContent({}) {
               {!flags.aboutDisbled && (
                 <Link
                   href="/about"
-                  onClick={() => setOpen(false)}
+                  onNavigate={handleClose}
                   className={linksClass}
                 >
                   Über den Verein
@@ -49,7 +52,7 @@ export default function NavbarMobileContent({}) {
 
               <Link
                 href="/home#chorleitung"
-                onClick={() => setOpen(false)}
+                onClick={handleClose}
                 className={linksClass}
               >
                 Chorleitung
@@ -58,7 +61,7 @@ export default function NavbarMobileContent({}) {
               {!flags.historyDisbled && (
                 <Link
                   href="/history"
-                  onClick={() => setOpen(false)}
+                  onClick={handleClose}
                   className={linksClass}
                 >
                   Geschichte
@@ -67,7 +70,7 @@ export default function NavbarMobileContent({}) {
 
               <Link
                 href="/home#concerts"
-                onClick={() => setOpen(false)}
+                onNavigate={handleClose}
                 className={linksClass}
               >
                 Konzerte
@@ -75,7 +78,7 @@ export default function NavbarMobileContent({}) {
 
               <Link
                 href="/home#joinus"
-                onClick={() => setOpen(false)}
+                onNavigate={handleClose}
                 className={linksClass}
               >
                 Mitsingen
@@ -83,7 +86,7 @@ export default function NavbarMobileContent({}) {
 
               <Link
                 href="/home#support"
-                onClick={() => setOpen(false)}
+                onNavigate={handleClose}
                 className={linksClass}
               >
                 Unterstützen
@@ -93,7 +96,7 @@ export default function NavbarMobileContent({}) {
               ) : (
                 <Link
                   href="/auth/sign-in"
-                  onClick={() => setOpen(false)}
+                  onNavigate={handleClose}
                   className={
                     "text-lg hover:text-primary flex items-center border border-second-background p-3 rounded-lg shadow-md lg:hidden"
                   }
@@ -106,7 +109,7 @@ export default function NavbarMobileContent({}) {
               ) : (
                 <Link
                   href="/auth/sign-up"
-                  onClick={() => setOpen(false)}
+                  onNavigate={handleClose}
                   className={
                     "text-lg hover:text-foreground text-background flex items-center bg-primary p-3 rounded-lg shadow-md lg:hidden "
                   }
