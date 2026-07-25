@@ -11,8 +11,6 @@ Next.js application for Kammerchor Elikuren.
 
 Domain: `https://kammerchor-elikuren.de`
 
-Former FastAPI / Railway / Hetzner material is under [`archive/`](archive/README.md).
-
 ## Local development
 
 ```bash
@@ -32,6 +30,6 @@ Or from the repo root: `make web` (after `make install` and DB env is set).
 1. Neon project in Frankfurt → set `DATABASE_URL` / `DATABASE_URL_UNPOOLED` on Vercel
 2. Vercel project, Root Directory `apps/web`, build: `npx prisma migrate deploy && npm run build`
 3. Clerk Production webhook → `https://kammerchor-elikuren.de/api/webhooks/clerk`
-4. Attach domain, then shut down Hetzner
+4. Attach domain
 
 Details: [`apps/web/docs/DEPLOY.md`](apps/web/docs/DEPLOY.md)

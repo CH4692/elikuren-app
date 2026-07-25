@@ -15,20 +15,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-
-# ----------------------------
-# Python
-# ----------------------------
-.venv/
-venv/
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.python-version
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
+.npm/
+*.log
 
 # ----------------------------
 # Environment / Secrets
@@ -36,8 +24,6 @@ __pycache__/
 .env
 .env.*
 !.env.example
-!.env.dev.example
-!.env.prod.example
 
 # ----------------------------
 # IDE / Editor
@@ -46,65 +32,14 @@ __pycache__/
 .idea/
 
 # ----------------------------
-# Terraform
-# ----------------------------
-*.tfstate
-*.tfstate.*
-.terraform/
-.terraform.lock.hcl
-crash.log
-override.tf
-override.tf.json
-*_override.tf
-*_override.tf.json
-infra/hetzner-infra/deploy_key
-infra/hetzner-infra/*.pem
-infra/hetzner-infra/terraform.tfvars
-infra/hetzner-infra/*.auto.tfvars
-archive/hetzner-infra/deploy_key
-archive/hetzner-infra/*.pem
-archive/hetzner-infra/terraform.tfvars
-archive/hetzner-infra/*.auto.tfvars
-infra/github-infra/terraform.tfvars
-infra/github-infra/*.auto.tfvars
-
-# ----------------------------
-# Cloud-init / local deploy artifacts
-# ----------------------------
-archive/deploy/letsencrypt/acme.json
-archive/deploy/data/
-archive/split-output/
-
-# root / nested git safety
-**/.git
-**/.git.bak-nested/
-
-# logs
-*.log
-
-# env files in archived deploy
-archive/deploy/.env
-archive/deploy/.env.*
-!archive/deploy/.env.example
-
-# local docker / compose overrides
-docker-compose.override.yml
-
-# python tooling
-.coverage
-htmlcov/
-.eggs/
-*.egg-info/
-
-# node lock/debug leftovers
-.npm/
-
-# Local extracted repos from subtree split
-split-output/
-archive/split-output/
-
 # Prisma CLI agent skill packs (local only)
+# ----------------------------
 apps/web/.agents/
 apps/web/.claude/
 apps/web/.windsurf/
 apps/web/skills-lock.json
+
+# Playwright
+apps/web/playwright-report/
+apps/web/test-results/
+apps/web/tsconfig.tsbuildinfo

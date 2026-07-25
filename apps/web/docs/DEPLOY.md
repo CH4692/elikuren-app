@@ -57,7 +57,3 @@ npx prisma migrate deploy && npm run build
 - Contact form
 - Sign-in → Dashboard → „Profil laden“
 - Clerk webhook delivery logs green
-
-## 5. Hetzner
-
-After DNS points to Vercel and everything works: `terraform destroy` in `archive/hetzner-infra`.
