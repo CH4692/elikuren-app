@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  vorstand
+  mitglied
+  kassenwart
+  kassenpruefer
+}
+
+model User {
+  id            String    @id
+  firstname     String?
+  lastname      String?
+  street        String?
+  houseNumber   String?   @map("house_number")
+  postalCode    String?   @map("postal_code")
+  location      String?
+  phone         String?
+  email         String?   @unique
+  birthday      DateTime? @db.Date
+  createdAt     DateTime  @map("created_at")
+  lastSignedIn  DateTime? @map("last_signed_in")
+  updatedAt     DateTime? @map("updated_at")
+  memberSince   DateTime? @map("member_since") @db.Date
+  role          Role      @default(mitglied)
+
+  @@index([firstname])
+  @@index([lastname])
+  @@map("users")
+}

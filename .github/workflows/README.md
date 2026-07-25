@@ -1,10 +1,7 @@
-# Legacy CI (monorepo)
+# CI
 
-These workflows build GHCR images for the former Hetzner pull-deploy path.
+| Workflow | Scope | Purpose |
+|---|---|---|
+| `web-ci.yml` | `apps/web/**` | Lint, typecheck, Next.js build |
 
-After the repository split:
-
-- Use `elikuren-api/.github/workflows/ci.yml` + Render Git deploy
-- Use `elikuren-web/.github/workflows/ci.yml` + Vercel Git deploy
-
-`build-api.yml` / `build-web.yml` can be disabled once Render/Vercel are live.
+Deploy: **Vercel** (Root Directory `apps/web`) + **Neon**.

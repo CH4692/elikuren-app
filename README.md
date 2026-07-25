@@ -1,55 +1,37 @@
-# elikuren-app (monorepo — being split)
+# Elikuren
 
-Kammerchor Elikuren application monorepo. Target architecture:
+Next.js application for Kammerchor Elikuren.
 
-| Repo / service | Stack | Hosting |
+| Layer | Tech | Hosting |
 |---|---|---|
-| `elikuren-api` (from `app-elikuren-api/`) | FastAPI + SQLModel + Alembic | Render + Neon |
-| `elikuren-web` (from `app-elikuren-web/`) | Next.js + Clerk + Resend | Vercel |
+| App (UI + API routes) | Next.js 16 in [`apps/web`](apps/web) | Vercel |
+| Database | Neon PostgreSQL (Prisma) | Neon Frankfurt |
+| Auth | Clerk | Clerk |
+| Email | Resend | Resend |
 
-Hetzner / Traefik infrastructure is archived under [`archive/`](archive/README.md).
+Domain: `https://kammerchor-elikuren.de`
 
-## Local development (still in monorepo)
+Former FastAPI / Railway / Hetzner material is under [`archive/`](archive/README.md).
 
-### API
-
-```bash
-cd app-elikuren-api
-cp .env.example .env
-docker compose up -d db
-uv sync
-uv run alembic upgrade head
-uv run uvicorn app.main:app --reload --port 8000
-```
-
-### Web
+## Local development
 
 ```bash
-cd app-elikuren-web
+cd apps/web
 cp .env.example .env.local
+# fill DATABASE_URL (+ DATABASE_URL_UNPOOLED), Clerk Development keys, Resend
+
 npm install
+npx prisma migrate deploy
 npm run dev
 ```
 
-Set `NEXT_PUBLIC_API_URL=http://localhost:8000` in `.env.local`.
+Or from the repo root: `make web` (after `make install` and DB env is set).
 
-## Split into two Git repositories
+## Deploy (short)
 
-Extracted local repos (ready to push):
+1. Neon project in Frankfurt → set `DATABASE_URL` / `DATABASE_URL_UNPOOLED` on Vercel
+2. Vercel project, Root Directory `apps/web`, build: `npx prisma migrate deploy && npm run build`
+3. Clerk Production webhook → `https://kammerchor-elikuren.de/api/webhooks/clerk`
+4. Attach domain, then shut down Hetzner
 
-- [`split-output/elikuren-api`](split-output/elikuren-api)
-- [`split-output/elikuren-web`](split-output/elikuren-web)
-
-History branches in this monorepo: `split/elikuren-api`, `split/elikuren-web`.
-
-Full cutover steps: [docs/SPLIT_AND_CUTOVER.md](docs/SPLIT_AND_CUTOVER.md)
-
-```bash
-./scripts/split-repos.sh
-```
-
-Deploy docs:
-
-- [app-elikuren-api/docs/DEPLOY.md](app-elikuren-api/docs/DEPLOY.md)
-- [app-elikuren-web/docs/DEPLOY.md](app-elikuren-web/docs/DEPLOY.md)
-
+Details: [`apps/web/docs/DEPLOY.md`](apps/web/docs/DEPLOY.md)

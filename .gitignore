@@ -71,10 +71,9 @@ infra/github-infra/*.auto.tfvars
 # ----------------------------
 # Cloud-init / local deploy artifacts
 # ----------------------------
-deploy/letsencrypt/acme.json
-deploy/data/
-archive/deploy/data/
 archive/deploy/letsencrypt/acme.json
+archive/deploy/data/
+archive/split-output/
 
 # root / nested git safety
 **/.git
@@ -83,12 +82,10 @@ archive/deploy/letsencrypt/acme.json
 # logs
 *.log
 
-# env files in deploy
-deploy/.env
-deploy/.env.*
-!deploy/.env.example
-!deploy/.env.dev.example
-!deploy/.env.prod.example
+# env files in archived deploy
+archive/deploy/.env
+archive/deploy/.env.*
+!archive/deploy/.env.example
 
 # local docker / compose overrides
 docker-compose.override.yml
@@ -104,3 +101,10 @@ htmlcov/
 
 # Local extracted repos from subtree split
 split-output/
+archive/split-output/
+
+# Prisma CLI agent skill packs (local only)
+apps/web/.agents/
+apps/web/.claude/
+apps/web/.windsurf/
+apps/web/skills-lock.json
