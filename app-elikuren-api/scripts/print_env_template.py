@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Print a ready-to-paste .env skeleton from optional PEM file path."""
 
 from pathlib import Path
