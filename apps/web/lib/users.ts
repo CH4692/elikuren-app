@@ -15,15 +15,10 @@ export type UserUpdateInput = {
   role?: Role | null;
 };
 
-function tsToDate(value: number | null | undefined): Date | null {
-  if (value == null) return null;
-  const ms = value > 10_000_000_000 ? value : value * 1000;
-  return new Date(ms);
-}
-
 export function serializeUser(user: User) {
   return {
     id: user.id,
+    name: user.name,
     firstname: user.firstname,
     lastname: user.lastname,
     street: user.street,
@@ -41,40 +36,15 @@ export function serializeUser(user: User) {
   };
 }
 
-export async function getUserByClerkId(clerkId: string) {
-  return prisma.user.findUnique({ where: { id: clerkId } });
+export async function getUserById(userId: string) {
+  return prisma.user.findUnique({ where: { id: userId } });
 }
 
-export async function getOrCreateUserFromClerk(authUser: {
-  id: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  primaryEmailAddress?: { emailAddress: string } | null;
-  primaryPhoneNumber?: { phoneNumber: string } | null;
-  createdAt?: Date | null;
-}) {
-  const existing = await getUserByClerkId(authUser.id);
-  if (existing) return existing;
-
-  const now = new Date();
-  return prisma.user.create({
-    data: {
-      id: authUser.id,
-      firstname: authUser.firstName ?? null,
-      lastname: authUser.lastName ?? null,
-      email: authUser.primaryEmailAddress?.emailAddress ?? null,
-      phone: authUser.primaryPhoneNumber?.phoneNumber ?? null,
-      createdAt: authUser.createdAt ?? now,
-      updatedAt: now,
-    },
-  });
-}
-
-export async function updateUser(clerkId: string, data: UserUpdateInput) {
-  const existing = await getUserByClerkId(clerkId);
+export async function updateUser(userId: string, data: UserUpdateInput) {
+  const existing = await getUserById(userId);
   if (!existing) return null;
 
-  const patch: Prisma.UserUpdateInput = { updatedAt: new Date() };
+  const patch: Prisma.UserUpdateInput = {};
   if ("firstname" in data) patch.firstname = data.firstname;
   if ("lastname" in data) patch.lastname = data.lastname;
   if ("street" in data) patch.street = data.street;
@@ -92,67 +62,14 @@ export async function updateUser(clerkId: string, data: UserUpdateInput) {
   if ("role" in data && data.role != null) patch.role = data.role;
 
   return prisma.user.update({
-    where: { id: clerkId },
+    where: { id: userId },
     data: patch,
   });
 }
 
-export async function deleteUser(clerkId: string) {
-  const existing = await getUserByClerkId(clerkId);
+export async function deleteUser(userId: string) {
+  const existing = await getUserById(userId);
   if (!existing) return false;
-  await prisma.user.delete({ where: { id: clerkId } });
+  await prisma.user.delete({ where: { id: userId } });
   return true;
-}
-
-export async function upsertUserFromClerkWebhook(data: {
-  id: string;
-  first_name?: string | null;
-  last_name?: string | null;
-  created_at?: number;
-  updated_at?: number;
-  primary_email_address_id?: string | null;
-  primary_phone_number_id?: string | null;
-  email_addresses?: Array<{ id: string; email_address: string }>;
-  phone_numbers?: Array<{ id: string; phone_number: string }>;
-}) {
-  const createdAt = tsToDate(data.created_at) ?? new Date();
-  const updatedAt = tsToDate(data.updated_at) ?? new Date();
-
-  let email: string | null = null;
-  const emails = data.email_addresses ?? [];
-  if (emails.length > 0) {
-    const primary =
-      emails.find((item) => item.id === data.primary_email_address_id) ??
-      emails[0];
-    email = primary.email_address;
-  }
-
-  let phone: string | null = null;
-  const phones = data.phone_numbers ?? [];
-  if (phones.length > 0) {
-    const primary =
-      phones.find((item) => item.id === data.primary_phone_number_id) ??
-      phones[0];
-    phone = primary.phone_number;
-  }
-
-  return prisma.user.upsert({
-    where: { id: data.id },
-    create: {
-      id: data.id,
-      firstname: data.first_name ?? null,
-      lastname: data.last_name ?? null,
-      email,
-      phone,
-      createdAt,
-      updatedAt,
-    },
-    update: {
-      firstname: data.first_name ?? null,
-      lastname: data.last_name ?? null,
-      ...(email != null ? { email } : {}),
-      ...(phone != null ? { phone } : {}),
-      updatedAt,
-    },
-  });
 }

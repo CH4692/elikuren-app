@@ -4,14 +4,14 @@ Next.js application for Kammerchor Elikuren (UI + API routes).
 
 - **Hosting:** Vercel
 - **Database:** Neon PostgreSQL (Prisma)
-- **Auth:** Clerk
+- **Auth:** Auth.js (magic link via Resend)
 - **Email:** Resend
 
 ## Local development
 
 ```bash
 cp .env.example .env.local
-# fill DATABASE_URL, Clerk Development keys, Resend
+# fill DATABASE_URL, AUTH_SECRET, RESEND_API_KEY, EMAIL_FROM
 
 npm install
 npx prisma migrate deploy   # or: npm run db:migrate:dev
@@ -22,8 +22,8 @@ npm run dev
 
 | Route | Purpose |
 |---|---|
-| `GET/PATCH/DELETE /api/me` | Current user (Clerk session) |
-| `POST /api/webhooks/clerk` | Clerk user sync |
+| `GET/PATCH/DELETE /api/me` | Current user (Auth.js session) |
+| `GET/POST /api/auth/*` | Auth.js handlers |
 | `POST /api/contact` | Contact form via Resend |
 | `GET /api/health` | Health check |
 

@@ -2,11 +2,10 @@
 
 ## Locked decisions
 
-- Hosting: **Vercel only** (no Railway / FastAPI)
+- Hosting: **Vercel only**
 - Database: **Neon Frankfurt**, fresh schema
-- Auth: **Clerk** (separate Development + Production apps)
+- Auth: **Auth.js** (magic link via Resend)
 - Domains: `kammerchor-elikuren.de`
-- Clerk webhook: `https://kammerchor-elikuren.de/api/webhooks/clerk`
 
 ## 1. Neon
 
@@ -20,22 +19,13 @@
 
 1. Import the monorepo.
 2. **Root Directory:** `apps/web`
-3. Production env vars (see `.env.example`).
+3. Production env vars (see `.env.example`), especially:
+   - `AUTH_SECRET`
+   - `AUTH_URL=https://kammerchor-elikuren.de`
+   - `RESEND_API_KEY`
+   - `EMAIL_FROM`
 4. Custom domain: `kammerchor-elikuren.de`
-5. After first deploy (or via local migrate against Neon):
-
-```bash
-cd apps/web
-DATABASE_URL_UNPOOLED="postgresql://…" npm run db:migrate
-```
-
-Or add a Vercel build command:
-
-```bash
-prisma migrate deploy && prisma generate && next build
-```
-
-Recommended production build command in Vercel:
+5. Build command:
 
 ```bash
 npx prisma migrate deploy && npm run build
@@ -43,17 +33,14 @@ npx prisma migrate deploy && npm run build
 
 (`npm run build` already runs `prisma generate`.)
 
-## 3. Clerk Production
+## 3. Auth.js / Resend
 
-1. Webhook URL: `https://kammerchor-elikuren.de/api/webhooks/clerk`
-2. Events: `user.created`, `user.updated`, `user.deleted`
-3. Put signing secret in Vercel as `CLERK_WEBHOOK_SECRET`
-4. Paths: `/auth/sign-in`, `/auth/sign-up`, redirects to `/dashboard`
-5. Allowed origins: production domain (+ `www` if used)
+1. Verify the Resend domain for `EMAIL_FROM`
+2. Sign-in / sign-up: `/auth/sign-in`, `/auth/sign-up`
+3. Magic-link callback goes through `/api/auth/*`
 
 ## 4. Verify
 
 - `https://kammerchor-elikuren.de/api/health`
 - Contact form
-- Sign-in → Dashboard → „Profil laden“
-- Clerk webhook delivery logs green
+- Sign-in → Magic Link → Dashboard → „Profil laden“

@@ -1,13 +1,13 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 
 import { ApiError, getCurrentUser, type UserResponse } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { status } = useSession();
   const [user, setUser] = useState<UserResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -16,8 +16,8 @@ export default function DashboardPage() {
     setError(null);
     setUser(null);
 
-    if (!isLoaded) return;
-    if (!isSignedIn) {
+    if (status === "loading") return;
+    if (status !== "authenticated") {
       setError("Nicht angemeldet");
       return;
     }
@@ -41,7 +41,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center gap-6 px-4">
-      <Button onClick={loadProfile} disabled={loading || !isLoaded}>
+      <Button onClick={loadProfile} disabled={loading || status === "loading"}>
         {loading ? "Lädt…" : "Profil laden"}
       </Button>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}

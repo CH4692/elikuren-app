@@ -46,12 +46,8 @@ jobs:
           DATABASE_URL: postgresql://elikuren:elikuren@localhost:5432/elikuren
           DATABASE_URL_UNPOOLED: postgresql://elikuren:elikuren@localhost:5432/elikuren
           NEXT_PUBLIC_SITE_URL: https://kammerchor-elikuren.de
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_placeholder
-          CLERK_SECRET_KEY: sk_test_placeholder
-          CLERK_WEBHOOK_SECRET: whsec_placeholder
-          NEXT_PUBLIC_CLERK_SIGN_IN_URL: /auth/sign-in
-          NEXT_PUBLIC_CLERK_SIGN_UP_URL: /auth/sign-up
-          NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: /dashboard
-          NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL: /dashboard
+          AUTH_SECRET: ci-placeholder-secret-change-me
+          AUTH_URL: http://localhost:3000
+          EMAIL_FROM: noreply@kammerchor-elikuren.de
           NEXT_PUBLIC_FLAG_AUTH_DISABLED: "true"
           RESEND_API_KEY: re_placeholder

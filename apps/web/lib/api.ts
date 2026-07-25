@@ -53,6 +53,7 @@ export async function apiFetch<T>(
 
 export type UserResponse = {
   id: string;
+  name?: string | null;
   firstname: string | null;
   lastname: string | null;
   street: string | null;

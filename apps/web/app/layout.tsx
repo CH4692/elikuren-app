@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar/navbar";
 import NavbarMobile from "@/components/navbar/mobile-menu";
+import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
@@ -27,36 +27,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider
-      proxyUrl={process.env.NEXT_PUBLIC_CLERK_PROXY_URL}
-      appearance={{
-        variables: {
-          colorPrimary: "#C8A24D",
-          colorText: "#F4F1EB",
-          colorInputForeground: "#F4F1EB",
-          colorBackground: "#1F1F23",
-          borderRadius: "0.75rem",
-          colorInput: "#F4F1EB",
-        },
-        elements: {
-          userButtonPopoverCard:
-            "bg-[#1F1F23] border border-[#C8A24D] shadow-xl",
-          userButtonPopoverActionButton:
-            "text-[#F4F1EB] hover:bg-[#C8A24D] hover:text-[#1F1F23] rounded-lg transition-colors",
-          userButtonPopoverFooter: "hidden",
-        },
-      }}
-    >
-      <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
+    <html lang="de">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <Providers>
           <Navbar />
           <NavbarMobile />
           {children}
           <Toaster />
-        </body>
-      </html>
-    </ClerkProvider>
+        </Providers>
+      </body>
+    </html>
   );
 }

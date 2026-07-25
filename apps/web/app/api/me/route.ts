@@ -1,16 +1,17 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+import { auth } from "@/auth";
 import {
   deleteUser,
-  getOrCreateUserFromClerk,
+  getUserById,
   serializeUser,
   updateUser,
   type UserUpdateInput,
 } from "@/lib/users";
 
 export async function GET() {
-  const { userId } = await auth();
+  const session = await auth();
+  const userId = session?.user?.id;
   if (!userId) {
     return NextResponse.json(
       { detail: "Unauthorized", code: "http_401" },
@@ -18,28 +19,20 @@ export async function GET() {
     );
   }
 
-  const clerkUser = await currentUser();
-  if (!clerkUser) {
+  const user = await getUserById(userId);
+  if (!user) {
     return NextResponse.json(
-      { detail: "Unauthorized", code: "http_401" },
-      { status: 401 },
+      { detail: "User not found", code: "http_404" },
+      { status: 404 },
     );
   }
-
-  const user = await getOrCreateUserFromClerk({
-    id: clerkUser.id,
-    firstName: clerkUser.firstName,
-    lastName: clerkUser.lastName,
-    primaryEmailAddress: clerkUser.primaryEmailAddress,
-    primaryPhoneNumber: clerkUser.primaryPhoneNumber,
-    createdAt: clerkUser.createdAt ? new Date(clerkUser.createdAt) : null,
-  });
 
   return NextResponse.json(serializeUser(user));
 }
 
 export async function PATCH(request: Request) {
-  const { userId } = await auth();
+  const session = await auth();
+  const userId = session?.user?.id;
   if (!userId) {
     return NextResponse.json(
       { detail: "Unauthorized", code: "http_401" },
@@ -78,7 +71,8 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE() {
-  const { userId } = await auth();
+  const session = await auth();
+  const userId = session?.user?.id;
   if (!userId) {
     return NextResponse.json(
       { detail: "Unauthorized", code: "http_401" },
