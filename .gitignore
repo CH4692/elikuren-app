@@ -101,3 +101,6 @@ htmlcov/
 
 # node lock/debug leftovers
 .npm/
+
+# Local extracted repos from subtree split
+split-output/
