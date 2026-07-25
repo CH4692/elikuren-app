@@ -3,7 +3,12 @@ __pycache__/
 *.pyc
 .env
 .env.local
+.env.*.local
 *.egg-info/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
 htmlcov/
+keys/*.pem
+!keys/.gitkeep

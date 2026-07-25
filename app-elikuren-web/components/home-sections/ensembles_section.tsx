@@ -76,21 +76,21 @@ export default function EnsemblesPage() {
         </h2>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-          <EnsembleCardDisabled
+          <EnsembleCard
             title="Eight-to-the-Bar"
             href="/ensembles/eight-to-the-bar"
             image="/eight-to-the-bar.jpg"
             cta="Männerchor entdecken"
           />
 
-          <EnsembleCardDisabled
+          <EnsembleCard
             title="Elikuren"
             href="/ensembles/elikuren"
             image="/elikuren-ensemble.jpg"
             cta="Elikuren entdecken"
           />
 
-          <EnsembleCardDisabled
+          <EnsembleCard
             title="musical team"
             href="/ensembles/musical-team"
             image="/musical-team.jpg"

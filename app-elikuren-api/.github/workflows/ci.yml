@@ -1,0 +1,65 @@
+name: ci
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: elikuren_test
+          POSTGRES_USER: elikuren
+          POSTGRES_PASSWORD: elikuren
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U elikuren -d elikuren_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+psycopg://elikuren:elikuren@localhost:5432/elikuren_test
+      DATABASE_URL_MIGRATIONS: postgresql+psycopg://elikuren:elikuren@localhost:5432/elikuren_test
+      CLERK_ISSUER: https://example.clerk.accounts.dev
+      CLERK_WEBHOOK_SECRET: whsec_test
+      CLERK_JWT_KEY: |
+        -----BEGIN PUBLIC KEY-----
+        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1L7VLPHCgNhWRCLJ
+        W5/znwIDAQAB
+        -----END PUBLIC KEY-----
+      ENVIRONMENT: test
+      CORS_ORIGINS: http://localhost:3000
+      TRUSTED_HOSTS: "*"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync dependencies
+        run: uv sync --group dev
+
+      - name: Ruff
+        run: uv run ruff check .
+
+      - name: Alembic upgrade
+        run: uv run alembic upgrade head
+
+      - name: Pytest
+        run: uv run pytest
+
+      - name: Docker build
+        run: docker build -t elikuren-api:ci .

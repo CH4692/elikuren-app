@@ -1,39 +1,48 @@
-# elikuren-app
+# elikuren-app (monorepo — being split)
 
-Monorepo for Next.js frontend, FastAPI backend, deploy and infra
+Kammerchor Elikuren application monorepo. Target architecture:
 
-Container bauen + Images
+| Repo / service | Stack | Hosting |
+|---|---|---|
+| `elikuren-api` (from `app-elikuren-api/`) | FastAPI + SQLModel + Alembic | Render + Neon |
+| `elikuren-web` (from `app-elikuren-web/`) | Next.js + Clerk + Resend | Vercel |
 
-```
-docker compose -f docker-compose.local.yml up --build
-```
+Hetzner / Traefik infrastructure is archived under [`archive/`](archive/README.md).
 
-Container starten ohne bauen
+## Local development (still in monorepo)
 
-```
-docker compose -f docker-compose.local.yml up
-```
+### API
 
-Container stoppen
-
-```
-docker compose -f docker-compose.local.yml down
-```
-
-Was ist voll (Images, Container, Volumes, Cache) ?
-
-```
-docker system df
+```bash
+cd app-elikuren-api
+cp .env.example .env
+docker compose up -d db
+uv sync
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload --port 8000
 ```
 
-Stoppt gelöschte Container, ungenutze Images, Build Cache
+### Web
 
-```
-docker system prune -a
+```bash
+cd app-elikuren-web
+cp .env.example .env.local
+npm install
+npm run dev
 ```
 
-Löscht Volumes. DB-Daten auch weg, vorsicht.
+Set `NEXT_PUBLIC_API_URL=http://localhost:8000` in `.env.local`.
 
+## Split into two Git repositories
+
+```bash
+chmod +x scripts/split-repos.sh
+./scripts/split-repos.sh
 ```
-docker system prune -a --volumes
-```
+
+This creates sibling folders `../elikuren-api` and `../elikuren-web` with history via `git subtree split`. Then create GitHub remotes and connect Render / Vercel.
+
+Deploy docs:
+
+- [app-elikuren-api/docs/DEPLOY.md](app-elikuren-api/docs/DEPLOY.md)
+- [app-elikuren-web/docs/DEPLOY.md](app-elikuren-web/docs/DEPLOY.md)

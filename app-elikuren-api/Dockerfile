@@ -1,27 +1,40 @@
-FROM python:3.12-slim
-
-ARG CLERK_ISSUER
-ARG CLERK_WEBHOOK_SECRET
-
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV CLERK_ISSUER=$CLERK_ISSUER
-ENV CLERK_WEBHOOK_SECRET=$CLERK_WEBHOOK_SECRET
+FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
     && pip install --no-cache-dir uv \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync
+RUN uv sync --frozen --no-dev
 
-COPY . .
+COPY alembic.ini ./
+COPY alembic ./alembic
+COPY app ./app
+
+
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:$PATH"
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 appuser
+
+COPY --from=builder /app /app
+
+USER appuser
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
+HEALTHCHECK --interval=15s --timeout=3s --retries=5 \
   CMD curl -f http://localhost:8000/health || exit 1
 
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]

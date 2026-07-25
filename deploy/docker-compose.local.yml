@@ -38,19 +38,3 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
-  api:
-    build:
-      context: ../app-elikuren-api
-    container_name: elikuren-api-dev
-    restart: unless-stopped
-    env_file:
-      - .env.local
-    ports:
-      - "8000:8000"
-    volumes:
-      - ../app-elikuren-api:/app
-      - ../app-elikuren-api/keys:/app/keys
-    depends_on:
-      db:
-        condition: service_healthy

@@ -40,7 +40,7 @@ export default function NavbarMobileContent({}) {
             <ClosMenu open={open} setOpen={setOpen} />
 
             <nav className="lg:mt-8 flex flex-col gap-4 px-2 py-4">
-              {!flags.aboutDisbled && (
+              {!flags.aboutDisabled && (
                 <Link
                   href="/about"
                   onNavigate={handleClose}
@@ -58,7 +58,7 @@ export default function NavbarMobileContent({}) {
                 Chorleitung
               </Link>
 
-              {!flags.historyDisbled && (
+              {!flags.historyDisabled && (
                 <Link
                   href="/history"
                   onClick={handleClose}
@@ -91,9 +91,7 @@ export default function NavbarMobileContent({}) {
               >
                 Unterstützen
               </Link>
-              {flags.authDisbled ? (
-                ""
-              ) : (
+              {flags.authDisabled ? null : (
                 <Link
                   href="/auth/sign-in"
                   onNavigate={handleClose}
@@ -104,9 +102,7 @@ export default function NavbarMobileContent({}) {
                   Mitglieder Login
                 </Link>
               )}
-              {flags.authDisbled ? (
-                ""
-              ) : (
+              {flags.authDisabled ? null : (
                 <Link
                   href="/auth/sign-up"
                   onNavigate={handleClose}

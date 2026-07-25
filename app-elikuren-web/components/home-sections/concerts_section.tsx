@@ -1,4 +1,3 @@
-import { CalendarDays, Clock3, MapPin, Music4, Users } from "lucide-react";
 import ConcertCard from "./concert_card";
 
 type ConcertType = {

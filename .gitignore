@@ -61,6 +61,10 @@ infra/hetzner-infra/deploy_key
 infra/hetzner-infra/*.pem
 infra/hetzner-infra/terraform.tfvars
 infra/hetzner-infra/*.auto.tfvars
+archive/hetzner-infra/deploy_key
+archive/hetzner-infra/*.pem
+archive/hetzner-infra/terraform.tfvars
+archive/hetzner-infra/*.auto.tfvars
 infra/github-infra/terraform.tfvars
 infra/github-infra/*.auto.tfvars
 
@@ -68,9 +72,13 @@ infra/github-infra/*.auto.tfvars
 # Cloud-init / local deploy artifacts
 # ----------------------------
 deploy/letsencrypt/acme.json
+deploy/data/
+archive/deploy/data/
+archive/deploy/letsencrypt/acme.json
 
 # root / nested git safety
 **/.git
+**/.git.bak-nested/
 
 # logs
 *.log

@@ -5,7 +5,10 @@ import { FaYoutube, FaFacebookF, FaInstagram } from "react-icons/fa";
 
 export default function FooterPage() {
   return (
-    <footer className="w-screen flex flex-col gap-8 justify-center py-8 lg:px-24 px-8 items-center">
+    <footer
+      id="footer"
+      className="w-screen flex flex-col gap-8 justify-center py-8 lg:px-24 px-8 items-center"
+    >
       <div className="w-full flex items-center flex-col lg:flex-row lg:justify-between gap-4">
         <Logo />
         <div className="flex gap-4">

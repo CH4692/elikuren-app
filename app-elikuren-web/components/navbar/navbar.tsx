@@ -31,15 +31,17 @@ export default function Navbar() {
 
             <NavigationMenuContent>
               <ul className="grid w-[220px] gap-2 p-4 bg-background">
-                {!flags.aboutDisbled && (
+                {!flags.aboutDisabled && (
                   <li className="hover:text-primary hover:cursor-pointer transition-all">
                     <Link href="/about">Über den Verein</Link>
                   </li>
                 )}
                 <li className="hover:text-primary hover:cursor-pointer">
-                  <Link href="/home#chorleitung">Chorleitung</Link>
+                  <Link href="/home#chorleitung" className="w-full block">
+                    Chorleitung
+                  </Link>
                 </li>
-                {!flags.historyDisbled && (
+                {!flags.historyDisabled && (
                   <li className="hover:text-primary hover:cursor-pointer">
                     <Link href="/history">Geschichte</Link>
                   </li>
@@ -73,14 +75,14 @@ export default function Navbar() {
       </NavigationMenu>
       <div className="flex items-center gap-3">
         <Button size="xl" variant="outline" asChild>
-          {flags.authDisbled ? (
+          {flags.authDisabled ? (
             "Mitglieder werden"
           ) : (
             <Link href="/auth/sign-in">Mitglieder Login</Link>
           )}
         </Button>
         <Button disabled size="xl" asChild>
-          {flags.authDisbled ? (
+          {flags.authDisabled ? (
             "Mitglieder werden"
           ) : (
             <Link href="/auth/sign-up">Mitglieder werden</Link>

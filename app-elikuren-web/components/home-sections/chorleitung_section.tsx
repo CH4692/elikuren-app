@@ -21,7 +21,7 @@ export default function ChorleitungPage() {
         </div>
 
         <div className="text-white">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-white/80">
+          <p className="mb-6 text-sm uppercase tracking-[0.2em] text-primary font-light leading-tight">
             Chorleitung
           </p>
 
