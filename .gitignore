@@ -35,12 +35,12 @@ pnpm-debug.log*
 # ----------------------------
 # Prisma CLI agent skill packs (local only)
 # ----------------------------
-apps/web/.agents/
-apps/web/.claude/
-apps/web/.windsurf/
-apps/web/skills-lock.json
+app/.agents/
+app/.claude/
+app/.windsurf/
+app/skills-lock.json
 
 # Playwright
-apps/web/playwright-report/
-apps/web/test-results/
-apps/web/tsconfig.tsbuildinfo
+app/playwright-report/
+app/test-results/
+app/tsconfig.tsbuildinfo

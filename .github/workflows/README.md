@@ -2,6 +2,6 @@
 
 | Workflow | Scope | Purpose |
 |---|---|---|
-| `web-ci.yml` | `apps/web/**` | Lint, typecheck, Next.js build |
+| `web-ci.yml` | `app/**` | Lint, typecheck, Next.js build, Playwright |
 
-Deploy: **Vercel** (Root Directory `apps/web`) + **Neon**.
+Deploy: **Vercel** (Root Directory `app`) + **Neon**.
