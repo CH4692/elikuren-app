@@ -35,14 +35,21 @@ Set `NEXT_PUBLIC_API_URL=http://localhost:8000` in `.env.local`.
 
 ## Split into two Git repositories
 
+Extracted local repos (ready to push):
+
+- [`split-output/elikuren-api`](split-output/elikuren-api)
+- [`split-output/elikuren-web`](split-output/elikuren-web)
+
+History branches in this monorepo: `split/elikuren-api`, `split/elikuren-web`.
+
+Full cutover steps: [docs/SPLIT_AND_CUTOVER.md](docs/SPLIT_AND_CUTOVER.md)
+
 ```bash
-chmod +x scripts/split-repos.sh
 ./scripts/split-repos.sh
 ```
-
-This creates sibling folders `../elikuren-api` and `../elikuren-web` with history via `git subtree split`. Then create GitHub remotes and connect Render / Vercel.
 
 Deploy docs:
 
 - [app-elikuren-api/docs/DEPLOY.md](app-elikuren-api/docs/DEPLOY.md)
 - [app-elikuren-web/docs/DEPLOY.md](app-elikuren-web/docs/DEPLOY.md)
+
