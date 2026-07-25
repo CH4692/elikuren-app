@@ -7,12 +7,22 @@ Next.js application for Kammerchor Elikuren (UI + API routes).
 - **Auth:** Auth.js (magic link via Resend)
 - **Email:** Resend
 
-## Local development
+## Environment files
+
+| File | Purpose | Git |
+|---|---|---|
+| `.env.example` | Template for new setups | committed |
+| `.env.local` | Local secrets (Next.js + Prisma) | ignored |
+| `.env.test` | Safe placeholders for CI / Playwright | committed |
 
 ```bash
 cp .env.example .env.local
-# fill DATABASE_URL, AUTH_SECRET, RESEND_API_KEY, EMAIL_FROM
+# fill real values (DB, AUTH_SECRET, RESEND_API_KEY, …)
+```
 
+## Local development
+
+```bash
 npm install
 npx prisma migrate deploy   # or: npm run db:migrate:dev
 npm run dev
@@ -35,7 +45,7 @@ npm run dev
 | `npm run build` | `prisma generate` + Next build |
 | `npm run db:migrate` | Apply migrations (production/CI) |
 | `npm run db:migrate:dev` | Create/apply migrations locally |
-| `npm run test:e2e` | Playwright |
+| `npm run test:e2e` | Playwright (uses `.env.local`, falls back to `.env.test`) |
 
 ## Deploy
 

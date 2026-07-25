@@ -2,12 +2,11 @@
 import { Inter } from "next/font/google";
 import Logo from "../logo";
 
-import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
+import { Sheet, SheetContent } from "../ui/sheet";
 import Link from "next/link";
 import { useState } from "react";
 import MenuToggle from "./menu-toggle";
 import ClosMenu from "./menu-close";
-import { flags } from "@/lib/flags";
 
 export const inter = Inter({
   variable: "--font-inter",
@@ -40,15 +39,13 @@ export default function NavbarMobileContent({}) {
             <ClosMenu open={open} setOpen={setOpen} />
 
             <nav className="lg:mt-8 flex flex-col gap-4 px-2 py-4">
-              {!flags.aboutDisabled && (
-                <Link
-                  href="/about"
-                  onNavigate={handleClose}
-                  className={linksClass}
-                >
-                  Über den Verein
-                </Link>
-              )}
+              <Link
+                href="/about"
+                onNavigate={handleClose}
+                className={linksClass}
+              >
+                Über den Verein
+              </Link>
 
               <Link
                 href="/home#chorleitung"
@@ -58,15 +55,13 @@ export default function NavbarMobileContent({}) {
                 Chorleitung
               </Link>
 
-              {!flags.historyDisabled && (
-                <Link
-                  href="/history"
-                  onClick={handleClose}
-                  className={linksClass}
-                >
-                  Geschichte
-                </Link>
-              )}
+              <Link
+                href="/history"
+                onClick={handleClose}
+                className={linksClass}
+              >
+                Geschichte
+              </Link>
 
               <Link
                 href="/home#concerts"
@@ -91,28 +86,24 @@ export default function NavbarMobileContent({}) {
               >
                 Unterstützen
               </Link>
-              {flags.authDisabled ? null : (
-                <Link
-                  href="/auth/sign-in"
-                  onNavigate={handleClose}
-                  className={
-                    "text-lg hover:text-primary flex items-center border border-second-background p-3 rounded-lg shadow-md lg:hidden"
-                  }
-                >
-                  Mitglieder Login
-                </Link>
-              )}
-              {flags.authDisabled ? null : (
-                <Link
-                  href="/auth/sign-up"
-                  onNavigate={handleClose}
-                  className={
-                    "text-lg hover:text-foreground text-background flex items-center bg-primary p-3 rounded-lg shadow-md lg:hidden "
-                  }
-                >
-                  Mitglieder werden
-                </Link>
-              )}
+              <Link
+                href="/auth/sign-in"
+                onNavigate={handleClose}
+                className={
+                  "text-lg hover:text-primary flex items-center border border-second-background p-3 rounded-lg shadow-md lg:hidden"
+                }
+              >
+                Mitglieder Login
+              </Link>
+              <Link
+                href="/auth/sign-up"
+                onNavigate={handleClose}
+                className={
+                  "text-lg hover:text-foreground text-background flex items-center bg-primary p-3 rounded-lg shadow-md lg:hidden "
+                }
+              >
+                Mitglieder werden
+              </Link>
             </nav>
           </SheetContent>
         </Sheet>

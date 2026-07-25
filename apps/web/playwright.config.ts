@@ -1,4 +1,11 @@
+import { config as loadEnv } from "dotenv";
 import { defineConfig, devices } from "@playwright/test";
+
+// CI/test defaults first; local secrets override when present.
+loadEnv({ path: ".env.test" });
+loadEnv({ path: ".env.local", override: true });
+
+const baseURL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:3000";
 
 export default defineConfig({
   testDir: "./tests",
@@ -8,7 +15,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? "github" : "html",
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL,
     trace: "on-first-retry",
   },
   projects: [
@@ -19,8 +26,13 @@ export default defineConfig({
   ],
   webServer: {
     command: "npm run dev",
-    url: "http://127.0.0.1:3000",
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: {
+      ...process.env,
+      NEXT_PUBLIC_SITE_URL: baseURL,
+      AUTH_URL: process.env.AUTH_URL ?? baseURL,
+    },
   },
 });

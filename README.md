@@ -15,8 +15,8 @@ Domain: `https://kammerchor-elikuren.de`
 
 ```bash
 cd apps/web
-cp .env.example .env.local
-# fill DATABASE_URL (+ DATABASE_URL_UNPOOLED), AUTH_SECRET, Resend
+cp .env.example .env.local   # then fill secrets
+# CI/Playwright use committed .env.test
 
 npm install
 npx prisma migrate deploy

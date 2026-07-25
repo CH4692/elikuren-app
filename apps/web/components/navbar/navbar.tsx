@@ -10,7 +10,6 @@ import {
 import Logo from "../logo";
 import Link from "next/link";
 import { Button } from "../ui/button";
-import { flags } from "@/lib/flags";
 
 export const inter = Inter({
   variable: "--font-inter",
@@ -25,32 +24,26 @@ export default function Navbar() {
       <Logo />
       <NavigationMenu>
         <NavigationMenuList>
-          {/* Über Uns (Dropdown) */}
           <NavigationMenuItem>
             <NavigationMenuTrigger>Über Uns</NavigationMenuTrigger>
 
             <NavigationMenuContent>
               <ul className="grid w-[220px] gap-2 p-4 bg-background">
-                {!flags.aboutDisabled && (
-                  <li className="hover:text-primary hover:cursor-pointer transition-all">
-                    <Link href="/about">Über den Verein</Link>
-                  </li>
-                )}
+                <li className="hover:text-primary hover:cursor-pointer transition-all">
+                  <Link href="/about">Über den Verein</Link>
+                </li>
                 <li className="hover:text-primary hover:cursor-pointer">
                   <Link href="/home#chorleitung" className="w-full block">
                     Chorleitung
                   </Link>
                 </li>
-                {!flags.historyDisabled && (
-                  <li className="hover:text-primary hover:cursor-pointer">
-                    <Link href="/history">Geschichte</Link>
-                  </li>
-                )}
+                <li className="hover:text-primary hover:cursor-pointer">
+                  <Link href="/history">Geschichte</Link>
+                </li>
               </ul>
             </NavigationMenuContent>
           </NavigationMenuItem>
 
-          {/* Normale Links */}
           <NavigationMenuItem>
             <Link
               href="/home#concerts"
@@ -75,18 +68,10 @@ export default function Navbar() {
       </NavigationMenu>
       <div className="flex items-center gap-3">
         <Button size="xl" variant="outline" asChild>
-          {flags.authDisabled ? (
-            "Mitglieder werden"
-          ) : (
-            <Link href="/auth/sign-in">Mitglieder Login</Link>
-          )}
+          <Link href="/auth/sign-in">Mitglieder Login</Link>
         </Button>
-        <Button disabled size="xl" asChild>
-          {flags.authDisabled ? (
-            "Mitglieder werden"
-          ) : (
-            <Link href="/auth/sign-up">Mitglieder werden</Link>
-          )}
+        <Button size="xl" asChild>
+          <Link href="/auth/sign-up">Mitglieder werden</Link>
         </Button>
       </div>
     </header>
