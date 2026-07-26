@@ -30,7 +30,7 @@ export default function DatenschutzPage() {
               <br />
               Deutschland
             </p>
-            <p>E-Mail: kammerchor-elikuren@t-online.de</p>
+            <p>E-Mail: kammerchor.elikuren@t-online.de</p>
           </section>
 
           <section className="space-y-3">

@@ -42,7 +42,7 @@ export default function ContactPage() {
                 href="mailto:kammerchor.elikuren@t-online.de"
                 className="mt-4 inline-block text-primary underline underline-offset-4"
               >
-                kammerchor-elikuren@t-online.de
+                kammerchor.elikuren@t-online.de
               </a>
             </div>
 

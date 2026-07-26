@@ -9,11 +9,11 @@ const historyEvents = [
     text: "Die Geschichte des Kammerchors Elikuren ist geprägt von musikalischer Leidenschaft, gemeinsamer Entwicklung und vielen besonderen Begegnungen. Von den ersten Proben an stand die Freude an anspruchsvoller Chormusik und sorgfältiger Ensemblearbeit im Mittelpunkt.",
     images: [
       {
-        src: "/images/history/history-1.jpg",
+        src: "/elikuren_gallery_1.jpg",
         alt: "Frühe Aufnahme des Kammerchors Elikuren",
       },
       {
-        src: "/images/history/history-2.jpg",
+        src: "/elikuren_gallery_2.jpg",
         alt: "Historisches Bild des Kammerchors Elikuren",
       },
     ],
@@ -24,11 +24,11 @@ const historyEvents = [
     text: "Mit den Jahren entwickelte sich der Chor musikalisch weiter und gestaltete regelmäßig Konzerte mit vielseitigen Programmen. Geistliche und weltliche Chormusik verschiedener Epochen prägten das Repertoire und formten das Profil des Ensembles.",
     images: [
       {
-        src: "/images/history/history-3.jpg",
+        src: "/elikuren_gallery_3.jpg",
         alt: "Kammerchor Elikuren bei einem früheren Konzert",
       },
       {
-        src: "/images/history/history-4.jpg",
+        src: "/eight-hero.jpg",
         alt: "Choraufnahme aus einer früheren Konzertphase",
       },
     ],
@@ -39,11 +39,11 @@ const historyEvents = [
     text: "Neben den Konzerten wurden auch Chorreisen, Begegnungen und gemeinsame Projekte zu wichtigen Bestandteilen des Chorlebens. Viele dieser Erlebnisse haben die Gemeinschaft gestärkt und die Geschichte des Chors nachhaltig geprägt.",
     images: [
       {
-        src: "/images/history/history-5.jpg",
+        src: "/eight_gallery_1.jpg",
         alt: "Gemeinsame Reise oder Begegnung des Chors",
       },
       {
-        src: "/images/history/history-6.jpg",
+        src: "/eight_gallery_2.jpg",
         alt: "Historische Aufnahme aus dem Chorleben",
       },
     ],
@@ -54,11 +54,11 @@ const historyEvents = [
     text: "Heute steht der Kammerchor Elikuren weiterhin für musikalischen Anspruch, klangliche Feinheit und lebendige Gemeinschaft. Die Geschichte des Chors lebt in seinen Konzerten, Erinnerungen und den Menschen weiter, die ihn über viele Jahre geprägt haben.",
     images: [
       {
-        src: "/images/history/history-7.jpg",
+        src: "/musical_hero.jpeg",
         alt: "Kammerchor Elikuren in neuerer Zeit",
       },
       {
-        src: "/images/history/history-8.jpg",
+        src: "/musical_gallery_1.jpg",
         alt: "Aktuelle Aufnahme des Kammerchors Elikuren",
       },
     ],
@@ -72,11 +72,11 @@ const choirTrips = [
     text: "Eine der prägenden Reisen des Chors führte nach Italien. Gemeinsame Konzerte, intensive Begegnungen und das Erleben neuer Orte machten diese Reise zu einem wichtigen Kapitel der Chorgeschichte.",
     images: [
       {
-        src: "/images/history/trips/trip-1.jpg",
+        src: "/eight_gallery_3.jpg",
         alt: "Chorreise des Kammerchors Elikuren nach Italien",
       },
       {
-        src: "/images/history/trips/trip-2.jpg",
+        src: "/musical_gallery_2.jpg",
         alt: "Gemeinsame Momente auf einer Chorreise",
       },
     ],
@@ -87,11 +87,11 @@ const choirTrips = [
     text: "Auch spätere Reisen verbanden musikalische Arbeit mit Gemeinschaft und kulturellen Eindrücken. Konzerte an besonderen Orten und die gemeinsame Zeit unterwegs bleiben bis heute in Erinnerung.",
     images: [
       {
-        src: "/images/history/trips/trip-3.jpg",
+        src: "/musical_gallery_3.jpg",
         alt: "Konzertreise des Chors",
       },
       {
-        src: "/images/history/trips/trip-4.jpg",
+        src: "/elikuren-ensemble.jpg",
         alt: "Aufnahme von einer früheren Chorreise",
       },
     ],
@@ -102,11 +102,11 @@ const choirTrips = [
     text: "Über die Jahre hinweg haben zahlreiche Reisen das Chorleben bereichert. Sie stehen für Gemeinschaft, musikalische Offenheit und die Freude daran, Musik auch außerhalb des gewohnten Rahmens miteinander zu erleben.",
     images: [
       {
-        src: "/images/history/trips/trip-5.jpg",
+        src: "/eight-to-the-bar.jpg",
         alt: "Historische Impression einer Chorreise",
       },
       {
-        src: "/images/history/trips/trip-6.jpg",
+        src: "/musical-team.jpg",
         alt: "Erinnerungsbild einer Reise des Kammerchors Elikuren",
       },
     ],
@@ -119,7 +119,7 @@ export default function HistoryPage() {
       <section className="relative overflow-hidden bg-second-primary text-white">
         <div className="absolute inset-0">
           <Image
-            src="/images/history/hero.jpg"
+            src="/kammerchor.jpg"
             alt="Historische Aufnahme des Kammerchors Elikuren"
             fill
             priority
@@ -196,7 +196,7 @@ export default function HistoryPage() {
 
           <div className="overflow-hidden rounded-[2rem] shadow-xl">
             <Image
-              src="/images/history/intro.jpg"
+              src="/elikuren_hero.jpg"
               alt="Historisches Gruppenbild des Kammerchors Elikuren"
               width={1200}
               height={900}

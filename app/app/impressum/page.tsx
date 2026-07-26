@@ -37,8 +37,8 @@ export default function ImpressumPage() {
             <strong>Kontakt</strong>
             <br />
             E-Mail:{" "}
-            <Link href="mailto:kammerchor-elikuren@t-online.de">
-              kammerchor-elikuren@t-online.de
+            <Link href="mailto:kammerchor.elikuren@t-online.de">
+              kammerchor.elikuren@t-online.de
             </Link>
           </p>
 
