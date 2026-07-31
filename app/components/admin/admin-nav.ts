@@ -1,8 +1,14 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  CalendarDays,
+  ContactRound,
+  FileAudio,
+  FileMusic,
+  FileText,
   LayoutDashboard,
   Megaphone,
   Music2,
+  ScrollText,
   Users,
   UserPlus,
 } from "lucide-react";
@@ -31,6 +37,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     permission: "MEMBER_MANAGE",
   },
   {
+    href: "/admin/contacts",
+    label: "Kontakte",
+    icon: ContactRound,
+    permission: "CONTACT_MANAGE",
+  },
+  {
     href: "/admin/requests",
     label: "Zugangsanfragen",
     icon: UserPlus,
@@ -43,10 +55,40 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     permission: "PIECE_MANAGE",
   },
   {
+    href: "/admin/scores",
+    label: "Noten & PDFs",
+    icon: FileMusic,
+    permission: "PIECE_MANAGE",
+  },
+  {
+    href: "/admin/audio",
+    label: "Audiodateien",
+    icon: FileAudio,
+    permission: "PIECE_MANAGE",
+  },
+  {
+    href: "/admin/events",
+    label: "Termine",
+    icon: CalendarDays,
+    permission: "EVENT_MANAGE",
+  },
+  {
     href: "/admin/announcements",
     label: "Mitteilungen",
     icon: Megaphone,
     permission: "ANNOUNCEMENT_MANAGE",
+  },
+  {
+    href: "/admin/invoices",
+    label: "Rechnungen & Belege",
+    icon: FileText,
+    permission: "INVOICE_READ",
+  },
+  {
+    href: "/admin/audit",
+    label: "Audit-Log",
+    icon: ScrollText,
+    permission: "AUDIT_READ",
   },
 ];
 
