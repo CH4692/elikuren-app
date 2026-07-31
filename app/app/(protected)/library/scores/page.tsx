@@ -1,10 +1,15 @@
+import { MemberShell } from "@/components/app/member-shell";
+import { PageHeader } from "@/components/app/page-header";
 import { LibraryScores } from "@/components/library/library-scores";
 
 export default function LibraryScoresPage() {
   return (
-    <main className="mx-auto min-h-screen max-w-4xl px-4 pb-16 pt-28">
-      <h1 className="mb-6 text-3xl font-semibold tracking-tight">Noten</h1>
+    <MemberShell>
+      <PageHeader
+        title="Noten & Stücke"
+        description="Partituren und Stimmen – suchen, filtern und in der Vorschau öffnen."
+      />
       <LibraryScores />
-    </main>
+    </MemberShell>
   );
 }

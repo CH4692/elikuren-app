@@ -1,64 +1,52 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  ADMIN_KPI_ICONS,
+  AdminOverview,
+  type AdminKpi,
+} from "@/components/admin/admin-overview";
+import { prisma } from "@/lib/db";
 import { hasPermission } from "@/lib/permissions";
-
-const LINKS = [
-  {
-    href: "/admin/requests",
-    title: "Zugangsanfragen",
-    description: "Mitgliedschaft freigeben oder ablehnen",
-    permission: "ACCESS_REQUEST_MANAGE" as const,
-  },
-  {
-    href: "/admin/pieces",
-    title: "Stücke",
-    description: "Noten und Audio verwalten",
-    permission: "PIECE_MANAGE" as const,
-  },
-  {
-    href: "/admin/members",
-    title: "Mitglieder",
-    description: "Stimme, Aktivstatus und Rollen",
-    permission: "MEMBER_MANAGE" as const,
-  },
-  {
-    href: "/admin/announcements",
-    title: "Mitteilungen",
-    description: "Ankündigungen an den Chor",
-    permission: "ANNOUNCEMENT_MANAGE" as const,
-  },
-];
 
 export default async function AdminIndexPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/sign-in");
 
   const role = session.user.role;
-  const available = LINKS.filter((link) => hasPermission(role, link.permission));
+  const canRequests = hasPermission(role, "ACCESS_REQUEST_MANAGE");
+  const canPieces = hasPermission(role, "PIECE_MANAGE");
 
-  return (
-    <main className="mx-auto min-h-screen max-w-4xl px-4 pb-16 pt-28">
-      <h1 className="mb-6 text-3xl font-semibold tracking-tight">Verwaltung</h1>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {available.map((link) => (
-          <Link key={link.href} href={link.href}>
-            <Card className="h-full transition hover:border-[#C8A24D]/50">
-              <CardHeader>
-                <CardTitle>{link.title}</CardTitle>
-                <CardDescription>{link.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
-        ))}
-      </div>
-    </main>
-  );
+  const [openRequests, draftPieces] = await Promise.all([
+    canRequests
+      ? prisma.membershipRequest.count({ where: { status: "pending" } })
+      : Promise.resolve(null),
+    canPieces
+      ? prisma.musicPiece.count({ where: { publicationStatus: "DRAFT" } })
+      : Promise.resolve(null),
+  ]);
+
+  const kpis: AdminKpi[] = [
+    canRequests
+      ? {
+          href: "/admin/requests",
+          title: "Offene Anfragen",
+          value: openRequests ?? 0,
+          description: "Warten auf Freigabe",
+          icon: ADMIN_KPI_ICONS.requests,
+          attention: true,
+        }
+      : null,
+    canPieces
+      ? {
+          href: "/admin/pieces",
+          title: "Entwürfe",
+          value: draftPieces ?? 0,
+          description: "Unveröffentlichte Stücke",
+          icon: ADMIN_KPI_ICONS.pieces,
+        }
+      : null,
+  ].filter(Boolean) as AdminKpi[];
+
+  return <AdminOverview role={role} kpis={kpis} />;
 }

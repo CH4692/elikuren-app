@@ -1,3 +1,5 @@
+import "server-only";
+
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
@@ -34,8 +36,17 @@ function createPrismaClient() {
   return prisma;
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+function getOrCreatePrismaClient() {
+  const cached = globalForPrisma.prisma;
+  // Dev/HMR can keep an old PrismaClient after `prisma generate` adds models.
+  if (cached && "contact" in cached && cached.contact) {
+    return cached;
+  }
+  const client = createPrismaClient();
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = client;
+  }
+  return client;
 }
+
+export const prisma = getOrCreatePrismaClient();
