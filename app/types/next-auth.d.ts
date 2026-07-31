@@ -1,4 +1,5 @@
 import type { DefaultSession } from "next-auth";
+
 import type { Role } from "@/lib/generated/prisma/client";
 
 declare module "next-auth" {
@@ -6,8 +7,9 @@ declare module "next-auth" {
     user: {
       id: string;
       role: Role;
-      firstname?: string | null;
-      lastname?: string | null;
+      firstname: string | null;
+      lastname: string | null;
+      sessionVersion: number;
     } & DefaultSession["user"];
   }
 
@@ -15,6 +17,7 @@ declare module "next-auth" {
     role?: Role;
     firstname?: string | null;
     lastname?: string | null;
+    sessionVersion?: number;
   }
 }
 
@@ -24,5 +27,6 @@ declare module "next-auth/jwt" {
     role?: Role;
     firstname?: string | null;
     lastname?: string | null;
+    sessionVersion?: number;
   }
 }

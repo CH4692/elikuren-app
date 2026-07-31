@@ -1,25 +1,48 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
-import { isAdminRole } from "@/lib/authz";
+import { hasPermission } from "@/lib/permissions";
+import type { Permission } from "@/lib/permissions";
 
-const protectedPrefixes = ["/dashboard", "/admin", "/profile", "/api/me"];
+const memberPrefixes = ["/profile", "/api/me"];
+
 const adminPrefixes = ["/admin", "/api/admin"];
+
+function matchPrefix(pathname: string, prefixes: string[]) {
+  return prefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+function permissionForAdminPath(pathname: string): Permission | Permission[] | null {
+  if (
+    pathname.startsWith("/admin/requests") ||
+    pathname.startsWith("/api/admin/membership-requests")
+  ) {
+    return "ACCESS_REQUEST_MANAGE";
+  }
+  if (
+    pathname.startsWith("/admin/members") ||
+    pathname.startsWith("/api/admin/members")
+  ) {
+    return "MEMBER_MANAGE";
+  }
+  if (pathname === "/admin" || pathname === "/api/admin") {
+    return ["ACCESS_REQUEST_MANAGE", "MEMBER_MANAGE"];
+  }
+  return "ACCESS_REQUEST_MANAGE";
+}
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
-  const isProtected = protectedPrefixes.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
-  const isAdminRoute = adminPrefixes.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+  const isMemberRoute = matchPrefix(pathname, memberPrefixes);
+  const isAdminRoute = matchPrefix(pathname, adminPrefixes);
 
-  if (!isProtected && !isAdminRoute) {
+  if (!isMemberRoute && !isAdminRoute) {
     return NextResponse.next();
   }
 
-  if (!req.auth) {
+  if (!req.auth?.user?.id) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
         { detail: "Unauthorized", code: "http_401" },
@@ -31,14 +54,24 @@ export default auth((req) => {
     return NextResponse.redirect(signInUrl);
   }
 
-  if (isAdminRoute && !isAdminRole(req.auth.user?.role)) {
-    if (pathname.startsWith("/api/")) {
-      return NextResponse.json(
-        { detail: "Forbidden", code: "http_403" },
-        { status: 403 },
-      );
+  const role = req.auth.user.role;
+
+  if (isAdminRoute) {
+    const needed = permissionForAdminPath(pathname);
+    if (needed) {
+      const allowed = Array.isArray(needed)
+        ? needed.some((p) => hasPermission(role, p))
+        : hasPermission(role, needed);
+      if (!allowed) {
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json(
+            { detail: "Forbidden", code: "http_403" },
+            { status: 403 },
+          );
+        }
+        return NextResponse.redirect(new URL("/profile", req.nextUrl.origin));
+      }
     }
-    return NextResponse.redirect(new URL("/profile", req.nextUrl.origin));
   }
 
   return NextResponse.next();
