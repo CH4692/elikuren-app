@@ -18,10 +18,22 @@ const LINKS = [
     permission: "ACCESS_REQUEST_MANAGE" as const,
   },
   {
+    href: "/admin/pieces",
+    title: "Stücke",
+    description: "Noten und Audio verwalten",
+    permission: "PIECE_MANAGE" as const,
+  },
+  {
     href: "/admin/members",
     title: "Mitglieder",
     description: "Stimme, Aktivstatus und Rollen",
     permission: "MEMBER_MANAGE" as const,
+  },
+  {
+    href: "/admin/announcements",
+    title: "Mitteilungen",
+    description: "Ankündigungen an den Chor",
+    permission: "ANNOUNCEMENT_MANAGE" as const,
   },
 ];
 
@@ -31,10 +43,6 @@ export default async function AdminIndexPage() {
 
   const role = session.user.role;
   const available = LINKS.filter((link) => hasPermission(role, link.permission));
-
-  if (available.length === 1) {
-    redirect(available[0]!.href);
-  }
 
   return (
     <main className="mx-auto min-h-screen max-w-4xl px-4 pb-16 pt-28">

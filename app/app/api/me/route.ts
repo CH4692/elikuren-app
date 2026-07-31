@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { auth } from "@/auth";
+import { requireActiveSession } from "@/lib/authz";
 import {
   deleteUser,
   getUserById,
@@ -10,16 +10,10 @@ import {
 } from "@/lib/users";
 
 export async function GET() {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) {
-    return NextResponse.json(
-      { detail: "Unauthorized", code: "http_401" },
-      { status: 401 },
-    );
-  }
+  const gate = await requireActiveSession();
+  if (!gate.ok) return gate.response;
 
-  const user = await getUserById(userId);
+  const user = await getUserById(gate.user.id);
   if (!user) {
     return NextResponse.json(
       { detail: "User not found", code: "http_404" },
@@ -31,14 +25,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) {
-    return NextResponse.json(
-      { detail: "Unauthorized", code: "http_401" },
-      { status: 401 },
-    );
-  }
+  const gate = await requireActiveSession();
+  if (!gate.ok) return gate.response;
 
   const body = (await request.json()) as UserUpdateInput & {
     house_number?: string | null;
@@ -46,8 +34,8 @@ export async function PATCH(request: Request) {
     member_since?: string | null;
   };
 
-  // Role changes are admin-only and never accepted from self-service PATCH.
-  const updated = await updateUser(userId, {
+  // Role / isActive / sessionVersion never accepted from self-service PATCH.
+  const updated = await updateUser(gate.user.id, {
     firstname: body.firstname,
     lastname: body.lastname,
     street: body.street,
@@ -71,16 +59,10 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE() {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) {
-    return NextResponse.json(
-      { detail: "Unauthorized", code: "http_401" },
-      { status: 401 },
-    );
-  }
+  const gate = await requireActiveSession();
+  if (!gate.ok) return gate.response;
 
-  const deleted = await deleteUser(userId);
+  const deleted = await deleteUser(gate.user.id);
   if (!deleted) {
     return NextResponse.json(
       { detail: "User not found", code: "http_404" },

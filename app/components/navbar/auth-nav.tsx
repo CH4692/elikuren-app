@@ -37,7 +37,6 @@ export function AuthNav({ variant = "desktop", onNavigate }: AuthNavProps) {
       { href: "/dashboard", label: "Dashboard" },
       { href: "/library/scores", label: "Noten" },
       { href: "/library/audio", label: "Audio" },
-      { href: "/events", label: "Termine" },
       { href: "/announcements", label: "Mitteilungen" },
       { href: "/profile", label: "Profil" },
     ];
@@ -47,9 +46,6 @@ export function AuthNav({ variant = "desktop", onNavigate }: AuthNavProps) {
         : null,
       hasPermission(role, "PIECE_MANAGE")
         ? { href: "/admin/pieces", label: "Stücke" }
-        : null,
-      hasPermission(role, "INVOICE_READ")
-        ? { href: "/admin/invoices", label: "Rechnungen" }
         : null,
       hasAdminAreaAccess(role) ? { href: "/admin", label: "Verwaltung" } : null,
     ].filter(Boolean) as Array<{ href: string; label: string }>;
