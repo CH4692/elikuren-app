@@ -9,13 +9,13 @@ test.describe("Mitglieder-Bibliothek", () => {
 
     await page.goto("/library/scores", { waitUntil: "domcontentloaded" });
     await expect(
-      page.getByRole("heading", { name: "Noten", exact: true }),
+      page.getByRole("heading", { name: "Noten & Stücke" }),
     ).toBeVisible();
     await expect(page.getByText("Meine Stimme")).toBeVisible();
 
     await page.goto("/library/audio", { waitUntil: "domcontentloaded" });
     await expect(
-      page.getByRole("heading", { name: /Audio/i }),
+      page.getByRole("heading", { name: "Audio & Üben", exact: true }),
     ).toBeVisible();
   });
 

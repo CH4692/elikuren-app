@@ -8,7 +8,7 @@ test.describe("Mitteilungen", () => {
     await loginAsAdmin(page);
     await page.goto("/admin/announcements", { waitUntil: "domcontentloaded" });
     await expect(
-      page.getByRole("heading", { name: /Mitteilungen verwalten/i }),
+      page.getByRole("heading", { name: "Mitteilungen", exact: true }),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Neue Mitteilung" }).click();

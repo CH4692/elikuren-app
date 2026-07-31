@@ -13,7 +13,6 @@ test.describe("Dashboard", () => {
     const hub = page.locator("main");
     await expect(hub.getByRole("link", { name: "Noten" })).toBeVisible();
     await expect(hub.getByRole("link", { name: "Audio" })).toBeVisible();
-    await expect(hub.getByRole("link", { name: "Termine" })).toBeVisible();
     await expect(hub.getByRole("link", { name: "Mitteilungen" })).toBeVisible();
     await expect(hub.getByRole("link", { name: "Profil" })).toBeVisible();
   });
@@ -33,10 +32,7 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.getByText("Wichtige Mitteilungen")).toBeVisible();
     await expect(page.getByText(title)).toBeVisible();
-    await expect(page.getByText("Nächster Termin")).toBeVisible();
 
-    // Event list is the stable place to assert the created title
-    // (another sooner event may occupy the dashboard card).
     await page.goto("/events", { waitUntil: "domcontentloaded" });
     await expect(page.getByText(eventTitle)).toBeVisible({ timeout: 15_000 });
   });

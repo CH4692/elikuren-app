@@ -13,15 +13,24 @@ test.describe("Mitgliederbereich Smoke", () => {
     await expect(
       page.getByRole("heading", { name: "Übersicht" }),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: "Mitglieder" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Kontakte" })).toBeVisible();
+    const sidebar = page.locator("aside");
     await expect(
-      page.getByRole("link", { name: "Zugangsanfragen" }),
+      sidebar.getByRole("link", { name: "Mitglieder", exact: true }),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: "Stücke" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Noten & PDFs" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Audiodateien" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Audit-Log" })).toBeVisible();
+    await expect(sidebar.getByRole("link", { name: "Kontakte" })).toBeVisible();
+    await expect(
+      sidebar.getByRole("link", { name: "Zugangsanfragen" }),
+    ).toBeVisible();
+    await expect(sidebar.getByRole("link", { name: "Stücke" })).toBeVisible();
+    await expect(
+      sidebar.getByRole("link", { name: "Noten & PDFs" }),
+    ).toBeVisible();
+    await expect(
+      sidebar.getByRole("link", { name: "Audiodateien" }),
+    ).toBeVisible();
+    await expect(
+      sidebar.getByRole("link", { name: "Audit-Log" }),
+    ).toBeVisible();
   });
 
   test("user menu navigates to dashboard", async ({ page }) => {

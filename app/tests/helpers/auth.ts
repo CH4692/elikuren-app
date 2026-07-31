@@ -96,6 +96,17 @@ export async function reviewRequest(
   return res.json();
 }
 
+/** Create an active member via the approval flow (admin session on `request`). */
+export async function approveMemberRequest(
+  request: APIRequestContext,
+  email: string,
+  voice = "Alt",
+) {
+  await createMembershipRequest(request, { email, voice });
+  const id = await findPendingRequestId(request, email);
+  await reviewRequest(request, id, { status: "approved", voice });
+}
+
 export async function requestMagicLink(page: Page, email: string) {
   await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded" });
   const form = page

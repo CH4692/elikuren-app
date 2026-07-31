@@ -4,14 +4,25 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
 import { PrismaClient, type Role } from "../lib/generated/prisma/client";
+import { pgSslForConnectionString } from "../lib/pg-connection";
 import {
   getE2EAdminCredentials,
   getE2EAuditorCredentials,
   getE2EMemberCredentials,
 } from "./helpers/credentials";
 
-loadEnv({ path: ".env.test" });
-loadEnv({ path: ".env.local", override: true });
+loadEnv({ path: ".env.local" });
+loadEnv({ path: ".env.test", override: true });
+
+const testDbPort = process.env.TEST_DB_PORT;
+if (testDbPort && testDbPort !== "5432") {
+  for (const key of ["DATABASE_URL", "DATABASE_URL_UNPOOLED"] as const) {
+    const value = process.env[key];
+    if (value?.includes(":5432/")) {
+      process.env[key] = value.replace(":5432/", `:${testDbPort}/`);
+    }
+  }
+}
 
 async function upsertUser(
   prisma: PrismaClient,
@@ -59,9 +70,7 @@ async function main() {
 
   const pool = new Pool({
     connectionString,
-    ssl: connectionString.includes("sslmode=disable")
-      ? undefined
-      : { rejectUnauthorized: false },
+    ssl: pgSslForConnectionString(connectionString),
   });
   const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 

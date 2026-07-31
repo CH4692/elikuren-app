@@ -5,6 +5,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
 import { PrismaClient } from "../lib/generated/prisma/client";
+import { pgSslForConnectionString } from "../lib/pg-connection";
 
 loadEnv({ path: ".env.local" });
 loadEnv({ path: ".env" });
@@ -26,9 +27,7 @@ async function main() {
 
   const pool = new Pool({
     connectionString,
-    ssl: connectionString.includes("sslmode=disable")
-      ? undefined
-      : { rejectUnauthorized: false },
+    ssl: pgSslForConnectionString(connectionString),
   });
   const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 

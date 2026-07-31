@@ -88,9 +88,7 @@ test.describe("mobile navigation", () => {
   test("opens menu and reaches membership request", async ({ page }) => {
     await page.goto("/home", { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: "Menü öffnen" }).click();
-    const joinLink = page
-      .locator("nav")
-      .getByRole("link", { name: /Mitglied werden|Mitglieder werden/i });
+    const joinLink = page.getByRole("link", { name: "Mitglied werden" });
     await expect(joinLink).toBeVisible({ timeout: 15_000 });
     await joinLink.click();
     await expect(page).toHaveURL(/\/auth\/sign-up/);

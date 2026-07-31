@@ -12,7 +12,7 @@ test.describe("Termine & RSVP", () => {
     await loginAsAdmin(page);
     await page.goto("/admin/events", { waitUntil: "domcontentloaded" });
     await expect(
-      page.getByRole("heading", { name: /Termine verwalten/i }),
+      page.getByRole("heading", { name: "Termine", exact: true }),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Neuer Termin" }).click();

@@ -20,6 +20,16 @@ cp .env.example .env.local
 # fill real values (DB, AUTH_SECRET, RESEND_API_KEY, …)
 ```
 
+For Playwright locally, copy the test env and ensure PostgreSQL matches `.env.test`:
+
+```bash
+docker compose -f docker-compose.test.yml up -d   # Postgres on :5433 (avoids local :5432 conflicts)
+TEST_DB_PORT=5433 npm run db:migrate
+TEST_DB_PORT=5433 npm run test
+```
+
+If port 5432 is free, omit `TEST_DB_PORT=5433`.
+
 ## Local development
 
 ```bash
@@ -47,7 +57,7 @@ npm run dev
 
 | Route | Purpose |
 |---|---|
-| `GET/PATCH/DELETE /api/me` | Current user (Auth.js session) |
+| `GET/PATCH /api/me` | Current user (Auth.js session) |
 | `POST /api/membership-requests` | Public membership application |
 | `GET/PATCH /api/admin/membership-requests` | Admin review (role `vorstand`) |
 | `GET/POST /api/admin/contacts` | Adressbuch (`CONTACT_MANAGE`) |
@@ -57,6 +67,36 @@ npm run dev
 | `POST /api/contact` | Contact form via Resend |
 | `GET /api/health` | Health check |
 
+## Tests
+
+Drei Ebenen — alle brauchen für Integration/UI eine erreichbare PostgreSQL-Instanz (CI startet Postgres als Service):
+
+| Befehl | Ebene | Was wird geprüft |
+|---|---|---|
+| `npm run test:unit` | Unit | Permissions, Rate-Limits, Geldformat, Upload-Validierung, neutrale Membership-Texte |
+| `npm run test:integration` | Integration | API-Flows ohne Browser (Membership, Mitglieder, Library, Ankündigungen, Events, Rechnungen, Kontakte, Audit) |
+| `npm run test:ui` | UI | Playwright-Seitenflows (Login, Admin, Mitgliederbereich, Marketing-Smoke) |
+| `npm run test` | Alle | Unit → Integration → UI nacheinander |
+
+### Abdeckung nach Feature
+
+| Modul | Unit | Integration | UI |
+|---|---|---|---|
+| **Membership / Auth** | `membership-requests`, `rate-limit`, `admin-access` | `integration/membership-api` | `pages/approval`, `pages/auth`, `pages/membership` |
+| **Permissions / Dateien** | `permissions`, `invoice-permissions` | `pages/api-authz` (UI+API) | — |
+| **Mitglieder (Admin)** | — | `integration/membership-api` | `pages/members` |
+| **Profil** | — | — | `pages/profile` |
+| **Dashboard** | — | — | `pages/dashboard` |
+| **Library (Noten/Audio)** | `permissions` (accessScope) | `integration/features-api` | `pages/library`, `pages/pieces` |
+| **Ankündigungen** | — | `integration/features-api` | `pages/announcements` |
+| **Termine / RSVP** | — | `integration/features-api` | `pages/events` |
+| **Rechnungen** | `invoice-permissions`, `money` | `integration/features-api` | `pages/invoices` |
+| **Kontakte / Audit** | `contact-types` | `integration/admin-api` | `pages/contacts-admin` |
+| **Admin-Shell / Nav** | — | `integration/admin-api` (health) | `pages/member-area`, `pages/profile`, `smoke/nav` |
+| **Marketing / Smoke** | — | — | `pages/home`, `pages/contact`, `smoke/*` |
+
+E2E-Testnutzer werden in `tests/global-setup.ts` via `tests/ensure-e2e-admin.ts` angelegt (Admin, Mitglied, Kassenprüfer).
+
 ## Scripts
 
 | Script | Purpose |
@@ -65,7 +105,11 @@ npm run dev
 | `npm run build` | `prisma generate` + Next build |
 | `npm run db:migrate` | Apply migrations (production/CI) |
 | `npm run db:migrate:dev` | Create/apply migrations locally |
-| `npm run test:e2e` | Playwright (uses `.env.local`, falls back to `.env.test`) |
+| `npm run test:unit` | Node unit tests (`tsx --test`) |
+| `npm run test:integration` | Playwright API integration tests |
+| `npm run test:ui` | Playwright UI tests |
+| `npm run test` | All test layers |
+| `npm run test:e2e` | All Playwright tests (integration + UI) |
 
 ## Deploy
 

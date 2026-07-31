@@ -79,7 +79,7 @@ test.describe("Membership API integration", () => {
 });
 
 test.describe("Members API integration", () => {
-  test("admin can deactivate member and block self-service profile API semantics", async ({
+  test("admin can deactivate member and block credentials login", async ({
     page,
   }) => {
     await loginAsAdmin(page);
@@ -92,29 +92,26 @@ test.describe("Members API integration", () => {
     const member = payload.items.find((item) => item.email === email);
     expect(member).toBeTruthy();
 
-    const patch = await page.request.patch(`/api/admin/members/${member!.id}`, {
-      data: { is_active: false },
-    });
-    expect(patch.ok()).toBeTruthy();
+    try {
+      const patch = await page.request.patch(`/api/admin/members/${member!.id}`, {
+        data: { is_active: false },
+      });
+      expect(patch.ok()).toBeTruthy();
 
-    await page.context().clearCookies();
-    await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded" });
-    await page
-      .locator("form")
-      .filter({ has: page.getByRole("button", { name: "Anmelden" }) })
-      .locator('input[name="email"]')
-      .fill(email);
-    await page
-      .locator("form")
-      .filter({ has: page.getByRole("button", { name: "Anmelden" }) })
-      .locator('input[name="password"]')
-      .fill(getE2EMemberCredentials().password);
-    await page.getByRole("button", { name: "Anmelden" }).click();
-    await expect(page).toHaveURL(/\/auth\/(sign-in|error)/, { timeout: 15_000 });
-
-    await loginAsAdmin(page);
-    await page.request.patch(`/api/admin/members/${member!.id}`, {
-      data: { is_active: true },
-    });
+      await page.context().clearCookies();
+      await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded" });
+      const loginForm = page
+        .locator("form")
+        .filter({ has: page.getByRole("button", { name: "Anmelden" }) });
+      await loginForm.locator('input[name="email"]').fill(email);
+      await loginForm.locator('input[name="password"]').fill(getE2EMemberCredentials().password);
+      await page.getByRole("button", { name: "Anmelden" }).click();
+      await expect(page).toHaveURL(/\/auth\/(sign-in|error)/, { timeout: 15_000 });
+    } finally {
+      await loginAsAdmin(page);
+      await page.request.patch(`/api/admin/members/${member!.id}`, {
+        data: { is_active: true },
+      });
+    }
   });
 });

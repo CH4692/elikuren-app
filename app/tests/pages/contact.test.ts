@@ -12,6 +12,7 @@ async function gotoContact(page: Page) {
   await page.locator("form").evaluate((form) => {
     (form as HTMLFormElement).noValidate = true;
   });
+  await expect(page.locator("form")).toHaveJSProperty("noValidate", true);
 }
 
 test("contact page shows form", async ({ page }) => {

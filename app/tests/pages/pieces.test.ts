@@ -7,8 +7,12 @@ test.describe("Admin Stücke", () => {
   test("create draft piece via UI and publish", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/pieces", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.getByRole("heading", { name: "Stücke", exact: true }),
+    ).toBeVisible();
 
     const title = `UI Stück ${Date.now()}`;
+    await page.getByRole("button", { name: "Neues Stück" }).click();
     await page.locator("#piece-title").fill(title);
     await page.locator("#piece-composer").fill("Bach");
     await page.getByRole("button", { name: "Entwurf anlegen" }).click();
@@ -26,7 +30,7 @@ test.describe("Admin Stücke", () => {
   test("member cannot open pieces admin", async ({ page }) => {
     await loginAsMember(page);
     await page.goto("/admin/pieces", { waitUntil: "domcontentloaded" });
-    await expect(page).not.toHaveURL(/\/admin\/pieces$/);
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 
   test("published piece appears in library for members", async ({ page }) => {

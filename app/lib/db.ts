@@ -4,6 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
 import { PrismaClient } from "@/lib/generated/prisma/client";
+import { pgSslForConnectionString } from "@/lib/pg-connection";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -21,9 +22,7 @@ function createPrismaClient() {
     new Pool({
       connectionString,
       max: 5,
-      ssl: connectionString.includes("sslmode=disable")
-        ? undefined
-        : { rejectUnauthorized: false },
+      ssl: pgSslForConnectionString(connectionString),
     });
 
   const adapter = new PrismaPg(pool);

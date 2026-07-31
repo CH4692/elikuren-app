@@ -10,9 +10,9 @@ test.describe("Profil UI", () => {
     await expect(page.getByRole("heading", { name: "Mein Profil" })).toBeVisible();
 
     const phone = `+49 ${Date.now().toString().slice(-8)}`;
-    await page.getByLabel(/Telefon/i).fill(phone);
+    await page.locator("#phone").fill(phone);
     await page.getByRole("button", { name: "Profil speichern" }).click();
-    await expect(page.getByText("Profil gespeichert")).toBeVisible({
+    await expect(page.locator("[data-sonner-toast]").getByText("Profil gespeichert")).toBeVisible({
       timeout: 10_000,
     });
   });
@@ -35,7 +35,7 @@ test.describe("Admin scores & audio UI", () => {
   test("member is redirected from scores admin", async ({ page }) => {
     await loginAsMember(page);
     await page.goto("/admin/scores", { waitUntil: "domcontentloaded" });
-    await expect(page).not.toHaveURL(/\/admin\/scores$/);
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 });
 
@@ -45,11 +45,12 @@ test.describe("Admin shell UI", () => {
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Übersicht" })).toBeVisible();
 
-    await page.getByRole("link", { name: "Mitglieder" }).click();
+    const sidebar = page.locator("aside");
+    await sidebar.getByRole("link", { name: "Mitglieder", exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/members/);
     await expect(page.getByRole("heading", { name: /Mitglieder/i })).toBeVisible();
 
-    await page.getByRole("link", { name: "Zugangsanfragen" }).click();
+    await sidebar.getByRole("link", { name: "Zugangsanfragen" }).click();
     await expect(page).toHaveURL(/\/admin\/requests/);
   });
 });
