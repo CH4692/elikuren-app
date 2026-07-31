@@ -10,6 +10,15 @@ import {
   reviewRequest,
 } from "../helpers/auth";
 
+async function openRequestReview(page: import("@playwright/test").Page, email: string) {
+  const row = page
+    .locator('[data-testid="membership-request"]')
+    .filter({ hasText: email });
+  await expect(row).toBeVisible({ timeout: 15_000 });
+  await row.getByRole("button", { name: "Prüfen" }).click();
+  return row;
+}
+
 test.describe("Admin Freigabeprozess", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -41,23 +50,16 @@ test.describe("Admin Freigabeprozess", () => {
 
     await loginAsAdmin(page);
     await page.goto("/admin/requests", { waitUntil: "domcontentloaded" });
-    await expect(
-      page.getByRole("heading", { name: "Mitgliederfreigaben" }),
-    ).toBeVisible();
-    await expect(page.getByText("Zugangsanfragen")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Zugangsanfragen" })).toBeVisible();
 
-    const card = page
-      .locator('[data-testid="membership-request"]')
-      .filter({ hasText: email });
-    await expect(card).toBeVisible({ timeout: 15_000 });
-    await expect(card.getByText("Bitte freischalten")).toBeVisible();
-
-    await card.locator("select").selectOption("Tenor");
-    await card.getByLabel(/Interne Notiz/i).fill("E2E Notiz");
+    await openRequestReview(page, email);
+    await expect(page.getByText("Bitte freischalten")).toBeVisible();
+    await page.locator("#req-voice").selectOption("Tenor");
+    await page.getByLabel(/Interne Notiz/i).fill("E2E Notiz");
     await expect(
-      card.getByText(/Info-E-Mail mit Link zur Login-Seite/i),
+      page.getByText(/Info-E-Mail mit Link zur Login-Seite/i),
     ).toBeVisible();
-    await card.getByRole("button", { name: "Freigeben" }).click();
+    await page.getByRole("button", { name: "Freigeben" }).click();
 
     await page.getByRole("button", { name: "Alle", exact: true }).click();
     const approved = page
@@ -66,7 +68,7 @@ test.describe("Admin Freigabeprozess", () => {
     await expect(approved.getByText("Freigegeben")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(approved.getByText(/Stimme:\s*Tenor/i)).toBeVisible();
+    await expect(approved.getByText("Tenor")).toBeVisible();
   });
 
   test("after approval magic-link gate no longer shows pending denial", async ({
@@ -133,11 +135,8 @@ test.describe("Admin Freigabeprozess", () => {
     await loginAsAdmin(page);
     await page.goto("/admin/requests", { waitUntil: "domcontentloaded" });
 
-    const card = page
-      .locator('[data-testid="membership-request"]')
-      .filter({ hasText: email });
-    await expect(card).toBeVisible({ timeout: 15_000 });
-    await card.getByRole("button", { name: "Ablehnen" }).click();
+    await openRequestReview(page, email);
+    await page.getByRole("button", { name: "Ablehnen" }).click();
 
     await page.getByRole("button", { name: "Alle", exact: true }).click();
     const rejected = page
