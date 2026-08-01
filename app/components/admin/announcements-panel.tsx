@@ -1,19 +1,27 @@
 "use client";
 
+import { Megaphone, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/app/confirm-dialog";
+import { DataTableToolbar } from "@/components/app/data-table-toolbar";
+import { EmptyState } from "@/components/app/empty-state";
+import { FormDrawer } from "@/components/app/form-drawer";
+import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 
 type AnnouncementItem = {
@@ -26,18 +34,29 @@ type AnnouncementItem = {
   read_count: number;
 };
 
+type AnnouncementForm = {
+  title: string;
+  body: string;
+  is_important: boolean;
+  expires_at: string;
+  publish: boolean;
+};
+
+const emptyForm = (): AnnouncementForm => ({
+  title: "",
+  body: "",
+  is_important: false,
+  expires_at: "",
+  publish: false,
+});
+
 export function AdminAnnouncementsPanel() {
   const [items, setItems] = useState<AnnouncementItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [pending, startTransition] = useTransition();
-  const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({
-    title: "",
-    body: "",
-    is_important: false,
-    expires_at: "",
-    publish: false,
-  });
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [form, setForm] = useState<AnnouncementForm>(emptyForm());
+  const [deleteTarget, setDeleteTarget] = useState<AnnouncementItem | null>(null);
 
   async function load() {
     setLoading(true);
@@ -77,14 +96,8 @@ export function AdminAnnouncementsPanel() {
         return;
       }
       toast.success(form.publish ? "Veröffentlicht" : "Entwurf gespeichert");
-      setCreating(false);
-      setForm({
-        title: "",
-        body: "",
-        is_important: false,
-        expires_at: "",
-        publish: false,
-      });
+      setDrawerOpen(false);
+      setForm(emptyForm());
       await load();
     });
   }
@@ -105,10 +118,10 @@ export function AdminAnnouncementsPanel() {
     });
   }
 
-  function remove(id: string) {
-    if (!confirm("Mitteilung wirklich löschen?")) return;
+  function confirmDelete() {
+    if (!deleteTarget) return;
     startTransition(async () => {
-      const res = await fetch(`/api/admin/announcements/${id}`, {
+      const res = await fetch(`/api/admin/announcements/${deleteTarget.id}`, {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -116,140 +129,188 @@ export function AdminAnnouncementsPanel() {
         return;
       }
       toast.success("Gelöscht");
+      setDeleteTarget(null);
       await load();
     });
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Mitteilungen verwalten</CardTitle>
-        <CardDescription>
-          Ankündigungen erstellen und veröffentlichen.
-        </CardDescription>
-        <Button
-          type="button"
-          size="sm"
-          className="mt-2 w-fit"
-          onClick={() => setCreating((v) => !v)}
-        >
-          {creating ? "Abbrechen" : "Neue Mitteilung"}
-        </Button>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {creating ? (
-          <div className="rounded-2xl border border-[#d9d2c4] p-4 space-y-3">
-            <div>
-              <Label htmlFor="ann-title">Titel</Label>
-              <Input
-                id="ann-title"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="ann-body">Text</Label>
-              <Textarea
-                id="ann-body"
-                rows={5}
-                value={form.body}
-                onChange={(e) => setForm({ ...form, body: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="ann-expires">Ablauf (optional)</Label>
-                <Input
-                  id="ann-expires"
-                  type="datetime-local"
-                  value={form.expires_at}
-                  onChange={(e) =>
-                    setForm({ ...form, expires_at: e.target.value })
-                  }
-                />
-              </div>
-              <div className="flex items-end gap-4 pb-2">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={form.is_important}
-                    onChange={(e) =>
-                      setForm({ ...form, is_important: e.target.checked })
-                    }
-                  />
-                  Wichtig
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={form.publish}
-                    onChange={(e) =>
-                      setForm({ ...form, publish: e.target.checked })
-                    }
-                  />
-                  Sofort veröffentlichen
-                </label>
-              </div>
-            </div>
-            <Button
-              disabled={pending || !form.title || !form.body}
-              onClick={createItem}
-            >
-              Speichern
-            </Button>
-          </div>
-        ) : null}
+    <div>
+      <PageHeader
+        title="Mitteilungen"
+        description="Ankündigungen erstellen und veröffentlichen."
+        actions={
+          <Button type="button" onClick={() => setDrawerOpen(true)}>
+            <Plus className="size-4" />
+            Neue Mitteilung
+          </Button>
+        }
+      />
 
-        {loading ? (
-          <p className="text-sm text-[#5c574e]">Lädt…</p>
-        ) : items.length === 0 ? (
-          <p className="text-sm text-[#5c574e]">Keine Mitteilungen.</p>
-        ) : (
-          <ul className="space-y-3">
-            {items.map((item) => (
-              <li
-                key={item.id}
-                className="rounded-2xl border border-[#d9d2c4] p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium">{item.title}</p>
-                    <p className="mt-1 line-clamp-2 text-sm text-[#5c574e]">
-                      {item.body}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
+      <DataTableToolbar />
+
+      {loading ? (
+        <div className="space-y-2 rounded-2xl border border-[#ebe4d8] bg-white/70 p-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon={Megaphone}
+          title="Keine Mitteilungen"
+          description="Erstelle die erste Ankündigung für den Chor."
+          action={
+            <Button type="button" onClick={() => setDrawerOpen(true)}>
+              Neue Mitteilung
+            </Button>
+          }
+        />
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-[#ebe4d8] bg-white/70">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Titel</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Gelesen</TableHead>
+                <TableHead>Ablauf</TableHead>
+                <TableHead className="text-right">Aktionen</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>
+                    <div className="font-medium">{item.title}</div>
+                    {item.is_important ? (
+                      <Badge variant="warning" className="mt-1">
+                        Wichtig
+                      </Badge>
+                    ) : null}
+                  </TableCell>
+                  <TableCell>
                     {item.published_at ? (
                       <Badge variant="success">Veröffentlicht</Badge>
                     ) : (
                       <Badge variant="warning">Entwurf</Badge>
                     )}
-                    <span className="text-xs text-[#5c574e]">
-                      {item.read_count} gelesen
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {!item.published_at ? (
-                    <Button size="sm" disabled={pending} onClick={() => publish(item.id)}>
-                      Veröffentlichen
-                    </Button>
-                  ) : null}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-[#cfc8bb] bg-transparent text-red-700"
-                    disabled={pending}
-                    onClick={() => remove(item.id)}
-                  >
-                    Löschen
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+                  </TableCell>
+                  <TableCell>{item.read_count}</TableCell>
+                  <TableCell>
+                    {item.expires_at
+                      ? new Date(item.expires_at).toLocaleString("de-DE")
+                      : "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      {!item.published_at ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={pending}
+                          onClick={() => publish(item.id)}
+                        >
+                          Veröffentlichen
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="border-[#d9d2c4] text-red-700"
+                        onClick={() => setDeleteTarget(item)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <FormDrawer
+        open={drawerOpen}
+        onOpenChange={(open) => {
+          setDrawerOpen(open);
+          if (!open) setForm(emptyForm());
+        }}
+        title="Neue Mitteilung"
+        loading={pending}
+        onSubmit={createItem}
+        submitLabel="Speichern"
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="ann-title">Titel</Label>
+            <Input
+              id="ann-title"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="ann-body">Text</Label>
+            <Textarea
+              id="ann-body"
+              rows={5}
+              value={form.body}
+              onChange={(e) => setForm({ ...form, body: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="ann-expires">Ablauf (optional)</Label>
+            <Input
+              id="ann-expires"
+              type="datetime-local"
+              value={form.expires_at}
+              onChange={(e) =>
+                setForm({ ...form, expires_at: e.target.value })
+              }
+            />
+          </div>
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.is_important}
+                onChange={(e) =>
+                  setForm({ ...form, is_important: e.target.checked })
+                }
+              />
+              Wichtig
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.publish}
+                onChange={(e) =>
+                  setForm({ ...form, publish: e.target.checked })
+                }
+              />
+              Sofort veröffentlichen
+            </label>
+          </div>
+        </div>
+      </FormDrawer>
+
+      <ConfirmDialog
+        open={deleteTarget != null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Mitteilung löschen?"
+        description={
+          deleteTarget
+            ? `„${deleteTarget.title}" wird unwiderruflich gelöscht.`
+            : undefined
+        }
+        confirmLabel="Löschen"
+        destructive
+        loading={pending}
+        onConfirm={confirmDelete}
+      />
+    </div>
   );
 }

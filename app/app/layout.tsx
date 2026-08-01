@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/navbar/navbar";
-import NavbarMobile from "@/components/navbar/mobile-menu";
+import { SiteChrome } from "@/components/navbar/site-chrome";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -32,8 +31,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <Navbar />
-          <NavbarMobile />
+          <SiteChrome />
           {children}
           <Toaster />
         </Providers>

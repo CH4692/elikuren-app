@@ -1,9 +1,11 @@
 "use client";
 
+import { Headphones } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { EmptyState } from "@/components/app/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,9 +89,9 @@ export function LibraryAudio() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Suche Titel oder Komponist"
-          className="max-w-sm"
+          className="max-w-sm border-[#ebe4d8] bg-white/80"
         />
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm text-[#5c574e]">
           <input
             type="checkbox"
             checked={myVoiceOnly}
@@ -103,24 +105,32 @@ export function LibraryAudio() {
           key={activeUrl}
           controls
           autoPlay
-          className="w-full"
+          className="w-full rounded-xl border border-[#ebe4d8] bg-white/80 p-2"
           src={activeUrl}
         />
       ) : null}
       {rows.length === 0 ? (
-        <p className="text-sm text-[#5c574e]">Keine veröffentlichten Audios.</p>
+        <EmptyState
+          icon={Headphones}
+          title="Kein Audio"
+          description={
+            myVoiceOnly
+              ? "Für deine Stimme ist noch kein Übematerial veröffentlicht."
+              : "Es ist noch kein Übematerial veröffentlicht."
+          }
+        />
       ) : (
         <ul className="space-y-2">
           {rows.map((row) => (
             <li
               key={row.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#C8A24D]/20 bg-white/70 px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#ebe4d8] bg-white/80 px-4 py-3"
             >
               <div>
                 <p className="font-medium">
                   <Link
                     href={`/library/pieces/${row.piece_id}`}
-                    className="hover:underline"
+                    className="text-[#1f1f23] hover:text-[#C8A24D] hover:underline"
                   >
                     {row.piece_title}
                   </Link>

@@ -1,9 +1,11 @@
 "use client";
 
+import { Music2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { EmptyState } from "@/components/app/empty-state";
 import { PdfPreview } from "@/components/library/pdf-preview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,9 +85,9 @@ export function LibraryScores() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Suche Titel oder Komponist"
-          className="max-w-sm"
+          className="max-w-sm border-[#ebe4d8] bg-white/80"
         />
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm text-[#5c574e]">
           <input
             type="checkbox"
             checked={myVoiceOnly}
@@ -95,19 +97,27 @@ export function LibraryScores() {
         </label>
       </div>
       {sheets.length === 0 ? (
-        <p className="text-sm text-[#5c574e]">Keine veröffentlichten Noten.</p>
+        <EmptyState
+          icon={Music2}
+          title="Keine Noten"
+          description={
+            myVoiceOnly
+              ? "Für deine Stimme sind noch keine Noten veröffentlicht."
+              : "Es sind noch keine Noten veröffentlicht."
+          }
+        />
       ) : (
         <ul className="space-y-2">
           {sheets.map((sheet) => (
             <li
               key={sheet.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#C8A24D]/20 bg-white/70 px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#ebe4d8] bg-white/80 px-4 py-3"
             >
               <div>
                 <p className="font-medium">
                   <Link
                     href={`/library/pieces/${sheet.piece_id}`}
-                    className="hover:underline"
+                    className="text-[#1f1f23] hover:text-[#C8A24D] hover:underline"
                   >
                     {sheet.piece_title}
                   </Link>

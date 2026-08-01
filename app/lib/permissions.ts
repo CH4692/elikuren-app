@@ -15,6 +15,8 @@ export const PERMISSIONS = [
   "INVOICE_WRITE",
   "PAYMENT_RECORD",
   "ROLE_MANAGE",
+  "CONTACT_MANAGE",
+  "AUDIT_READ",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -42,6 +44,8 @@ const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "INVOICE_WRITE",
     "PAYMENT_RECORD",
     "ROLE_MANAGE",
+    "CONTACT_MANAGE",
+    "AUDIT_READ",
   ],
   kassenwart: [
     "MEMBER_CONTENT_READ",
@@ -95,6 +99,8 @@ export function hasAdminAreaAccess(
     "EVENT_MANAGE",
     "ANNOUNCEMENT_MANAGE",
     "INVOICE_READ",
+    "CONTACT_MANAGE",
+    "AUDIT_READ",
   ]);
 }
 

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
+import { MemberShell } from "@/components/app/member-shell";
+import { PageHeader } from "@/components/app/page-header";
 import {
   Card,
   CardDescription,
@@ -69,17 +71,15 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <main className="mx-auto min-h-screen max-w-4xl px-4 pb-16 pt-28">
-      <header className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Hallo{user.firstname ? ` ${user.firstname}` : ""}
-        </h1>
-        <p className="mt-1 text-[#5c574e]">
-          {user.voice
+    <MemberShell>
+      <PageHeader
+        title={`Hallo${user.firstname ? ` ${user.firstname}` : ""}`}
+        description={
+          user.voice
             ? `Deine Stimme: ${user.voice}`
-            : "Stimme noch nicht hinterlegt – bitte im Profil ergänzen."}
-        </p>
-      </header>
+            : "Stimme noch nicht hinterlegt – bitte im Profil ergänzen."
+        }
+      />
 
       {importantAnnouncements.length > 0 ? (
         <section className="mb-8 space-y-2">
@@ -158,6 +158,6 @@ export default async function DashboardPage() {
           </Link>
         ) : null}
       </section>
-    </main>
+    </MemberShell>
   );
 }

@@ -1,3 +1,4 @@
+import { MemberShell } from "@/components/app/member-shell";
 import { PieceDetail } from "@/components/library/piece-detail";
 
 type Props = { params: Promise<{ pieceId: string }> };
@@ -5,8 +6,8 @@ type Props = { params: Promise<{ pieceId: string }> };
 export default async function LibraryPiecePage({ params }: Props) {
   const { pieceId } = await params;
   return (
-    <main className="mx-auto min-h-screen max-w-4xl px-4 pb-16 pt-28">
+    <MemberShell>
       <PieceDetail pieceId={pieceId} />
-    </main>
+    </MemberShell>
   );
 }
