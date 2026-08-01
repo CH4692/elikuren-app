@@ -1,8 +1,9 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { useState } from "react";
 
 import {
@@ -13,6 +14,22 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { hasPermission, type Permission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+
+function LogoutButton({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        onNavigate?.();
+        void signOut({ callbackUrl: "/" });
+      }}
+      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#F4F1EB]/70 transition hover:bg-red-500/10 hover:text-red-300"
+    >
+      <LogOut className="size-4 shrink-0" />
+      Abmelden
+    </button>
+  );
+}
 
 type AdminSidebarProps = {
   role: string;
@@ -79,13 +96,8 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
         <div className="flex-1 overflow-y-auto py-3">
           <NavList role={role} pathname={pathname} />
         </div>
-        <div className="border-t border-[var(--sidebar-border)] px-4 py-4">
-          <Link
-            href="/dashboard"
-            className="text-xs text-[#F4F1EB]/55 transition hover:text-[#C8A24D]"
-          >
-            ← Mitgliederbereich
-          </Link>
+        <div className="border-t border-[var(--sidebar-border)] px-3 py-3">
+          <LogoutButton />
         </div>
       </aside>
 
@@ -102,16 +114,21 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
           </Button>
           <SheetContent
             side="left"
-            className="w-72 border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] p-0 text-[var(--sidebar-foreground)]"
+            className="flex w-72 flex-col border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] p-0 text-[var(--sidebar-foreground)]"
           >
             <SheetHeader className="border-b border-[var(--sidebar-border)] px-4 py-4">
               <SheetTitle className="text-[#F4F1EB]">Verwaltung</SheetTitle>
             </SheetHeader>
-            <NavList
-              role={role}
-              pathname={pathname}
-              onNavigate={() => setOpen(false)}
-            />
+            <div className="flex-1 overflow-y-auto py-3">
+              <NavList
+                role={role}
+                pathname={pathname}
+                onNavigate={() => setOpen(false)}
+              />
+            </div>
+            <div className="border-t border-[var(--sidebar-border)] px-3 py-3">
+              <LogoutButton onNavigate={() => setOpen(false)} />
+            </div>
           </SheetContent>
         </Sheet>
         <div>
