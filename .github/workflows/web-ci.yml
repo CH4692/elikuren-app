@@ -21,21 +21,6 @@ jobs:
       run:
         working-directory: app
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: elikuren
-          POSTGRES_PASSWORD: elikuren
-          POSTGRES_DB: elikuren
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U elikuren -d elikuren"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
@@ -48,8 +33,18 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Use test env
-        run: cp .env.test .env.local
+      - name: Create .env.local from Neon secrets
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+        run: |
+          cp .env.test .env.local
+          {
+            echo "DATABASE_URL=$DATABASE_URL"
+            echo "DATABASE_URL_UNPOOLED=$DATABASE_URL_UNPOOLED"
+            echo "AUTH_SECRET=$AUTH_SECRET"
+          } >> .env.local
 
       - name: Migrate test database
         run: npm run db:migrate

@@ -1,21 +1,9 @@
 import { config as loadEnv } from "dotenv";
 import { defineConfig, devices } from "@playwright/test";
 
-// Local secrets win over committed test placeholders, except where noted below.
+// Safe defaults first, then Neon + secrets from .env.local (or CI-generated .env.local).
 loadEnv({ path: ".env.test" });
 loadEnv({ path: ".env.local", override: true });
-// Playwright/E2E always use committed test DB credentials (CI + docker-compose.test.yml).
-loadEnv({ path: ".env.test", override: true });
-
-const testDbPort = process.env.TEST_DB_PORT;
-if (testDbPort && testDbPort !== "5432") {
-  for (const key of ["DATABASE_URL", "DATABASE_URL_UNPOOLED"] as const) {
-    const value = process.env[key];
-    if (value?.includes(":5432/")) {
-      process.env[key] = value.replace(":5432/", `:${testDbPort}/`);
-    }
-  }
-}
 
 const port = process.env.PLAYWRIGHT_PORT ?? "3005";
 const baseURL = `http://127.0.0.1:${port}`;

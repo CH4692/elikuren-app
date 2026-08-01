@@ -11,18 +11,8 @@ import {
   getE2EMemberCredentials,
 } from "./helpers/credentials";
 
-loadEnv({ path: ".env.local" });
-loadEnv({ path: ".env.test", override: true });
-
-const testDbPort = process.env.TEST_DB_PORT;
-if (testDbPort && testDbPort !== "5432") {
-  for (const key of ["DATABASE_URL", "DATABASE_URL_UNPOOLED"] as const) {
-    const value = process.env[key];
-    if (value?.includes(":5432/")) {
-      process.env[key] = value.replace(":5432/", `:${testDbPort}/`);
-    }
-  }
-}
+loadEnv({ path: ".env.test" });
+loadEnv({ path: ".env.local", override: true });
 
 async function upsertUser(
   prisma: PrismaClient,
@@ -65,7 +55,9 @@ async function main() {
   const connectionString =
     process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
   if (!connectionString) {
-    throw new Error("DATABASE_URL is required for Playwright admin setup");
+    throw new Error(
+      "DATABASE_URL is required for Playwright admin setup (set in .env.local)",
+    );
   }
 
   const pool = new Pool({

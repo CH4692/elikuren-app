@@ -13,22 +13,19 @@ Next.js application for Kammerchor Elikuren (UI + API routes).
 |---|---|---|
 | `.env.example` | Template for new setups | committed |
 | `.env.local` | Local secrets (Next.js + Prisma) | ignored |
-| `.env.test` | Safe placeholders for CI / Playwright | committed |
+| `.env.test` | Non-secret Playwright/CI defaults (E2E users, auth placeholders) | committed |
 
 ```bash
 cp .env.example .env.local
-# fill real values (DB, AUTH_SECRET, RESEND_API_KEY, …)
+# Neon DATABASE_URL + DATABASE_URL_UNPOOLED, AUTH_SECRET, RESEND_API_KEY, …
 ```
 
-For Playwright locally, copy the test env and ensure PostgreSQL matches `.env.test`:
+Tests and local dev use **Neon** via `.env.local` (same as production). No local Postgres/Docker required.
 
 ```bash
-docker compose -f docker-compose.test.yml up -d   # Postgres on :5433 (avoids local :5432 conflicts)
-TEST_DB_PORT=5433 npm run db:migrate
-TEST_DB_PORT=5433 npm run test
+npm run db:migrate
+npm run test
 ```
-
-If port 5432 is free, omit `TEST_DB_PORT=5433`.
 
 ## Local development
 
@@ -69,7 +66,7 @@ npm run dev
 
 ## Tests
 
-Drei Ebenen — alle brauchen für Integration/UI eine erreichbare PostgreSQL-Instanz (CI startet Postgres als Service):
+Drei Ebenen — Integration/UI brauchen eine erreichbare **Neon**-Datenbank (lokal via `.env.local`, CI via GitHub Secrets `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AUTH_SECRET`):
 
 | Befehl | Ebene | Was wird geprüft |
 |---|---|---|
