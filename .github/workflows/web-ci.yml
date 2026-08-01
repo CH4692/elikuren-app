@@ -17,6 +17,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    environment: dev
     defaults:
       run:
         working-directory: app
@@ -50,11 +51,11 @@ jobs:
           auth="${AUTH_SECRET:-${NEXTAUTH_SECRET:-${VAR_AUTH_SECRET}}}"
 
           if [ -z "$db" ]; then
-            echo "::error::Missing DATABASE_URL (set repository secret DATABASE_URL or NEON_DATABASE_URL)"
+            echo "::error::Missing DATABASE_URL in the 'dev' environment (or repository secrets). Tried: DATABASE_URL, NEON_DATABASE_URL."
             exit 1
           fi
           if [ -z "$auth" ]; then
-            echo "::error::Missing AUTH_SECRET (set repository secret AUTH_SECRET or NEXTAUTH_SECRET)"
+            echo "::error::Missing AUTH_SECRET in the 'dev' environment (or repository secrets). Tried: AUTH_SECRET, NEXTAUTH_SECRET."
             exit 1
           fi
 
