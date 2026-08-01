@@ -7,7 +7,7 @@ Stand: fokussierter Mitgliederbereich mit Permission-Layer, Auth/Aktivstatus, Au
 - Dashboard
 - Noten/PDF-Stücke und MP3-Aufnahmen (`/library/*`)
 - Profil
-- Admin: Freigaben, Mitglieder, Stücke, Rechnungen, Kontakte, Audit-UI
+- Admin: Freigaben, Mitglieder, Stücke, Rechnungen, Audit-UI
 
 Termine und Mitteilungen werden über Spond verwaltet und sind in der App nicht enthalten.
 

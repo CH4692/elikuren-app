@@ -17,34 +17,29 @@ export default async function AdminIndexPage() {
   const canRequests = hasPermission(role, "ACCESS_REQUEST_MANAGE");
   const canPieces = hasPermission(role, "PIECE_MANAGE");
   const canInvoices = hasPermission(role, "INVOICE_READ");
-  const canContacts = hasPermission(role, "CONTACT_MANAGE");
 
   const now = new Date();
-  const [openRequests, draftPieces, overdueInvoices, activeContacts] =
-    await Promise.all([
-      canRequests
-        ? prisma.membershipRequest.count({ where: { status: "pending" } })
-        : Promise.resolve(null),
-      canPieces
-        ? prisma.musicPiece.count({ where: { publicationStatus: "DRAFT" } })
-        : Promise.resolve(null),
-      canInvoices
-        ? prisma.invoice.count({
-            where: {
-              OR: [
-                { status: "OVERDUE" },
-                {
-                  status: "OPEN",
-                  dueDate: { lt: now },
-                },
-              ],
-            },
-          })
-        : Promise.resolve(null),
-      canContacts
-        ? prisma.contact.count({ where: { archivedAt: null } })
-        : Promise.resolve(null),
-    ]);
+  const [openRequests, draftPieces, overdueInvoices] = await Promise.all([
+    canRequests
+      ? prisma.membershipRequest.count({ where: { status: "pending" } })
+      : Promise.resolve(null),
+    canPieces
+      ? prisma.musicPiece.count({ where: { publicationStatus: "DRAFT" } })
+      : Promise.resolve(null),
+    canInvoices
+      ? prisma.invoice.count({
+          where: {
+            OR: [
+              { status: "OVERDUE" },
+              {
+                status: "OPEN",
+                dueDate: { lt: now },
+              },
+            ],
+          },
+        })
+      : Promise.resolve(null),
+  ]);
 
   const kpis: AdminKpi[] = [
     canRequests
@@ -74,15 +69,6 @@ export default async function AdminIndexPage() {
           description: "Fälligkeit überschritten",
           icon: ADMIN_KPI_ICONS.invoices,
           attention: true,
-        }
-      : null,
-    canContacts
-      ? {
-          href: "/admin/contacts",
-          title: "Kontakte",
-          value: activeContacts ?? 0,
-          description: "Aktives Adressbuch",
-          icon: ADMIN_KPI_ICONS.contacts,
         }
       : null,
   ].filter(Boolean) as AdminKpi[];

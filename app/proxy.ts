@@ -37,12 +37,6 @@ function permissionForAdminPath(
     return "MEMBER_MANAGE";
   }
   if (
-    pathname.startsWith("/admin/contacts") ||
-    pathname.startsWith("/api/admin/contacts")
-  ) {
-    return "CONTACT_MANAGE";
-  }
-  if (
     pathname.startsWith("/admin/pieces") ||
     pathname.startsWith("/admin/scores") ||
     pathname.startsWith("/admin/audio") ||
@@ -73,7 +67,6 @@ function permissionForAdminPath(
       "MEMBER_MANAGE",
       "PIECE_MANAGE",
       "INVOICE_READ",
-      "CONTACT_MANAGE",
       "AUDIT_READ",
     ];
   }

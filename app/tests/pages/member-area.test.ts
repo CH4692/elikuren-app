@@ -17,7 +17,9 @@ test.describe("Mitgliederbereich Smoke", () => {
     await expect(
       sidebar.getByRole("link", { name: "Mitglieder", exact: true }),
     ).toBeVisible();
-    await expect(sidebar.getByRole("link", { name: "Kontakte" })).toBeVisible();
+    await expect(sidebar.getByRole("link", { name: "Kontakte" })).toHaveCount(
+      0,
+    );
     await expect(
       sidebar.getByRole("link", { name: "Zugangsanfragen" }),
     ).toBeVisible();

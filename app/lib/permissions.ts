@@ -10,7 +10,6 @@ export const PERMISSIONS = [
   "INVOICE_WRITE",
   "PAYMENT_RECORD",
   "ROLE_MANAGE",
-  "CONTACT_MANAGE",
   "AUDIT_READ",
 ] as const;
 
@@ -31,7 +30,6 @@ const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "INVOICE_WRITE",
     "PAYMENT_RECORD",
     "ROLE_MANAGE",
-    "CONTACT_MANAGE",
     "AUDIT_READ",
   ],
   kassenwart: [
@@ -78,7 +76,6 @@ export function hasAdminAreaAccess(
     "MEMBER_MANAGE",
     "PIECE_MANAGE",
     "INVOICE_READ",
-    "CONTACT_MANAGE",
     "AUDIT_READ",
   ]);
 }

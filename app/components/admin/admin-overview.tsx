@@ -1,6 +1,5 @@
 import {
   ArrowUpRight,
-  ContactRound,
   FileText,
   Music2,
   UserPlus,
@@ -159,5 +158,4 @@ export const ADMIN_KPI_ICONS = {
   requests: UserPlus,
   pieces: Music2,
   invoices: FileText,
-  contacts: ContactRound,
 } as const;

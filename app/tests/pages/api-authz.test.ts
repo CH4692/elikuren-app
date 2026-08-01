@@ -43,7 +43,6 @@ test.describe("API AuthZ", () => {
       "/api/admin/members",
       "/api/admin/invoices",
       "/api/admin/membership-requests",
-      "/api/admin/contacts",
       "/api/admin/audit",
       "/api/admin/scores",
       "/api/admin/audio",
@@ -52,9 +51,8 @@ test.describe("API AuthZ", () => {
     }
   });
 
-  test("member denied for contacts and audit APIs", async ({ page }) => {
+  test("member denied for audit API", async ({ page }) => {
     await loginAsMember(page);
-    expect((await page.request.get("/api/admin/contacts")).status()).toBe(403);
     expect((await page.request.get("/api/admin/audit")).status()).toBe(403);
   });
 

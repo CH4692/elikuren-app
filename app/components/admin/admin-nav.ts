@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  ContactRound,
   FileAudio,
   FileMusic,
   FileText,
@@ -33,12 +32,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Mitglieder",
     icon: Users,
     permission: "MEMBER_MANAGE",
-  },
-  {
-    href: "/admin/contacts",
-    label: "Kontakte",
-    icon: ContactRound,
-    permission: "CONTACT_MANAGE",
   },
   {
     href: "/admin/requests",

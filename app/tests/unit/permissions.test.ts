@@ -38,14 +38,12 @@ describe("Permission matrix V1", () => {
     assert.equal(perms.includes("PIECE_MANAGE"), false);
   });
 
-  it("vorstand can manage contacts and read audit", () => {
-    assert.equal(hasPermission("vorstand", "CONTACT_MANAGE"), true);
+  it("vorstand can read audit", () => {
     assert.equal(hasPermission("vorstand", "AUDIT_READ"), true);
   });
 
-  it("mitglied and kassenwart cannot manage contacts or audit", () => {
+  it("mitglied and kassenwart cannot read audit", () => {
     for (const role of ["mitglied", "kassenwart", "kassenpruefer"] as const) {
-      assert.equal(hasPermission(role, "CONTACT_MANAGE"), false);
       assert.equal(hasPermission(role, "AUDIT_READ"), false);
     }
   });
