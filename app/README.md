@@ -20,7 +20,7 @@ cp .env.example .env.local
 # Neon DATABASE_URL + DATABASE_URL_UNPOOLED, AUTH_SECRET, RESEND_API_KEY, …
 ```
 
-Local dev and full E2E use **Neon** via `.env.local`. GitHub CI is minimal (like charles-portfolio): typecheck, lint, build, public smoke tests — no Neon.
+Local dev and full E2E use **Neon** via `.env.local`. GitHub CI matches charles-portfolio (typecheck, lint, build, Playwright smoke) — no Neon secrets in the workflow.
 
 ```bash
 npm run db:migrate
@@ -70,10 +70,8 @@ npm run dev
 
 | Ort | Was |
 |---|---|
-| **GitHub `CI`** | Typecheck, lint, build, public Playwright smoke (wie charles-portfolio) |
+| **GitHub `CI`** (`deploy.yml`) | Typecheck, lint, build, public Playwright smoke |
 | **Lokal** (`npm run test`) | Unit + volles Playwright inkl. Auth/Admin gegen Neon |
-
-Auth-/Mitglieder-E2E laufen **nicht** in GitHub Actions (brauchen Neon + E2E-User).
 
 ### Befehle
 

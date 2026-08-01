@@ -2,11 +2,17 @@ import { execSync } from "node:child_process";
 import path from "node:path";
 
 /**
- * Seeds shared E2E users. Skipped in minimal CI smoke (SKIP_E2E_DB_SETUP=1).
+ * Seeds shared E2E users when a real database is available.
+ * Skipped in CI (placeholder DATABASE_URL in .env.test only).
  */
 export default function globalSetup() {
-  if (process.env.SKIP_E2E_DB_SETUP === "1") {
-    console.log("E2E DB setup skipped (SKIP_E2E_DB_SETUP=1)");
+  if (process.env.CI) {
+    return;
+  }
+
+  const url = process.env.DATABASE_URL ?? "";
+  if (!url || url.includes("@127.0.0.1:5432/build")) {
+    console.log("E2E DB setup skipped (no real DATABASE_URL)");
     return;
   }
 

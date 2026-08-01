@@ -1,16 +1,9 @@
 # CI
 
-| Workflow | Trigger | Purpose |
-|---|---|---|
-| `web-ci.yml` (`CI`) | push/PR on `app/**` | Typecheck, lint, build, public Playwright smoke |
+Same shape as [charles-portfolio](https://github.com/CH4692/charles-portfolio): typecheck, lint, build, Playwright.
 
-Mirrors [charles-portfolio](https://github.com/CH4692/charles-portfolio) CI: no Neon, no auth E2E on the runner.
+| Workflow | Trigger |
+|---|---|
+| `deploy.yml` (`CI`) | push/PR on `main`, `dev` |
 
-Full Playwright (membership, admin, …) is run **locally**:
-
-```bash
-cd app
-npm run test
-```
-
-Deploy: **Vercel** (Root Directory `app`) + **Neon**.
+Full auth/admin E2E runs locally against Neon (`cd app && npm run test`).

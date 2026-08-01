@@ -1,49 +1,44 @@
 import { config as loadEnv } from "dotenv";
 import { defineConfig, devices } from "@playwright/test";
 
-// Safe defaults first, then local secrets.
-loadEnv({ path: ".env.test" });
-loadEnv({ path: ".env.local", override: true });
+loadEnv({ path: ".env.test", quiet: true });
+loadEnv({ path: ".env.local", override: true, quiet: true });
 
 const isCI = !!process.env.CI;
-const previewUrl = (
-  process.env.PLAYWRIGHT_BASE_URL ||
-  process.env.BASE_URL ||
-  ""
-).replace(/\/$/, "");
-const againstRemote = previewUrl.length > 0;
-
-const port = process.env.PLAYWRIGHT_PORT ?? "3005";
-const baseURL = againstRemote ? previewUrl : `http://127.0.0.1:${port}`;
-
-const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
+const port = process.env.PLAYWRIGHT_PORT ?? "3000";
+const baseURL =
+  process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: "./tests",
   testIgnore: ["**/unit/**"],
+  // CI: public smoke only (no Neon). Locally: full suite.
+  ...(isCI
+    ? {
+        testMatch: [
+          "**/smoke/routes.test.ts",
+          "**/smoke/health.test.ts",
+          "**/pages/home.test.ts",
+          "**/pages/content.test.ts",
+        ],
+      }
+    : {}),
   globalSetup: "./tests/global-setup.ts",
   globalTeardown: "./tests/global-teardown.ts",
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
   workers: isCI ? 1 : undefined,
-  reporter: isCI
-    ? [["github"], ["html", { open: "never" }], ["list"]]
-    : [["html", { open: "never" }], ["list"]],
+  reporter: [
+    ["html", { open: "never" }],
+    ["list"],
+  ],
   timeout: 60_000,
   expect: { timeout: 10_000 },
   use: {
     baseURL,
     trace: "retain-on-failure",
     navigationTimeout: 45_000,
-    ...(bypass
-      ? {
-          extraHTTPHeaders: {
-            "x-vercel-protection-bypass": bypass,
-            "x-vercel-set-bypass-cookie": "true",
-          },
-        }
-      : {}),
   },
   projects: [
     {
@@ -51,33 +46,17 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  ...(againstRemote
-    ? {}
+  webServer: isCI
+    ? {
+        command: `npm run start -- -p ${port}`,
+        url: baseURL,
+        reuseExistingServer: false,
+        timeout: 120_000,
+      }
     : {
-        webServer: isCI
-          ? {
-              command: `npx next start --port ${port}`,
-              url: baseURL,
-              reuseExistingServer: false,
-              timeout: 120_000,
-              env: {
-                ...process.env,
-                PORT: port,
-                NEXT_PUBLIC_SITE_URL: baseURL,
-                AUTH_URL: baseURL,
-              },
-            }
-          : {
-              command: `npm run dev -- --port ${port}`,
-              url: baseURL,
-              reuseExistingServer: true,
-              timeout: 120_000,
-              env: {
-                ...process.env,
-                PORT: port,
-                NEXT_PUBLIC_SITE_URL: baseURL,
-                AUTH_URL: baseURL,
-              },
-            },
-      }),
+        command: `npm run dev -- -p ${port}`,
+        url: baseURL,
+        reuseExistingServer: true,
+        timeout: 120_000,
+      },
 });

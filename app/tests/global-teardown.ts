@@ -1,9 +1,14 @@
 import { execSync } from "node:child_process";
 import path from "node:path";
 
-/** Reset shared E2E users after Playwright (skipped when DB setup was skipped). */
+/** Reset shared E2E users after Playwright (local / real DB only). */
 export default function globalTeardown() {
-  if (process.env.SKIP_E2E_DB_SETUP === "1") {
+  if (process.env.CI) {
+    return;
+  }
+
+  const url = process.env.DATABASE_URL ?? "";
+  if (!url || url.includes("@127.0.0.1:5432/build")) {
     return;
   }
 

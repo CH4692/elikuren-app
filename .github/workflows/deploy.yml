@@ -1,20 +1,10 @@
-# Minimal CI — same shape as charles-portfolio:
-# typecheck + lint → build → lightweight Playwright smoke (no Neon / no auth E2E).
 name: CI
 
 on:
   push:
     branches: [main, dev]
-    paths:
-      - "app/**"
-      - ".github/workflows/web-ci.yml"
   pull_request:
-    paths:
-      - "app/**"
-      - ".github/workflows/web-ci.yml"
-
-permissions:
-  contents: read
+    branches: [main, dev]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -23,16 +13,11 @@ concurrency:
 env:
   NEXT_TELEMETRY_DISABLED: 1
   CI: true
-  # Prisma generate / next build need placeholders; smoke tests hit public pages only.
-  DATABASE_URL: postgresql://build:build@127.0.0.1:5432/build?sslmode=disable
-  DATABASE_URL_UNPOOLED: postgresql://build:build@127.0.0.1:5432/build?sslmode=disable
-  AUTH_SECRET: ci-build-auth-secret-not-for-runtime
-  SKIP_E2E_DB_SETUP: "1"
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: app
@@ -57,13 +42,15 @@ jobs:
           npm run lint
 
       - name: Build (Next)
-        run: npm run build
+        run: |
+          cp .env.test .env
+          npm run build
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps
 
-      - name: Run Playwright smoke
-        run: npx playwright test tests/smoke/routes.test.ts tests/pages/home.test.ts tests/pages/content.test.ts
+      - name: Run Playwright tests
+        run: npx playwright test
 
       - name: Upload Playwright report
         if: ${{ always() }}
