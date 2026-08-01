@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  CalendarDays,
   FileAudio,
   FileMusic,
   FileText,
@@ -36,6 +37,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Zugangsanfragen",
     icon: UserPlus,
     permission: "ACCESS_REQUEST_MANAGE",
+  },
+  {
+    href: "/admin/concerts",
+    label: "Konzerte",
+    icon: CalendarDays,
+    permission: "PIECE_MANAGE",
   },
   {
     href: "/admin/scores",

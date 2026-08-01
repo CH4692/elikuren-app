@@ -7,7 +7,7 @@ export default function LibraryAudioPage() {
     <MemberShell>
       <MemberPageIntro
         title="Audio & Üben"
-        description="Übematerial zum Anhören – nach Titel, Typ oder Stimme filtern."
+        description="Üben nach Stück und Stimme, oder Mitschnitte nach Konzert."
       />
       <LibraryAudio />
     </MemberShell>

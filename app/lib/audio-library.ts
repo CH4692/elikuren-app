@@ -15,6 +15,7 @@ export function serializeAudio(
     accessScope: FileAccessScope;
     durationSeconds: number | null;
     isVisible: boolean;
+    concertId?: string | null;
     createdAt: Date;
     updatedAt: Date;
     storedFile: {
@@ -35,6 +36,7 @@ export function serializeAudio(
     access_scope: audio.accessScope,
     duration_seconds: audio.durationSeconds,
     is_visible: audio.isVisible,
+    concert_id: audio.concertId ?? null,
     stored_file: {
       id: audio.storedFile.id,
       original_name: audio.storedFile.originalName,
@@ -89,6 +91,7 @@ export async function createAudio(input: {
   audioType?: AudioType;
   accessScope?: FileAccessScope;
   isVisible?: boolean;
+  concertId?: string | null;
 }) {
   const stored = await prisma.storedFile.findUnique({
     where: { id: input.storedFileId },
@@ -114,6 +117,7 @@ export async function createAudio(input: {
       audioType: input.audioType ?? "OTHER",
       accessScope: input.accessScope ?? "ALL_MEMBERS",
       isVisible: input.isVisible !== false,
+      concertId: input.concertId || null,
     },
     include: {
       storedFile: {

@@ -22,6 +22,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { uploadFileViaPresign } from "@/lib/upload-client";
+import {
+  AUDIO_TYPE_OPTIONS,
+  LIBRARY_VOICE_OPTIONS as VOICE_OPTIONS,
+} from "@/lib/voice-options";
 
 type AudioItem = {
   id: string;
@@ -50,31 +54,10 @@ type AudioForm = {
   accessScope: string;
 };
 
-const VOICE_OPTIONS = [
-  { value: "SOPRANO", label: "Sopran" },
-  { value: "ALTO", label: "Alt" },
-  { value: "TENOR", label: "Tenor" },
-  { value: "BASS", label: "Bass" },
-  { value: "OTHER", label: "Sonstige" },
-] as const;
-
 const SCOPE_OPTIONS = [
   { value: "ALL_MEMBERS", label: "Alle Mitglieder" },
   { value: "VOICE_GROUP_ONLY", label: "Nur Stimme" },
   { value: "ADMIN_ONLY", label: "Nur Admin" },
-] as const;
-
-const AUDIO_TYPE_OPTIONS = [
-  { value: "FULL_RECORDING", label: "Gesamtaufnahme" },
-  { value: "SOPRANO", label: "Sopran" },
-  { value: "ALTO", label: "Alt" },
-  { value: "TENOR", label: "Tenor" },
-  { value: "BASS", label: "Bass" },
-  { value: "PIANO", label: "Klavier" },
-  { value: "REHEARSAL", label: "Probe" },
-  { value: "PRONUNCIATION", label: "Aussprache" },
-  { value: "CONCERT_RECORDING", label: "Konzert" },
-  { value: "OTHER", label: "Sonstige" },
 ] as const;
 
 const selectClass =

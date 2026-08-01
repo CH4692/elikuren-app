@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { uploadFileViaPresign } from "@/lib/upload-client";
+import { LIBRARY_VOICE_OPTIONS as VOICE_OPTIONS } from "@/lib/voice-options";
 
 type ScoreItem = {
   id: string;
@@ -46,14 +47,6 @@ type ScoreForm = {
   voiceGroup: string;
   accessScope: string;
 };
-
-const VOICE_OPTIONS = [
-  { value: "SOPRANO", label: "Sopran" },
-  { value: "ALTO", label: "Alt" },
-  { value: "TENOR", label: "Tenor" },
-  { value: "BASS", label: "Bass" },
-  { value: "OTHER", label: "Sonstige" },
-] as const;
 
 const SCOPE_OPTIONS = [
   { value: "ALL_MEMBERS", label: "Alle Mitglieder" },

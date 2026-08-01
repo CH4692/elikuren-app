@@ -28,7 +28,6 @@ enum AudioType {
   BASS
   PIANO
   REHEARSAL
-  PRONUNCIATION
   CONCERT_RECORDING
   OTHER
 }
@@ -38,6 +37,8 @@ enum VoiceGroup {
   ALTO
   TENOR
   BASS
+  MUSICAL_TEAM
+  EIGHT_TO_THE_BAR
   OTHER
 }
 
@@ -191,6 +192,7 @@ model SheetFile {
   isVisible    Boolean         @default(true) @map("is_visible")
   createdAt    DateTime        @default(now()) @map("created_at")
   updatedAt    DateTime        @updatedAt @map("updated_at")
+  concertItems ConcertItem[]
 
   @@index([title])
   @@index([composer])
@@ -210,15 +212,62 @@ model AudioFile {
   accessScope     FileAccessScope @default(ALL_MEMBERS) @map("access_scope")
   durationSeconds Int?            @map("duration_seconds")
   isVisible       Boolean         @default(true) @map("is_visible")
+  /// When set, this track is a concert recording (or practice linked to an event).
+  concertId       String?         @map("concert_id")
+  concert         Concert?        @relation(fields: [concertId], references: [id], onDelete: SetNull)
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
+  concertItems    ConcertItem[]
 
   @@index([title])
   @@index([composer])
   @@index([audioType])
   @@index([voiceGroup])
   @@index([isVisible])
+  @@index([concertId])
   @@map("audio_files")
+}
+
+/// Performance / season program (setlist). Master catalog stays on SheetFile/AudioFile.
+model Concert {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  date        DateTime?     @db.Date
+  isCurrent   Boolean       @default(false) @map("is_current")
+  notes       String?       @db.Text
+  isVisible   Boolean       @default(true) @map("is_visible")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  items       ConcertItem[]
+  recordings  AudioFile[]
+
+  @@index([isCurrent])
+  @@index([date])
+  @@index([isVisible])
+  @@map("concerts")
+}
+
+/// Ordered program entry; optionally links a score and/or practice/concert audio.
+model ConcertItem {
+  id           String      @id @default(cuid())
+  concertId    String      @map("concert_id")
+  concert      Concert     @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  sortOrder    Int         @default(0) @map("sort_order")
+  title        String
+  ensemble     VoiceGroup? // null = Elikuren / alle; MUSICAL_TEAM / EIGHT_TO_THE_BAR for ensembles
+  sheetFileId  String?     @map("sheet_file_id")
+  sheetFile    SheetFile?  @relation(fields: [sheetFileId], references: [id], onDelete: SetNull)
+  audioFileId  String?     @map("audio_file_id")
+  audioFile    AudioFile?  @relation(fields: [audioFileId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@index([concertId, sortOrder])
+  @@index([sheetFileId])
+  @@index([audioFileId])
+  @@index([ensemble])
+  @@map("concert_items")
 }
 
 model UserFavorite {

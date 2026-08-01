@@ -41,10 +41,12 @@ function permissionForAdminPath(
   if (
     pathname.startsWith("/admin/scores") ||
     pathname.startsWith("/admin/audio") ||
+    pathname.startsWith("/admin/concerts") ||
     pathname.startsWith("/api/admin/files") ||
     pathname.startsWith("/api/admin/sheets") ||
     pathname.startsWith("/api/admin/audio") ||
-    pathname.startsWith("/api/admin/scores")
+    pathname.startsWith("/api/admin/scores") ||
+    pathname.startsWith("/api/admin/concerts")
   ) {
     return "PIECE_MANAGE";
   }

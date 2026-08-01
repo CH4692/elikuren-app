@@ -80,6 +80,9 @@ export async function listLibraryAudio(input: {
   q?: string;
   myVoiceOnly?: boolean;
   audioType?: AudioType | null;
+  /** practice = exclude concert recordings; concerts = only concert recordings */
+  section?: "practice" | "concerts" | null;
+  concertId?: string | null;
 }) {
   const myVoice = normalizeVoiceLabel(input.voice);
   const audios = await prisma.audioFile.findMany({
@@ -88,7 +91,16 @@ export async function listLibraryAudio(input: {
       ...(hasPermission(input.role, "PIECE_MANAGE")
         ? {}
         : { isVisible: true }),
-      ...(input.audioType ? { audioType: input.audioType } : {}),
+      ...(input.section === "concerts"
+        ? { audioType: "CONCERT_RECORDING" as const }
+        : input.section === "practice"
+          ? input.audioType && input.audioType !== "CONCERT_RECORDING"
+            ? { audioType: input.audioType }
+            : { audioType: { not: "CONCERT_RECORDING" as const } }
+          : input.audioType
+            ? { audioType: input.audioType }
+            : {}),
+      ...(input.concertId ? { concertId: input.concertId } : {}),
       ...(input.q
         ? {
             OR: [
@@ -98,7 +110,10 @@ export async function listLibraryAudio(input: {
           }
         : {}),
     },
-    include: { storedFile: true },
+    include: {
+      storedFile: true,
+      concert: { select: { id: true, title: true, slug: true, isCurrent: true } },
+    },
     orderBy: [{ title: "asc" }, { createdAt: "desc" }],
   });
 
@@ -128,6 +143,8 @@ export async function listLibraryAudio(input: {
       original_name: audio.storedFile.originalName,
       mime_type: audio.storedFile.mimeType,
       duration_seconds: audio.durationSeconds,
+      concert_id: audio.concertId,
+      concert_title: audio.concert?.title ?? null,
       created_at: audio.createdAt.toISOString(),
     }));
 }

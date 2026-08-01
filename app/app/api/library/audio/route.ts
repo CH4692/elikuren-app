@@ -12,7 +12,6 @@ const AUDIO_TYPES = new Set([
   "BASS",
   "PIANO",
   "REHEARSAL",
-  "PRONUNCIATION",
   "CONCERT_RECORDING",
   "OTHER",
 ]);
@@ -29,6 +28,12 @@ export async function GET(request: Request) {
     typeParam && AUDIO_TYPES.has(typeParam)
       ? (typeParam as AudioType)
       : null;
+  const sectionParam = searchParams.get("section");
+  const section =
+    sectionParam === "practice" || sectionParam === "concerts"
+      ? sectionParam
+      : null;
+  const concertId = searchParams.get("concertId")?.trim() || null;
 
   const items = await listLibraryAudio({
     role: gate.user.role,
@@ -36,6 +41,8 @@ export async function GET(request: Request) {
     q,
     myVoiceOnly,
     audioType,
+    section,
+    concertId,
   });
 
   return NextResponse.json({

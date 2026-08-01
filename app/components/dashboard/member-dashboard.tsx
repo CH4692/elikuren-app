@@ -66,8 +66,8 @@ export function MemberDashboard({
               Hallo {greetingName}
             </h1>
             <p className="max-w-xl text-sm leading-relaxed text-[#f4f1eb]/70 sm:text-base">
-              Schön, dass du da bist. Noten und Übematerial findest du in der
-              Bibliothek.
+              Schön, dass du da bist. Aktuelles Konzertprogramm, Notenkatalog
+              und Übematerial findest du in der Bibliothek.
             </p>
           </div>
           <Button

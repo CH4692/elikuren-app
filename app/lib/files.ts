@@ -88,7 +88,15 @@ export function normalizeVoiceLabel(
   voice: string | null | undefined,
 ): VoiceGroup | null {
   if (!voice) return null;
-  const v = voice.trim().toLowerCase();
+  const v = voice.trim().toLowerCase().replace(/[_]+/g, "-");
+  if (v.includes("musical") && v.includes("team")) return "MUSICAL_TEAM";
+  if (
+    v.includes("eight") ||
+    v.includes("8-to-the-bar") ||
+    v.includes("8ttb")
+  ) {
+    return "EIGHT_TO_THE_BAR";
+  }
   if (v.startsWith("sop")) return "SOPRANO";
   if (v.startsWith("alt")) return "ALTO";
   if (v.startsWith("ten")) return "TENOR";

@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { MEMBER_VOICE_OPTIONS as VOICE_OPTIONS } from "@/lib/voice-options";
 
 type RequestItem = {
   id: string;
@@ -41,7 +42,6 @@ type Draft = {
   adminNote: string;
 };
 
-const VOICE_OPTIONS = ["Sopran", "Alt", "Tenor", "Bass"] as const;
 const selectClass =
   "flex h-10 w-full rounded-xl border border-[#d9d2c4] bg-white px-3 py-2 text-sm text-[#1f1f23]";
 

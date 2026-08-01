@@ -130,7 +130,7 @@ export function MembershipRequestForm() {
             <Input
               id="voice"
               name="voice"
-              placeholder="Sopran, Alt, Tenor, Bass"
+              placeholder="Sopran, Alt, Tenor, Bass, musical team, …"
               className={fieldClass}
             />
           </div>
