@@ -1,12 +1,10 @@
 "use client";
 
 import {
-  CalendarDays,
   FileMusic,
   Headphones,
   LayoutDashboard,
   LogOut,
-  Megaphone,
   Shield,
   UserRound,
 } from "lucide-react";
@@ -59,13 +57,18 @@ function displayName(user: UserMenuUser) {
   return full || user.name || user.email || "Konto";
 }
 
-const memberLinks = [
+const memberOnlyLinks = [
   { href: "/dashboard", label: "Mitglieder-Dashboard", icon: LayoutDashboard },
   { href: "/profile", label: "Mein Profil", icon: UserRound },
   { href: "/library/scores", label: "Noten & Stücke", icon: FileMusic },
   { href: "/library/audio", label: "Audio & Üben", icon: Headphones },
-  { href: "/events", label: "Termine", icon: CalendarDays },
-  { href: "/announcements", label: "Mitteilungen", icon: Megaphone },
+] as const;
+
+const adminLinks = [
+  { href: "/admin", label: "Admin-Dashboard", icon: Shield },
+  { href: "/profile", label: "Mein Profil", icon: UserRound },
+  { href: "/library/scores", label: "Noten & Stücke", icon: FileMusic },
+  { href: "/library/audio", label: "Audio & Üben", icon: Headphones },
 ] as const;
 
 export function UserMenu({
@@ -78,6 +81,7 @@ export function UserMenu({
   const router = useRouter();
   const initials = initialsFor(user);
   const name = displayName(user);
+  const links = showAdmin ? adminLinks : memberOnlyLinks;
 
   if (variant === "mobile") {
     return (
@@ -96,7 +100,7 @@ export function UserMenu({
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          {memberLinks.map(({ href, label, icon: Icon }) => (
+          {links.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
@@ -107,16 +111,6 @@ export function UserMenu({
               {label}
             </Link>
           ))}
-          {showAdmin ? (
-            <Link
-              href="/admin"
-              onNavigate={onNavigate}
-              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-foreground transition hover:bg-primary/15"
-            >
-              <Shield className="size-4 text-primary" />
-              Admin-Dashboard
-            </Link>
-          ) : null}
           <button
             type="button"
             onClick={() => {
@@ -162,7 +156,7 @@ export function UserMenu({
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {memberLinks.map(({ href, label, icon: Icon }) => (
+        {links.map(({ href, label, icon: Icon }) => (
           <DropdownMenuItem
             key={href}
             onClick={() => router.push(href)}
@@ -171,15 +165,6 @@ export function UserMenu({
             {label}
           </DropdownMenuItem>
         ))}
-        {showAdmin ? (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/admin")}>
-              <Shield className="size-4" />
-              Admin-Dashboard
-            </DropdownMenuItem>
-          </>
-        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"

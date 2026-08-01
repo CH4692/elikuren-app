@@ -1,6 +1,5 @@
 import {
   ArrowUpRight,
-  CalendarDays,
   ContactRound,
   FileText,
   Music2,
@@ -159,7 +158,6 @@ function KpiTile({ kpi }: { kpi: AdminKpi }) {
 export const ADMIN_KPI_ICONS = {
   requests: UserPlus,
   pieces: Music2,
-  events: CalendarDays,
   invoices: FileText,
   contacts: ContactRound,
 } as const;

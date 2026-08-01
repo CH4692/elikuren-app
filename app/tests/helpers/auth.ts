@@ -21,12 +21,15 @@ async function loginWithCredentials(
   await form.locator('input[name="password"]').fill(password);
   await form.getByRole("button", { name: "Anmelden" }).click();
 
-  await expect(page).toHaveURL(/\/(dashboard|profile)/, { timeout: 20_000 });
+  await expect(page).toHaveURL(/\/(dashboard|profile|admin)/, {
+    timeout: 20_000,
+  });
 }
 
 export async function loginAsAdmin(page: Page) {
   const { email, password } = getE2EAdminCredentials();
   await loginWithCredentials(page, email, password);
+  await expect(page).toHaveURL(/\/admin/, { timeout: 20_000 });
 }
 
 export async function loginAsMember(page: Page) {

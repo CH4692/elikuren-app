@@ -8,13 +8,9 @@ const memberPrefixes = [
   "/dashboard",
   "/profile",
   "/library",
-  "/events",
-  "/announcements",
   "/api/me",
   "/api/library",
   "/api/files",
-  "/api/events",
-  "/api/announcements",
 ];
 
 const adminPrefixes = ["/admin", "/api/admin"];
@@ -59,18 +55,6 @@ function permissionForAdminPath(
     return "PIECE_MANAGE";
   }
   if (
-    pathname.startsWith("/admin/events") ||
-    pathname.startsWith("/api/admin/events")
-  ) {
-    return "EVENT_MANAGE";
-  }
-  if (
-    pathname.startsWith("/admin/announcements") ||
-    pathname.startsWith("/api/admin/announcements")
-  ) {
-    return "ANNOUNCEMENT_MANAGE";
-  }
-  if (
     pathname.startsWith("/admin/invoices") ||
     pathname.startsWith("/api/admin/invoices")
   ) {
@@ -88,8 +72,6 @@ function permissionForAdminPath(
       "ACCESS_REQUEST_MANAGE",
       "MEMBER_MANAGE",
       "PIECE_MANAGE",
-      "EVENT_MANAGE",
-      "ANNOUNCEMENT_MANAGE",
       "INVOICE_READ",
       "CONTACT_MANAGE",
       "AUDIT_READ",

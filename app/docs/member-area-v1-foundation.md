@@ -7,10 +7,9 @@ Stand: fokussierter Mitgliederbereich mit Permission-Layer, Auth/Aktivstatus, Au
 - Dashboard
 - Noten/PDF-Stücke und MP3-Aufnahmen (`/library/*`)
 - Profil
-- Einfache Ankündigungen
-- Admin: Freigaben, Mitglieder, Stücke, Mitteilungen
+- Admin: Freigaben, Mitglieder, Stücke, Rechnungen, Kontakte, Audit-UI
 
-Später ergänzbar: Rechnungen, Termine/RSVP, Kontakte, Audit-UI und weitere Module.
+Termine und Mitteilungen werden über Spond verwaltet und sind in der App nicht enthalten.
 
 ## 1. Permission-Layer
 
@@ -32,7 +31,7 @@ Später ergänzbar: Rechnungen, Termine/RSVP, Kontakte, Audit-UI und weitere Mod
 
 ## 4. Prisma & R2
 
-- Modelle u. a. `StoredFile`, `MusicPiece`, `SheetFile`, `AudioFile`, Announcements, `accessScope`, Publish-Felder.
+- Modelle u. a. `StoredFile`, `MusicPiece`, `SheetFile`, `AudioFile`, `accessScope`, Publish-Felder.
 - R2-Client: `lib/r2.ts` (Presigned PUT/GET, Head/Delete). Secrets nur serverseitig.
 - Upload-Flow APIs:
   - `POST /api/admin/files/presign` → PENDING + Presigned PUT

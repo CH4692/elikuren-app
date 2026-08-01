@@ -32,11 +32,6 @@ const ALLOWED: Record<
     ext: [".pdf", ".jpg", ".jpeg", ".png"],
     maxBytes: MAX_INVOICE_BYTES,
   },
-  ANNOUNCEMENT: {
-    mime: ["application/pdf", "image/jpeg", "image/png"],
-    ext: [".pdf", ".jpg", ".jpeg", ".png"],
-    maxBytes: MAX_INVOICE_BYTES,
-  },
   OTHER: {
     mime: ["application/pdf"],
     ext: [".pdf"],
@@ -69,7 +64,6 @@ export function objectKeyFor(input: {
   category: StoredFileCategory;
   pieceId?: string;
   invoiceId?: string;
-  announcementId?: string;
   fileId?: string;
   extension: string;
 }): string {
@@ -95,13 +89,6 @@ export function objectKeyFor(input: {
     return buildObjectKey([
       "invoices",
       input.invoiceId,
-      `${fileId}.${ext}`,
-    ]);
-  }
-  if (input.category === "ANNOUNCEMENT" && input.announcementId) {
-    return buildObjectKey([
-      "announcements",
-      input.announcementId,
       `${fileId}.${ext}`,
     ]);
   }

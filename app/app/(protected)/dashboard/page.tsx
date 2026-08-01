@@ -4,7 +4,6 @@ import { auth } from "@/auth";
 import { MemberDashboard } from "@/components/dashboard/member-dashboard";
 import { MemberShell } from "@/components/app/member-shell";
 import { prisma } from "@/lib/db";
-import { listEventsForMember } from "@/lib/events";
 import { listPublishedPiecesForUser } from "@/lib/library";
 import { hasAdminAreaAccess } from "@/lib/permissions";
 
@@ -23,14 +22,13 @@ export default async function DashboardPage() {
   });
   if (!user?.isActive) redirect("/auth/sign-in");
 
-  const now = new Date();
-  const [pieces, events] = await Promise.all([
-    listPublishedPiecesForUser({
-      role: user.role,
-      voice: user.voice,
-    }),
-    listEventsForMember(session.user.id, now),
-  ]);
+  // Admin-Rollen starten im Verwaltungsbereich, nicht im Mitglieder-Dashboard.
+  if (hasAdminAreaAccess(user.role)) redirect("/admin");
+
+  const pieces = await listPublishedPiecesForUser({
+    role: user.role,
+    voice: user.voice,
+  });
 
   const rehearsing = pieces.filter((p) => p.rehearsalStatus === "REHEARSING");
   const featured = rehearsing[0] ?? null;
@@ -74,23 +72,11 @@ export default async function DashboardPage() {
       kind,
     }));
 
-  const next = events[0] ?? null;
-  const nextEvent = next
-    ? {
-        id: next.id,
-        title: next.title,
-        startsAt: next.startsAt,
-        location: next.location,
-      }
-    : null;
-
   return (
     <MemberShell>
       <MemberDashboard
         firstname={user.firstname}
         voice={user.voice}
-        showAdmin={hasAdminAreaAccess(user.role)}
-        nextEvent={nextEvent}
         currentProject={currentProject}
         recentLibrary={recentLibrary}
       />

@@ -58,7 +58,6 @@ export async function PATCH(request: Request, { params }: Params) {
     note?: string | null;
     stored_file_id?: string | null;
     member_id?: string | null;
-    event_id?: string | null;
     status?: InvoiceStatus;
     paid_at?: string | null;
     payment_method?: string | null;
@@ -86,7 +85,6 @@ export async function PATCH(request: Request, { params }: Params) {
     "note" in body ||
     "stored_file_id" in body ||
     "member_id" in body ||
-    "event_id" in body ||
     ("status" in body && body.status !== "PAID");
 
   if (!wantsWrite) {
@@ -133,7 +131,6 @@ export async function PATCH(request: Request, { params }: Params) {
     note: body.note,
     storedFileId: body.stored_file_id,
     memberId: body.member_id,
-    eventId: body.event_id,
     status: body.status,
     paidAt:
       body.status === "PAID" && !body.paid_at

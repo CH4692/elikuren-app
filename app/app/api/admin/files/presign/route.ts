@@ -17,15 +17,11 @@ type Body = {
   sizeBytes?: number;
   pieceId?: string;
   invoiceId?: string;
-  announcementId?: string;
 };
 
 function permissionForCategory(category: StoredFileCategory) {
   if (category === "INVOICE") {
     return ["INVOICE_WRITE"] as const;
-  }
-  if (category === "ANNOUNCEMENT") {
-    return ["ANNOUNCEMENT_MANAGE"] as const;
   }
   return ["PIECE_MANAGE"] as const;
 }
@@ -47,7 +43,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const gate = await requireAnyPermission(permissionForCategory(category));
+  const needed = permissionForCategory(category);
+  if (!needed) {
+    return NextResponse.json(
+      { detail: "Kategorie nicht unterstützt", code: "validation_error" },
+      { status: 400 },
+    );
+  }
+
+  const gate = await requireAnyPermission(needed);
   if (!gate.ok) return gate.response;
 
   const originalName = String(body.originalName ?? "").trim();
@@ -77,7 +81,6 @@ export async function POST(request: Request) {
     category,
     pieceId: body.pieceId,
     invoiceId: body.invoiceId,
-    announcementId: body.announcementId,
     extension: validated.extension,
   });
 

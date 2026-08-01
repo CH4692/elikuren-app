@@ -79,6 +79,9 @@ test.describe("desktop navigation", () => {
     await expect(
       page.getByRole("menuitem", { name: "Admin-Dashboard" }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("menuitem", { name: "Mitglieder-Dashboard" }),
+    ).toHaveCount(0);
   });
 });
 

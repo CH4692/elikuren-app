@@ -3,13 +3,25 @@ import { headers } from "next/headers";
 
 import { signIn } from "@/auth";
 import { writeAccessAudit } from "@/lib/access-audit";
+import { prisma } from "@/lib/db";
 import { normalizeEmail } from "@/lib/permissions";
+import { postLoginPath } from "@/lib/post-login-path";
 import { canRequestMagicLink } from "@/lib/membership-requests";
 import {
   allowMagicLinkRequest,
   clientIpFromHeaders,
 } from "@/lib/rate-limit";
 import { Button } from "@/components/ui/button";
+
+async function resolvePostLoginRedirect(email: string, fallback: string) {
+  // Explicit deep-links (e.g. /profile) stay as requested.
+  if (fallback && fallback !== "/dashboard") return fallback;
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { role: true },
+  });
+  return postLoginPath(user?.role, fallback);
+}
 
 type AuthEmailFormProps = {
   title: string;
@@ -61,9 +73,10 @@ export function AuthEmailForm({
           }
 
           try {
+            const redirectTo = await resolvePostLoginRedirect(email, callbackUrl);
             await signIn("resend", {
               email,
-              redirectTo: callbackUrl,
+              redirectTo,
             });
           } catch (error) {
             if (error instanceof AuthError) {
@@ -121,10 +134,14 @@ export function AuthEmailForm({
               if (!email || !password) return;
 
               try {
+                const redirectTo = await resolvePostLoginRedirect(
+                  email,
+                  callbackUrl,
+                );
                 await signIn("credentials", {
                   email,
                   password,
-                  redirectTo: callbackUrl,
+                  redirectTo,
                 });
               } catch (error) {
                 if (error instanceof AuthError) {

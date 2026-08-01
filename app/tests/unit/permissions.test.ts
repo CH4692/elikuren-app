@@ -34,7 +34,7 @@ describe("Permission matrix V1", () => {
   it("mitglied baseline content permissions", () => {
     const perms = permissionsForRole("mitglied");
     assert.ok(perms.includes("MEMBER_CONTENT_READ"));
-    assert.ok(perms.includes("EVENT_RESPOND"));
+    assert.ok(perms.includes("PROFILE_WRITE_SELF"));
     assert.equal(perms.includes("PIECE_MANAGE"), false);
   });
 

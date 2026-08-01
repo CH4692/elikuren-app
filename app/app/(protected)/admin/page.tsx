@@ -16,44 +16,35 @@ export default async function AdminIndexPage() {
   const role = session.user.role;
   const canRequests = hasPermission(role, "ACCESS_REQUEST_MANAGE");
   const canPieces = hasPermission(role, "PIECE_MANAGE");
-  const canEvents = hasPermission(role, "EVENT_MANAGE");
   const canInvoices = hasPermission(role, "INVOICE_READ");
   const canContacts = hasPermission(role, "CONTACT_MANAGE");
 
   const now = new Date();
-  const [
-    openRequests,
-    draftPieces,
-    upcomingEvents,
-    overdueInvoices,
-    activeContacts,
-  ] = await Promise.all([
-    canRequests
-      ? prisma.membershipRequest.count({ where: { status: "pending" } })
-      : Promise.resolve(null),
-    canPieces
-      ? prisma.musicPiece.count({ where: { publicationStatus: "DRAFT" } })
-      : Promise.resolve(null),
-    canEvents
-      ? prisma.event.count({ where: { startsAt: { gte: now } } })
-      : Promise.resolve(null),
-    canInvoices
-      ? prisma.invoice.count({
-          where: {
-            OR: [
-              { status: "OVERDUE" },
-              {
-                status: "OPEN",
-                dueDate: { lt: now },
-              },
-            ],
-          },
-        })
-      : Promise.resolve(null),
-    canContacts
-      ? prisma.contact.count({ where: { archivedAt: null } })
-      : Promise.resolve(null),
-  ]);
+  const [openRequests, draftPieces, overdueInvoices, activeContacts] =
+    await Promise.all([
+      canRequests
+        ? prisma.membershipRequest.count({ where: { status: "pending" } })
+        : Promise.resolve(null),
+      canPieces
+        ? prisma.musicPiece.count({ where: { publicationStatus: "DRAFT" } })
+        : Promise.resolve(null),
+      canInvoices
+        ? prisma.invoice.count({
+            where: {
+              OR: [
+                { status: "OVERDUE" },
+                {
+                  status: "OPEN",
+                  dueDate: { lt: now },
+                },
+              ],
+            },
+          })
+        : Promise.resolve(null),
+      canContacts
+        ? prisma.contact.count({ where: { archivedAt: null } })
+        : Promise.resolve(null),
+    ]);
 
   const kpis: AdminKpi[] = [
     canRequests
@@ -73,15 +64,6 @@ export default async function AdminIndexPage() {
           value: draftPieces ?? 0,
           description: "Unveröffentlichte Stücke",
           icon: ADMIN_KPI_ICONS.pieces,
-        }
-      : null,
-    canEvents
-      ? {
-          href: "/admin/events",
-          title: "Kommende Termine",
-          value: upcomingEvents ?? 0,
-          description: "Ab heute",
-          icon: ADMIN_KPI_ICONS.events,
         }
       : null,
     canInvoices

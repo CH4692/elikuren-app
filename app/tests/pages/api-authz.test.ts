@@ -5,12 +5,8 @@ import { loginAsAdmin, loginAsAuditor, loginAsMember } from "../helpers/auth";
 const guestDenied = [
   "/api/me",
   "/api/library/pieces",
-  "/api/events",
-  "/api/announcements",
   "/api/admin/pieces",
   "/api/admin/members",
-  "/api/admin/events",
-  "/api/admin/announcements",
   "/api/admin/invoices",
   "/api/admin/files/presign",
 ] as const;
@@ -23,21 +19,13 @@ test.describe("API AuthZ", () => {
     });
   }
 
-  test("member can read library/events/announcements but not admin write APIs", async ({
-    page,
-  }) => {
+  test("member can read library but not admin write APIs", async ({ page }) => {
     await loginAsMember(page);
     expect((await page.request.get("/api/library/pieces")).ok()).toBeTruthy();
-    expect((await page.request.get("/api/events")).ok()).toBeTruthy();
-    expect((await page.request.get("/api/announcements")).ok()).toBeTruthy();
     expect((await page.request.get("/api/me")).ok()).toBeTruthy();
 
     expect((await page.request.get("/api/admin/pieces")).status()).toBe(403);
     expect((await page.request.get("/api/admin/members")).status()).toBe(403);
-    expect((await page.request.get("/api/admin/events")).status()).toBe(403);
-    expect((await page.request.get("/api/admin/announcements")).status()).toBe(
-      403,
-    );
     expect((await page.request.get("/api/admin/invoices")).status()).toBe(403);
   });
 
@@ -53,8 +41,6 @@ test.describe("API AuthZ", () => {
     for (const path of [
       "/api/admin/pieces",
       "/api/admin/members",
-      "/api/admin/events",
-      "/api/admin/announcements",
       "/api/admin/invoices",
       "/api/admin/membership-requests",
       "/api/admin/contacts",

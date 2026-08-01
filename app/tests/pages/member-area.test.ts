@@ -4,7 +4,7 @@ import { loginAsAdmin } from "../helpers/auth";
 
 /**
  * Smoke coverage for the member-area hub.
- * Detailed feature tests live in dedicated files (pieces, events, …).
+ * Detailed feature tests live in dedicated files (pieces, invoices, …).
  */
 test.describe("Mitgliederbereich Smoke", () => {
   test("admin shell shows sidebar links and overview", async ({ page }) => {
@@ -31,13 +31,17 @@ test.describe("Mitgliederbereich Smoke", () => {
     await expect(
       sidebar.getByRole("link", { name: "Audit-Log" }),
     ).toBeVisible();
+    await expect(sidebar.getByRole("link", { name: "Termine" })).toHaveCount(0);
+    await expect(
+      sidebar.getByRole("link", { name: "Mitteilungen" }),
+    ).toHaveCount(0);
   });
 
-  test("user menu navigates to dashboard", async ({ page }) => {
+  test("user menu navigates to admin dashboard for admins", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/home", { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: "Benutzermenü" }).click();
-    await page.getByRole("menuitem", { name: "Mitglieder-Dashboard" }).click();
-    await expect(page).toHaveURL(/\/dashboard/);
+    await page.getByRole("menuitem", { name: "Admin-Dashboard" }).click();
+    await expect(page).toHaveURL(/\/admin/);
   });
 });

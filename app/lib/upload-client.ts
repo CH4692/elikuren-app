@@ -3,10 +3,9 @@
 /** Browser-side controlled Presigned-PUT upload against our APIs. */
 export async function uploadFileViaPresign(input: {
   file: File;
-  category: "SHEET" | "AUDIO" | "INVOICE" | "ANNOUNCEMENT" | "OTHER";
+  category: "SHEET" | "AUDIO" | "INVOICE" | "OTHER";
   pieceId?: string;
   invoiceId?: string;
-  announcementId?: string;
 }): Promise<{ fileId: string }> {
   const intentRes = await fetch("/api/admin/files/presign", {
     method: "POST",
@@ -18,7 +17,6 @@ export async function uploadFileViaPresign(input: {
       sizeBytes: input.file.size,
       pieceId: input.pieceId,
       invoiceId: input.invoiceId,
-      announcementId: input.announcementId,
     }),
   });
 

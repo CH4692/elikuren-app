@@ -45,7 +45,6 @@ export async function POST(request: Request) {
     note?: string | null;
     stored_file_id?: string | null;
     member_id?: string | null;
-    event_id?: string | null;
   };
 
   const invoiceNumber = String(body.invoice_number ?? "").trim();
@@ -90,7 +89,6 @@ export async function POST(request: Request) {
       note: body.note,
       storedFileId: body.stored_file_id,
       memberId: body.member_id,
-      eventId: body.event_id,
     },
     gate.user.id,
   );

@@ -1,12 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  CalendarDays,
   ContactRound,
   FileAudio,
   FileMusic,
   FileText,
   LayoutDashboard,
-  Megaphone,
   Music2,
   ScrollText,
   Users,
@@ -65,18 +63,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Audiodateien",
     icon: FileAudio,
     permission: "PIECE_MANAGE",
-  },
-  {
-    href: "/admin/events",
-    label: "Termine",
-    icon: CalendarDays,
-    permission: "EVENT_MANAGE",
-  },
-  {
-    href: "/admin/announcements",
-    label: "Mitteilungen",
-    icon: Megaphone,
-    permission: "ANNOUNCEMENT_MANAGE",
   },
   {
     href: "/admin/invoices",

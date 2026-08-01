@@ -47,7 +47,6 @@ export function serializeInvoice(invoice: InvoiceWithRelations) {
           lastname: invoice.member.lastname,
         }
       : null,
-    event_id: invoice.eventId,
     created_by: invoice.createdBy
       ? {
           id: invoice.createdBy.id,
@@ -110,7 +109,6 @@ export type InvoiceCreateInput = {
   note?: string | null;
   storedFileId?: string | null;
   memberId?: string | null;
-  eventId?: string | null;
 };
 
 export async function createInvoice(
@@ -136,7 +134,6 @@ export async function createInvoice(
       note: data.note?.trim() || null,
       storedFileId: data.storedFileId || null,
       memberId: data.memberId || null,
-      eventId: data.eventId || null,
       createdById,
     },
     include: invoiceInclude,
@@ -184,9 +181,6 @@ export async function updateInvoice(id: string, data: InvoicePatchBody) {
   if ("memberId" in data) {
     const memberId = data.memberId;
     patch.member = memberId ? { connect: { id: memberId } } : { disconnect: true };
-  }
-  if ("eventId" in data) {
-    patch.eventId = data.eventId || null;
   }
   if ("status" in data && data.status != null) patch.status = data.status;
   if ("paidAt" in data)

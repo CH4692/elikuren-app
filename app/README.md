@@ -44,7 +44,7 @@ npm run dev
 
 ## Mitglieder- & Admin-Bereich
 
-- Eingeloggt: Avatar-Menü (Dashboard, Profil, Noten, Audio, Termine, Mitteilungen; Admin nur mit Admin-Rechten). Login/„Mitglied werden“ sind ausgeblendet.
+- Eingeloggt: Avatar-Menü (Dashboard, Profil, Noten, Audio; Admin nur mit Admin-Rechten). Login/„Mitglied werden“ sind ausgeblendet.
 - `/admin` nutzt eine eigene Shell mit berechtigungsbasierter Sidebar (ohne Marketing-Navbar).
 - Neue Permissions: `CONTACT_MANAGE`, `AUDIT_READ` (Vorstand). Unbekannte `/admin/*`-Pfade werden verweigert.
 - Kontakte sind ein separates Prisma-Modell `Contact` (optional `linkedUserId`); Auth/Rollen bleiben auf `User`.

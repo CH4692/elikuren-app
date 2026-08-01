@@ -26,40 +26,6 @@ export async function publishPiece(request: APIRequestContext, id: string) {
   return res.json();
 }
 
-export async function createEvent(
-  request: APIRequestContext,
-  input?: { title?: string; startsAt?: string },
-) {
-  const startsAt =
-    input?.startsAt ?? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
-  const res = await request.post("/api/admin/events", {
-    data: {
-      title: input?.title ?? `E2E Termin ${Date.now()}`,
-      type: "REHEARSAL",
-      starts_at: startsAt,
-      location: "Probenraum",
-    },
-  });
-  expect(res.ok()).toBeTruthy();
-  return res.json() as Promise<{ id: string; title: string }>;
-}
-
-export async function createAnnouncement(
-  request: APIRequestContext,
-  input?: { title?: string; body?: string; publish?: boolean },
-) {
-  const res = await request.post("/api/admin/announcements", {
-    data: {
-      title: input?.title ?? `E2E Mitteilung ${Date.now()}`,
-      body: input?.body ?? "Playwright Mitteilungstext",
-      is_important: true,
-      publish: input?.publish ?? true,
-    },
-  });
-  expect(res.ok()).toBeTruthy();
-  return res.json() as Promise<{ id: string; title: string }>;
-}
-
 export async function createInvoice(
   request: APIRequestContext,
   input?: { invoiceNumber?: string; amountCents?: number },

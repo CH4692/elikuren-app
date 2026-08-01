@@ -75,7 +75,6 @@ enum StoredFileCategory {
   SHEET
   AUDIO
   INVOICE
-  ANNOUNCEMENT
   OTHER
 }
 
@@ -113,28 +112,6 @@ enum ContentEventType {
   VIEWED
   PLAYED
   DOWNLOADED
-}
-
-enum EventType {
-  REHEARSAL
-  SPECIAL_REHEARSAL
-  GENERAL_REHEARSAL
-  CONCERT
-  SERVICE
-  PERFORMANCE
-  OTHER
-}
-
-enum RsvpStatus {
-  YES
-  NO
-  MAYBE
-}
-
-enum AnnouncementAudience {
-  ALL_MEMBERS
-  ROLE
-  VOICE_GROUP
 }
 
 enum InvoiceDocumentType {
@@ -183,8 +160,6 @@ model User {
   uploadedFiles  StoredFile[]          @relation("UploadedBy")
   favorites      UserFavorite[]
   contentEvents  UserContentEvent[]
-  eventResponses EventResponse[]
-  announcementReads AnnouncementRead[]
   createdInvoices Invoice[]            @relation("InvoiceCreatedBy")
   memberInvoices Invoice[]             @relation("InvoiceMember")
   auditLogs      AuditLog[]            @relation("AuditActor")
@@ -276,7 +251,6 @@ model StoredFile {
   sheetFiles   SheetFile[]
   audioFiles   AudioFile[]
   invoices     Invoice[]
-  announcementAttachments AnnouncementAttachment[]
 
   @@index([uploadStatus])
   @@index([category])
@@ -301,7 +275,6 @@ model MusicPiece {
   updatedAt          DateTime          @updatedAt @map("updated_at")
   sheetFiles         SheetFile[]
   audioFiles         AudioFile[]
-  events             Event[]
 
   @@index([title])
   @@index([composer])
@@ -381,92 +354,6 @@ model UserContentEvent {
   @@map("user_content_events")
 }
 
-model Event {
-  id           String    @id @default(cuid())
-  title        String
-  type         EventType @default(REHEARSAL)
-  startsAt     DateTime  @map("starts_at")
-  endsAt       DateTime? @map("ends_at")
-  location     String?
-  description  String?   @db.Text
-  rsvpDeadline DateTime? @map("rsvp_deadline")
-  pieceId      String?   @map("piece_id")
-  piece        MusicPiece? @relation(fields: [pieceId], references: [id], onDelete: SetNull)
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  responses    EventResponse[]
-
-  @@index([startsAt])
-  @@index([type])
-  @@map("events")
-}
-
-model EventResponse {
-  id        String     @id @default(cuid())
-  eventId   String     @map("event_id")
-  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  userId    String     @map("user_id")
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status    RsvpStatus
-  note      String?    @db.Text
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-
-  @@unique([eventId, userId])
-  @@map("event_responses")
-}
-
-model Announcement {
-  id          String    @id @default(cuid())
-  title       String
-  body        String    @db.Text
-  isImportant Boolean   @default(false) @map("is_important")
-  publishedAt DateTime? @map("published_at")
-  expiresAt   DateTime? @map("expires_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  targets     AnnouncementTarget[]
-  reads       AnnouncementRead[]
-  attachments AnnouncementAttachment[]
-
-  @@index([publishedAt])
-  @@map("announcements")
-}
-
-model AnnouncementTarget {
-  id             String               @id @default(cuid())
-  announcementId String               @map("announcement_id")
-  announcement   Announcement         @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  audience       AnnouncementAudience
-  role           Role?
-  voiceGroup     VoiceGroup?          @map("voice_group")
-
-  @@index([announcementId])
-  @@map("announcement_targets")
-}
-
-model AnnouncementRead {
-  id             String       @id @default(cuid())
-  announcementId String       @map("announcement_id")
-  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  userId         String       @map("user_id")
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  readAt         DateTime     @default(now()) @map("read_at")
-
-  @@unique([announcementId, userId])
-  @@map("announcement_reads")
-}
-
-model AnnouncementAttachment {
-  id             String       @id @default(cuid())
-  announcementId String       @map("announcement_id")
-  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  storedFileId   String       @map("stored_file_id")
-  storedFile     StoredFile   @relation(fields: [storedFileId], references: [id], onDelete: Restrict)
-
-  @@map("announcement_attachments")
-}
-
 model Invoice {
   id               String              @id @default(cuid())
   invoiceNumber    String              @unique @map("invoice_number")
@@ -490,7 +377,6 @@ model Invoice {
   storedFile       StoredFile?         @relation(fields: [storedFileId], references: [id], onDelete: SetNull)
   memberId         String?             @map("member_id")
   member           User?               @relation("InvoiceMember", fields: [memberId], references: [id], onDelete: SetNull)
-  eventId          String?             @map("event_id")
   createdById      String?             @map("created_by_id")
   createdBy        User?               @relation("InvoiceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt        DateTime            @default(now()) @map("created_at")
