@@ -10,16 +10,27 @@ import { prisma } from "@/lib/db";
 import type { Role } from "@/lib/generated/prisma/client";
 import { canRequestMagicLink } from "@/lib/membership-requests";
 
+const resendApiKey =
+  process.env.RESEND_API_KEY?.trim() ||
+  process.env.AUTH_RESEND_KEY?.trim() ||
+  "";
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  secret: process.env.AUTH_SECRET,
   providers: [
     Resend({
-      apiKey: process.env.RESEND_API_KEY,
+      apiKey: resendApiKey || undefined,
       from: process.env.EMAIL_FROM ?? "noreply@kammerchor-elikuren.de",
       // CI / .env.test use re_test_* — skip real Resend calls so Playwright can assert gates.
       async sendVerificationRequest(params) {
-        const apiKey = process.env.RESEND_API_KEY ?? "";
+        const apiKey = resendApiKey;
+        if (!apiKey) {
+          throw new Error(
+            "RESEND_API_KEY (or AUTH_RESEND_KEY) is not configured",
+          );
+        }
         if (apiKey.startsWith("re_test")) {
           console.info(
             `[auth:e2e] magic-link skipped (test key) for ${params.identifier}`,
@@ -30,7 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const res = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${provider.apiKey}`,
+            Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({

@@ -19,13 +19,15 @@
 
 1. Import the monorepo.
 2. **Root Directory:** `app`
-3. Production env vars (see `.env.example`), especially:
+3. Env vars for **Production and Preview** (see `.env.example`). Preview deployments do **not** inherit Production-only vars:
    - `AUTH_SECRET`
-   - `AUTH_URL=https://kammerchor-elikuren.de`
-   - `RESEND_API_KEY`
-   - `EMAIL_FROM`
-4. Custom domain: `kammerchor-elikuren.de`
-5. Build command:
+   - `AUTH_URL` — must match the public URL (e.g. `https://elikuren.charlesheller.dev` on Preview)
+   - `RESEND_API_KEY` (or `AUTH_RESEND_KEY`)
+   - `EMAIL_FROM` — domain must be verified in Resend
+   - `DATABASE_URL` / `DATABASE_URL_UNPOOLED`
+4. Custom domain (e.g. `elikuren.charlesheller.dev` / `kammerchor-elikuren.de`)
+5. Check `GET /api/health` → `auth.*` flags should all be `true`
+6. Build command:
 
 ```bash
 npx prisma migrate deploy && npm run build

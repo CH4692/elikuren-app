@@ -9,7 +9,7 @@ const MESSAGES: Record<string, { title: string; body: string }> = {
   },
   Configuration: {
     title: "Anmeldung fehlgeschlagen",
-    body: "Die Anmeldung ist derzeit nicht konfiguriert.",
+    body: "Die Anmeldung ist serverseitig nicht konfiguriert. Für Preview/Production müssen AUTH_SECRET, AUTH_URL, RESEND_API_KEY und EMAIL_FROM in Vercel gesetzt sein (Environment: Preview + Production).",
   },
   Verification: {
     title: "Anmeldung fehlgeschlagen",
