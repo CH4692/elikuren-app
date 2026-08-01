@@ -28,7 +28,6 @@ type Piece = {
   instrumentation: string | null;
   difficulty: string | null;
   rehearsal_status: "PLANNED" | "REHEARSING" | "PERFORMANCE_READY" | "ARCHIVED";
-  publication_status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   rehearsal_notes: string | null;
   description: string | null;
   sheet_files: Array<{
@@ -37,7 +36,7 @@ type Piece = {
     voice_group: string | null;
     access_scope: string;
     version: string;
-    published_at: string | null;
+    is_visible: boolean;
     stored_file: {
       id: string;
       original_name: string;
@@ -49,7 +48,7 @@ type Piece = {
     audio_type: string;
     voice_group: string | null;
     access_scope: string;
-    published_at: string | null;
+    is_visible: boolean;
     stored_file: {
       id: string;
       original_name: string;
@@ -81,13 +80,11 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
     sheetType: "CHOIR_SCORE",
     voiceGroup: "",
     accessScope: "ALL_MEMBERS",
-    publish: false,
   });
   const [audioMeta, setAudioMeta] = useState({
     audioType: "REHEARSAL",
     voiceGroup: "",
     accessScope: "ALL_MEMBERS",
-    publish: false,
   });
 
   const load = useCallback(async () => {
@@ -135,29 +132,6 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
     });
   }
 
-  function setPublication(status: Piece["publication_status"]) {
-    if (!piece) return;
-    startTransition(async () => {
-      const res = await fetch(`/api/admin/pieces/${piece.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicationStatus: status }),
-      });
-      if (!res.ok) {
-        toast.error("Statusänderung fehlgeschlagen");
-        return;
-      }
-      setPiece((await res.json()) as Piece);
-      toast.success(
-        status === "PUBLISHED"
-          ? "Stück veröffentlicht"
-          : status === "DRAFT"
-            ? "Als Entwurf zurückgesetzt"
-            : "Archiviert",
-      );
-    });
-  }
-
   function uploadSheet(file: File | null) {
     if (!file || !piece) return;
     startTransition(async () => {
@@ -175,7 +149,6 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
             sheetType: sheetMeta.sheetType,
             voiceGroup: sheetMeta.voiceGroup || null,
             accessScope: sheetMeta.accessScope,
-            publish: sheetMeta.publish,
           }),
         });
         if (!res.ok) throw new Error("attach failed");
@@ -206,7 +179,6 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
             audioType: audioMeta.audioType,
             voiceGroup: audioMeta.voiceGroup || null,
             accessScope: audioMeta.accessScope,
-            publish: audioMeta.publish,
           }),
         });
         if (!res.ok) throw new Error("attach failed");
@@ -220,11 +192,11 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
     });
   }
 
-  async function toggleSheetPublish(id: string, publish: boolean) {
+  async function toggleSheetVisibility(id: string, isVisible: boolean) {
     const res = await fetch(`/api/admin/sheets/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(publish ? { publish: true } : { unpublish: true }),
+      body: JSON.stringify({ isVisible }),
     });
     if (!res.ok) {
       toast.error("Aktualisierung fehlgeschlagen");
@@ -233,11 +205,11 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
     await load();
   }
 
-  async function toggleAudioPublish(id: string, publish: boolean) {
+  async function toggleAudioVisibility(id: string, isVisible: boolean) {
     const res = await fetch(`/api/admin/audio/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(publish ? { publish: true } : { unpublish: true }),
+      body: JSON.stringify({ isVisible }),
     });
     if (!res.ok) {
       toast.error("Aktualisierung fehlgeschlagen");
@@ -252,48 +224,24 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Link
-            href="/admin/pieces"
-            className="text-sm text-primary underline-offset-4 hover:underline"
-          >
-            ← Zurück zur Übersicht
-          </Link>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-            {piece.title}
-          </h1>
-          <p className="text-[#5c574e]">{piece.composer}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {piece.publication_status === "PUBLISHED" ? (
-            <Badge variant="success">Veröffentlicht</Badge>
-          ) : piece.publication_status === "ARCHIVED" ? (
-            <Badge variant="danger">Archiviert</Badge>
-          ) : (
-            <Badge variant="warning">Entwurf</Badge>
-          )}
-          {piece.publication_status !== "PUBLISHED" ? (
-            <Button disabled={pending} onClick={() => setPublication("PUBLISHED")}>
-              Stück veröffentlichen
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              disabled={pending}
-              onClick={() => setPublication("DRAFT")}
-            >
-              Zurück zu Entwurf
-            </Button>
-          )}
-        </div>
+      <div>
+        <Link
+          href="/admin/pieces"
+          className="text-sm text-primary underline-offset-4 hover:underline"
+        >
+          ← Zurück zur Übersicht
+        </Link>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+          {piece.title}
+        </h1>
+        <p className="text-[#5c574e]">{piece.composer || "—"}</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Stammdaten</CardTitle>
           <CardDescription>
-            Änderungen bleiben Entwurf, bis das Stück veröffentlicht ist.
+            Titel, Komponist und Probenstatus dieses Stücks.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
@@ -305,7 +253,7 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Komponist</Label>
+            <Label>Komponist (optional)</Label>
             <Input
               value={piece.composer}
               onChange={(e) => setPiece({ ...piece, composer: e.target.value })}
@@ -360,12 +308,12 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
         <CardHeader>
           <CardTitle>Noten (PDF)</CardTitle>
           <CardDescription>
-            Upload über Presigned PUT zu R2. Dateien sind erst nach
-            Veröffentlichung sichtbar.
+            Upload über Presigned PUT zu R2. Neue Dateien sind standardmäßig
+            sichtbar.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-1.5">
               <Label>Typ</Label>
               <select
@@ -417,16 +365,6 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
                 ))}
               </select>
             </div>
-            <label className="flex items-end gap-2 pb-2 text-sm">
-              <input
-                type="checkbox"
-                checked={sheetMeta.publish}
-                onChange={(e) =>
-                  setSheetMeta({ ...sheetMeta, publish: e.target.checked })
-                }
-              />
-              Sofort veröffentlichen
-            </label>
           </div>
           <Input
             type="file"
@@ -449,19 +387,19 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {sheet.published_at ? (
-                    <Badge variant="success">Datei live</Badge>
+                  {sheet.is_visible ? (
+                    <Badge variant="success">Sichtbar</Badge>
                   ) : (
-                    <Badge variant="warning">Datei Entwurf</Badge>
+                    <Badge variant="warning">Versteckt</Badge>
                   )}
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() =>
-                      void toggleSheetPublish(sheet.id, !sheet.published_at)
+                      void toggleSheetVisibility(sheet.id, !sheet.is_visible)
                     }
                   >
-                    {sheet.published_at ? "Zurückziehen" : "Veröffentlichen"}
+                    {sheet.is_visible ? "Verstecken" : "Sichtbar machen"}
                   </Button>
                 </div>
               </li>
@@ -476,7 +414,7 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
           <CardDescription>MP3/M4A/WAV über denselben R2-Flow.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-1.5">
               <Label>Typ</Label>
               <select
@@ -530,16 +468,6 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
                 ))}
               </select>
             </div>
-            <label className="flex items-end gap-2 pb-2 text-sm">
-              <input
-                type="checkbox"
-                checked={audioMeta.publish}
-                onChange={(e) =>
-                  setAudioMeta({ ...audioMeta, publish: e.target.checked })
-                }
-              />
-              Sofort veröffentlichen
-            </label>
           </div>
           <Input
             type="file"
@@ -562,19 +490,19 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {audio.published_at ? (
-                    <Badge variant="success">Datei live</Badge>
+                  {audio.is_visible ? (
+                    <Badge variant="success">Sichtbar</Badge>
                   ) : (
-                    <Badge variant="warning">Datei Entwurf</Badge>
+                    <Badge variant="warning">Versteckt</Badge>
                   )}
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() =>
-                      void toggleAudioPublish(audio.id, !audio.published_at)
+                      void toggleAudioVisibility(audio.id, !audio.is_visible)
                     }
                   >
-                    {audio.published_at ? "Zurückziehen" : "Veröffentlichen"}
+                    {audio.is_visible ? "Verstecken" : "Sichtbar machen"}
                   </Button>
                 </div>
               </li>

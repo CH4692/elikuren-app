@@ -19,12 +19,14 @@ export default async function AdminIndexPage() {
   const canInvoices = hasPermission(role, "INVOICE_READ");
 
   const now = new Date();
-  const [openRequests, draftPieces, overdueInvoices] = await Promise.all([
+  const [openRequests, libraryPieces, overdueInvoices] = await Promise.all([
     canRequests
       ? prisma.membershipRequest.count({ where: { status: "pending" } })
       : Promise.resolve(null),
     canPieces
-      ? prisma.musicPiece.count({ where: { publicationStatus: "DRAFT" } })
+      ? prisma.musicPiece.count({
+          where: { rehearsalStatus: { not: "ARCHIVED" } },
+        })
       : Promise.resolve(null),
     canInvoices
       ? prisma.invoice.count({
@@ -55,9 +57,9 @@ export default async function AdminIndexPage() {
     canPieces
       ? {
           href: "/admin/pieces",
-          title: "Entwürfe",
-          value: draftPieces ?? 0,
-          description: "Unveröffentlichte Stücke",
+          title: "Stücke",
+          value: libraryPieces ?? 0,
+          description: "In der Bibliothek",
           icon: ADMIN_KPI_ICONS.pieces,
         }
       : null,

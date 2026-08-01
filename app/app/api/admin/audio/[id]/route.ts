@@ -27,13 +27,8 @@ export async function PATCH(request: Request, { params }: Params) {
     audioType?: AudioType;
     voiceGroup?: VoiceGroup | null;
     accessScope?: FileAccessScope;
-    publish?: boolean;
-    unpublish?: boolean;
+    isVisible?: boolean;
   };
-
-  let publishedAt = existing.publishedAt;
-  if (body.publish) publishedAt = new Date();
-  if (body.unpublish) publishedAt = null;
 
   const updated = await prisma.audioFile.update({
     where: { id },
@@ -41,13 +36,13 @@ export async function PATCH(request: Request, { params }: Params) {
       audioType: body.audioType,
       voiceGroup: body.voiceGroup === undefined ? undefined : body.voiceGroup,
       accessScope: body.accessScope,
-      publishedAt,
+      isVisible: body.isVisible,
     },
   });
 
   return NextResponse.json({
     id: updated.id,
-    published_at: updated.publishedAt?.toISOString() ?? null,
+    is_visible: updated.isVisible,
   });
 }
 

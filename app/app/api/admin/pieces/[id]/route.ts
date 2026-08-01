@@ -45,39 +45,25 @@ export async function PATCH(request: Request, { params }: Params) {
     rehearsalNotes?: string | null;
     description?: string | null;
     rehearsalStatus?: "PLANNED" | "REHEARSING" | "PERFORMANCE_READY" | "ARCHIVED";
-    publicationStatus?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   };
 
   const title =
     body.title !== undefined ? String(body.title).trim() : existing.title;
-  const composer =
-    body.composer !== undefined
-      ? String(body.composer).trim()
-      : existing.composer;
-  if (!title || !composer) {
+  if (!title) {
     return NextResponse.json(
-      { detail: "Titel und Komponist sind Pflicht", code: "validation_error" },
+      { detail: "Titel ist Pflicht", code: "validation_error" },
       { status: 400 },
     );
-  }
-
-  let publicationStatus = existing.publicationStatus;
-  let publishedAt = existing.publishedAt;
-  if (body.publicationStatus) {
-    publicationStatus = body.publicationStatus;
-    if (publicationStatus === "PUBLISHED" && !publishedAt) {
-      publishedAt = new Date();
-    }
-    if (publicationStatus !== "PUBLISHED") {
-      publishedAt = publicationStatus === "DRAFT" ? null : publishedAt;
-    }
   }
 
   const piece = await prisma.musicPiece.update({
     where: { id },
     data: {
       title,
-      composer,
+      composer:
+        body.composer !== undefined
+          ? String(body.composer).trim()
+          : undefined,
       arranger:
         body.arranger !== undefined
           ? body.arranger?.trim() || null
@@ -104,8 +90,6 @@ export async function PATCH(request: Request, { params }: Params) {
           ? body.description?.trim() || null
           : undefined,
       rehearsalStatus: body.rehearsalStatus,
-      publicationStatus,
-      publishedAt,
     },
     include: {
       sheetFiles: {
@@ -139,7 +123,7 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   await prisma.musicPiece.update({
     where: { id },
-    data: { publicationStatus: "ARCHIVED" },
+    data: { rehearsalStatus: "ARCHIVED" },
   });
 
   return NextResponse.json({ archived: true });

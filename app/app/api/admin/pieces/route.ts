@@ -32,10 +32,9 @@ export async function POST(request: Request) {
   };
 
   const title = String(body.title ?? "").trim();
-  const composer = String(body.composer ?? "").trim();
-  if (!title || !composer) {
+  if (!title) {
     return NextResponse.json(
-      { detail: "Titel und Komponist sind Pflicht", code: "validation_error" },
+      { detail: "Titel ist Pflicht", code: "validation_error" },
       { status: 400 },
     );
   }
@@ -43,7 +42,7 @@ export async function POST(request: Request) {
   const piece = await prisma.musicPiece.create({
     data: {
       title,
-      composer,
+      composer: String(body.composer ?? "").trim(),
       arranger: body.arranger?.trim() || null,
       category: body.category?.trim() || null,
       epoch: body.epoch?.trim() || null,
@@ -52,7 +51,6 @@ export async function POST(request: Request) {
       rehearsalNotes: body.rehearsalNotes?.trim() || null,
       description: body.description?.trim() || null,
       rehearsalStatus: body.rehearsalStatus ?? "PLANNED",
-      publicationStatus: "DRAFT",
     },
     include: {
       sheetFiles: { include: { storedFile: true } },

@@ -46,7 +46,7 @@ export async function GET(request: Request) {
       voice_group: audio.voiceGroup,
       access_scope: audio.accessScope,
       duration_seconds: audio.durationSeconds,
-      published_at: audio.publishedAt?.toISOString() ?? null,
+      is_visible: audio.isVisible,
       stored_file: {
         id: audio.storedFile.id,
         original_name: audio.storedFile.originalName,

@@ -22,10 +22,8 @@ export function serializePiece(piece: PieceWithFiles) {
     instrumentation: piece.instrumentation,
     difficulty: piece.difficulty,
     rehearsal_status: piece.rehearsalStatus,
-    publication_status: piece.publicationStatus,
     rehearsal_notes: piece.rehearsalNotes,
     description: piece.description,
-    published_at: piece.publishedAt?.toISOString() ?? null,
     created_at: piece.createdAt.toISOString(),
     updated_at: piece.updatedAt.toISOString(),
     sheet_files: piece.sheetFiles.map((sheet) => ({
@@ -36,7 +34,7 @@ export function serializePiece(piece: PieceWithFiles) {
       version: sheet.version,
       is_current: sheet.isCurrent,
       changelog: sheet.changelog,
-      published_at: sheet.publishedAt?.toISOString() ?? null,
+      is_visible: sheet.isVisible,
       sort_order: sheet.sortOrder,
       stored_file: {
         id: sheet.storedFile.id,
@@ -53,7 +51,7 @@ export function serializePiece(piece: PieceWithFiles) {
       access_scope: audio.accessScope,
       duration_seconds: audio.durationSeconds,
       sort_order: audio.sortOrder,
-      published_at: audio.publishedAt?.toISOString() ?? null,
+      is_visible: audio.isVisible,
       stored_file: {
         id: audio.storedFile.id,
         original_name: audio.storedFile.originalName,
@@ -65,38 +63,30 @@ export function serializePiece(piece: PieceWithFiles) {
   };
 }
 
+const pieceInclude = {
+  sheetFiles: {
+    where: { storedFile: { deletedAt: null } },
+    include: { storedFile: true },
+    orderBy: [{ sortOrder: "asc" as const }, { createdAt: "asc" as const }],
+  },
+  audioFiles: {
+    where: { storedFile: { deletedAt: null } },
+    include: { storedFile: true },
+    orderBy: [{ sortOrder: "asc" as const }, { createdAt: "asc" as const }],
+  },
+};
+
 export async function getPieceById(id: string) {
   return prisma.musicPiece.findUnique({
     where: { id },
-    include: {
-      sheetFiles: {
-        where: { storedFile: { deletedAt: null } },
-        include: { storedFile: true },
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      },
-      audioFiles: {
-        where: { storedFile: { deletedAt: null } },
-        include: { storedFile: true },
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      },
-    },
+    include: pieceInclude,
   });
 }
 
 export async function listPiecesAdmin() {
   return prisma.musicPiece.findMany({
-    include: {
-      sheetFiles: {
-        where: { storedFile: { deletedAt: null } },
-        include: { storedFile: true },
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      },
-      audioFiles: {
-        where: { storedFile: { deletedAt: null } },
-        include: { storedFile: true },
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      },
-    },
+    where: { rehearsalStatus: { not: "ARCHIVED" } },
+    include: pieceInclude,
     orderBy: [{ updatedAt: "desc" }],
   });
 }

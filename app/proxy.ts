@@ -41,6 +41,7 @@ function permissionForAdminPath(
     pathname.startsWith("/admin/scores") ||
     pathname.startsWith("/admin/audio") ||
     pathname.startsWith("/api/admin/pieces") ||
+    pathname.startsWith("/api/admin/library") ||
     pathname.startsWith("/api/admin/files") ||
     pathname.startsWith("/api/admin/sheets") ||
     pathname.startsWith("/api/admin/audio") ||

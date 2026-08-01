@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 
 import { requirePermission } from "@/lib/authz";
-import { prisma } from "@/lib/db";
 import type {
   FileAccessScope,
   SheetType,
   VoiceGroup,
 } from "@/lib/generated/prisma/client";
-import { getPieceById, serializePiece } from "@/lib/pieces";
+import { AttachError, attachLibraryFile } from "@/lib/library-attach";
+import { getPieceById } from "@/lib/pieces";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -29,9 +29,7 @@ export async function POST(request: Request, { params }: Params) {
     sheetType?: SheetType;
     voiceGroup?: VoiceGroup | null;
     accessScope?: FileAccessScope;
-    version?: string;
-    changelog?: string | null;
-    publish?: boolean;
+    isVisible?: boolean;
   };
 
   if (!body.storedFileId) {
@@ -41,35 +39,24 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const stored = await prisma.storedFile.findUnique({
-    where: { id: body.storedFileId },
-  });
-  if (
-    !stored ||
-    stored.deletedAt ||
-    stored.uploadStatus !== "READY" ||
-    stored.category !== "SHEET"
-  ) {
-    return NextResponse.json(
-      { detail: "Datei nicht bereit", code: "validation_error" },
-      { status: 400 },
-    );
-  }
-
-  const publish = Boolean(body.publish);
-  await prisma.sheetFile.create({
-    data: {
+  try {
+    const updated = await attachLibraryFile({
+      storedFileId: body.storedFileId,
+      kind: "sheet",
       pieceId,
-      storedFileId: stored.id,
-      sheetType: body.sheetType ?? "OTHER",
-      voiceGroup: body.voiceGroup ?? null,
-      accessScope: body.accessScope ?? "ALL_MEMBERS",
-      version: body.version?.trim() || "1",
-      changelog: body.changelog?.trim() || null,
-      publishedAt: publish ? new Date() : null,
-    },
-  });
-
-  const updated = await getPieceById(pieceId);
-  return NextResponse.json(serializePiece(updated!), { status: 201 });
+      sheetType: body.sheetType,
+      voiceGroup: body.voiceGroup,
+      accessScope: body.accessScope,
+      isVisible: body.isVisible,
+    });
+    return NextResponse.json(updated, { status: 201 });
+  } catch (error) {
+    if (error instanceof AttachError) {
+      return NextResponse.json(
+        { detail: error.message, code: error.code },
+        { status: error.status },
+      );
+    }
+    throw error;
+  }
 }

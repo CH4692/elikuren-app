@@ -1,22 +1,23 @@
 import { test, expect } from "@playwright/test";
 
-import { createInvoice, createPiece, publishPiece } from "../helpers/api";
+import { createInvoice, createPiece } from "../helpers/api";
 import { loginAsAdmin, loginAsAuditor, loginAsMember } from "../helpers/auth";
 
 test.describe("Library API integration", () => {
-  test("published piece appears in member library list", async ({ page }) => {
+  test("member can list library; empty piece is omitted", async ({ page }) => {
     await loginAsAdmin(page);
     const piece = await createPiece(page.request, {
       title: `Int Library ${Date.now()}`,
     });
-    await publishPiece(page.request, piece.id);
 
     await page.context().clearCookies();
     await loginAsMember(page);
     const res = await page.request.get("/api/library/pieces");
     expect(res.ok()).toBeTruthy();
-    const body = (await res.json()) as { items: Array<{ id: string; title: string }> };
-    expect(body.items.some((item) => item.id === piece.id)).toBeTruthy();
+    const body = (await res.json()) as {
+      items: Array<{ id: string; title: string }>;
+    };
+    expect(body.items.some((item) => item.id === piece.id)).toBeFalsy();
   });
 });
 

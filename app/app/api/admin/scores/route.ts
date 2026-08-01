@@ -46,7 +46,7 @@ export async function GET(request: Request) {
       voice_group: sheet.voiceGroup,
       access_scope: sheet.accessScope,
       version: sheet.version,
-      published_at: sheet.publishedAt?.toISOString() ?? null,
+      is_visible: sheet.isVisible,
       stored_file: {
         id: sheet.storedFile.id,
         original_name: sheet.storedFile.originalName,

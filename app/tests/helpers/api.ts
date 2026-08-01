@@ -18,9 +18,13 @@ export async function createPiece(
   return res.json() as Promise<{ id: string; title: string }>;
 }
 
-export async function publishPiece(request: APIRequestContext, id: string) {
+/** Mark piece as currently in rehearsal (dashboard “aktuelles Projekt”). */
+export async function setPieceRehearsing(
+  request: APIRequestContext,
+  id: string,
+) {
   const res = await request.patch(`/api/admin/pieces/${id}`, {
-    data: { publicationStatus: "PUBLISHED", rehearsalStatus: "REHEARSING" },
+    data: { rehearsalStatus: "REHEARSING" },
   });
   expect(res.ok()).toBeTruthy();
   return res.json();

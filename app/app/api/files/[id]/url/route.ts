@@ -28,10 +28,10 @@ export async function GET(request: Request, { params }: Params) {
     where: { id },
     include: {
       sheetFiles: {
-        include: { piece: { select: { publicationStatus: true } } },
+        include: { piece: { select: { rehearsalStatus: true } } },
       },
       audioFiles: {
-        include: { piece: { select: { publicationStatus: true } } },
+        include: { piece: { select: { rehearsalStatus: true } } },
       },
       invoices: { select: { id: true } },
     },
@@ -63,7 +63,6 @@ export async function GET(request: Request, { params }: Params) {
     const audio = file.audioFiles[0];
     const link = sheet ?? audio;
     if (!link) {
-      // Orphan READY file: admins only until linked
       if (!hasPermission(gate.user.role, "PIECE_MANAGE")) {
         return NextResponse.json(
           { detail: "Forbidden", code: "http_403" },
@@ -72,11 +71,8 @@ export async function GET(request: Request, { params }: Params) {
       }
     } else {
       const isAdmin = hasPermission(gate.user.role, "PIECE_MANAGE");
-      const published =
-        link.piece.publicationStatus === "PUBLISHED" &&
-        link.publishedAt != null;
-
-      if (!published && !isAdmin) {
+      const archived = link.piece.rehearsalStatus === "ARCHIVED";
+      if ((!link.isVisible || archived) && !isAdmin) {
         return NextResponse.json(
           { detail: "Forbidden", code: "http_403" },
           { status: 403 },

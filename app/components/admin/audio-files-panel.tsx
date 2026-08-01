@@ -29,7 +29,7 @@ type AudioItem = {
   voice_group: string | null;
   access_scope: string;
   duration_seconds: number | null;
-  published_at: string | null;
+  is_visible: boolean;
   stored_file: {
     id: string;
     original_name: string;

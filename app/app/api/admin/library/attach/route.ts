@@ -1,55 +1,52 @@
 import { NextResponse } from "next/server";
 
 import { requirePermission } from "@/lib/authz";
+import { AttachError, attachLibraryFile } from "@/lib/library-attach";
 import type {
   AudioType,
   FileAccessScope,
+  SheetType,
   VoiceGroup,
 } from "@/lib/generated/prisma/client";
-import { AttachError, attachLibraryFile } from "@/lib/library-attach";
-import { getPieceById } from "@/lib/pieces";
 
-type Params = { params: Promise<{ id: string }> };
-
-export async function POST(request: Request, { params }: Params) {
+export async function POST(request: Request) {
   const gate = await requirePermission("PIECE_MANAGE");
   if (!gate.ok) return gate.response;
 
-  const { id: pieceId } = await params;
-  const piece = await getPieceById(pieceId);
-  if (!piece) {
-    return NextResponse.json(
-      { detail: "Stück nicht gefunden", code: "http_404" },
-      { status: 404 },
-    );
-  }
-
   const body = (await request.json()) as {
     storedFileId?: string;
+    kind?: "sheet" | "audio";
+    pieceId?: string | null;
+    title?: string | null;
+    composer?: string | null;
+    sheetType?: SheetType;
     audioType?: AudioType;
     voiceGroup?: VoiceGroup | null;
     accessScope?: FileAccessScope;
     isVisible?: boolean;
   };
 
-  if (!body.storedFileId) {
+  if (!body.storedFileId || (body.kind !== "sheet" && body.kind !== "audio")) {
     return NextResponse.json(
-      { detail: "storedFileId fehlt", code: "validation_error" },
+      { detail: "storedFileId und kind (sheet|audio) sind Pflicht", code: "validation_error" },
       { status: 400 },
     );
   }
 
   try {
-    const updated = await attachLibraryFile({
+    const piece = await attachLibraryFile({
       storedFileId: body.storedFileId,
-      kind: "audio",
-      pieceId,
+      kind: body.kind,
+      pieceId: body.pieceId,
+      title: body.title,
+      composer: body.composer,
+      sheetType: body.sheetType,
       audioType: body.audioType,
       voiceGroup: body.voiceGroup,
       accessScope: body.accessScope,
       isVisible: body.isVisible,
     });
-    return NextResponse.json(updated, { status: 201 });
+    return NextResponse.json(piece, { status: 201 });
   } catch (error) {
     if (error instanceof AttachError) {
       return NextResponse.json(

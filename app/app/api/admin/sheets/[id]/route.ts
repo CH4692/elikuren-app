@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 
 import { requirePermission } from "@/lib/authz";
 import { prisma } from "@/lib/db";
-import type { FileAccessScope, SheetType, VoiceGroup } from "@/lib/generated/prisma/client";
+import type {
+  FileAccessScope,
+  SheetType,
+  VoiceGroup,
+} from "@/lib/generated/prisma/client";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -25,13 +29,8 @@ export async function PATCH(request: Request, { params }: Params) {
     accessScope?: FileAccessScope;
     version?: string;
     changelog?: string | null;
-    publish?: boolean;
-    unpublish?: boolean;
+    isVisible?: boolean;
   };
-
-  let publishedAt = existing.publishedAt;
-  if (body.publish) publishedAt = new Date();
-  if (body.unpublish) publishedAt = null;
 
   const updated = await prisma.sheetFile.update({
     where: { id },
@@ -44,13 +43,13 @@ export async function PATCH(request: Request, { params }: Params) {
         body.changelog !== undefined
           ? body.changelog?.trim() || null
           : undefined,
-      publishedAt,
+      isVisible: body.isVisible,
     },
   });
 
   return NextResponse.json({
     id: updated.id,
-    published_at: updated.publishedAt?.toISOString() ?? null,
+    is_visible: updated.isVisible,
   });
 }
 

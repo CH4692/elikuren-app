@@ -27,12 +27,6 @@ enum RehearsalStatus {
   ARCHIVED
 }
 
-enum PublicationStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-
 enum SheetType {
   FULL_SCORE
   CHOIR_SCORE
@@ -205,27 +199,24 @@ model StoredFile {
 }
 
 model MusicPiece {
-  id                 String            @id @default(cuid())
-  title              String
-  composer           String
-  arranger           String?
-  category           String?
-  epoch              String?
-  instrumentation    String?
-  difficulty         String?
-  rehearsalStatus    RehearsalStatus   @default(PLANNED) @map("rehearsal_status")
-  publicationStatus  PublicationStatus @default(DRAFT) @map("publication_status")
-  rehearsalNotes     String?           @db.Text @map("rehearsal_notes")
-  description        String?           @db.Text
-  publishedAt        DateTime?         @map("published_at")
-  createdAt          DateTime          @default(now()) @map("created_at")
-  updatedAt          DateTime          @updatedAt @map("updated_at")
-  sheetFiles         SheetFile[]
-  audioFiles         AudioFile[]
+  id              String          @id @default(cuid())
+  title           String
+  composer        String          @default("")
+  arranger        String?
+  category        String?
+  epoch           String?
+  instrumentation String?
+  difficulty      String?
+  rehearsalStatus RehearsalStatus @default(PLANNED) @map("rehearsal_status")
+  rehearsalNotes  String?         @db.Text @map("rehearsal_notes")
+  description     String?         @db.Text
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  sheetFiles      SheetFile[]
+  audioFiles      AudioFile[]
 
   @@index([title])
   @@index([composer])
-  @@index([publicationStatus])
   @@index([rehearsalStatus])
   @@map("music_pieces")
 }
@@ -242,13 +233,14 @@ model SheetFile {
   version      String          @default("1")
   isCurrent    Boolean         @default(true) @map("is_current")
   changelog    String?         @db.Text
-  publishedAt  DateTime?       @map("published_at")
+  isVisible    Boolean         @default(true) @map("is_visible")
   sortOrder    Int             @default(0) @map("sort_order")
   createdAt    DateTime        @default(now()) @map("created_at")
   updatedAt    DateTime        @updatedAt @map("updated_at")
 
   @@index([pieceId])
   @@index([voiceGroup])
+  @@index([isVisible])
   @@map("sheet_files")
 }
 
@@ -263,12 +255,13 @@ model AudioFile {
   accessScope     FileAccessScope @default(ALL_MEMBERS) @map("access_scope")
   durationSeconds Int?            @map("duration_seconds")
   sortOrder       Int             @default(0) @map("sort_order")
-  publishedAt     DateTime?       @map("published_at")
+  isVisible       Boolean         @default(true) @map("is_visible")
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
   @@index([pieceId])
   @@index([audioType])
+  @@index([isVisible])
   @@map("audio_files")
 }
 

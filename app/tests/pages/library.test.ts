@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-import { createPiece, publishPiece } from "../helpers/api";
+import { createPiece } from "../helpers/api";
 import { loginAsAdmin, loginAsMember } from "../helpers/auth";
 
 test.describe("Mitglieder-Bibliothek", () => {
@@ -19,7 +19,7 @@ test.describe("Mitglieder-Bibliothek", () => {
     ).toBeVisible();
   });
 
-  test("library list API returns published pieces for members", async ({
+  test("library list API works for members; empty pieces stay hidden", async ({
     page,
   }) => {
     await loginAsAdmin(page);
@@ -28,7 +28,6 @@ test.describe("Mitglieder-Bibliothek", () => {
       title,
       composer: "Haydn",
     });
-    await publishPiece(page.request, piece.id);
 
     await page.context().clearCookies();
     await loginAsMember(page);
@@ -40,14 +39,8 @@ test.describe("Mitglieder-Bibliothek", () => {
       my_voice: string | null;
     };
     expect(body.my_voice).toBeTruthy();
-    expect(body.items.some((item) => item.id === piece.id)).toBe(true);
-
-    await page.goto(`/library/pieces/${piece.id}`, {
-      waitUntil: "domcontentloaded",
-    });
-    await expect(page.getByRole("heading", { name: title })).toBeVisible({
-      timeout: 15_000,
-    });
+    // Without attached visible files, piece is not listed for members
+    expect(body.items.some((item) => item.id === piece.id)).toBe(false);
   });
 
   test("guest cannot open library pages", async ({ page }) => {

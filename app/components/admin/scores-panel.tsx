@@ -29,7 +29,7 @@ type ScoreItem = {
   voice_group: string | null;
   access_scope: string;
   version: number;
-  published_at: string | null;
+  is_visible: boolean;
   stored_file: {
     id: string;
     original_name: string;

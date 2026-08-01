@@ -50,7 +50,7 @@ export default async function DashboardPage() {
         pieceTitle: p.title,
         name: s.storedFile.originalName,
         kind: "score" as const,
-        at: s.publishedAt,
+        at: s.createdAt,
       })),
     ),
     ...pieces.flatMap((p) =>
@@ -59,11 +59,11 @@ export default async function DashboardPage() {
         pieceTitle: p.title,
         name: a.storedFile.originalName,
         kind: "audio" as const,
-        at: a.publishedAt,
+        at: a.createdAt,
       })),
     ),
   ]
-    .sort((a, b) => (b.at?.getTime() ?? 0) - (a.at?.getTime() ?? 0))
+    .sort((a, b) => b.at.getTime() - a.at.getTime())
     .slice(0, 5)
     .map(({ pieceId, pieceTitle, name, kind }) => ({
       pieceId,

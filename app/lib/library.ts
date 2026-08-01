@@ -3,14 +3,15 @@ import { canAccessScopedFile, normalizeVoiceLabel } from "@/lib/files";
 import type { Role } from "@/lib/generated/prisma/client";
 import { hasPermission } from "@/lib/permissions";
 
-export async function listPublishedPiecesForUser(input: {
+/** Pieces with visible, ready files the user may access. */
+export async function listLibraryPiecesForUser(input: {
   role: Role | string;
   voice: string | null;
   q?: string;
 }) {
   const pieces = await prisma.musicPiece.findMany({
     where: {
-      publicationStatus: "PUBLISHED",
+      rehearsalStatus: { not: "ARCHIVED" },
       ...(input.q
         ? {
             OR: [
@@ -23,7 +24,7 @@ export async function listPublishedPiecesForUser(input: {
     include: {
       sheetFiles: {
         where: {
-          publishedAt: { not: null },
+          isVisible: true,
           storedFile: { uploadStatus: "READY", deletedAt: null },
         },
         include: { storedFile: true },
@@ -31,7 +32,7 @@ export async function listPublishedPiecesForUser(input: {
       },
       audioFiles: {
         where: {
-          publishedAt: { not: null },
+          isVisible: true,
           storedFile: { uploadStatus: "READY", deletedAt: null },
         },
         include: { storedFile: true },
@@ -40,6 +41,8 @@ export async function listPublishedPiecesForUser(input: {
     },
     orderBy: [{ title: "asc" }],
   });
+
+  const isAdmin = hasPermission(input.role, "PIECE_MANAGE");
 
   return pieces
     .map((piece) => ({
@@ -63,15 +66,15 @@ export async function listPublishedPiecesForUser(input: {
     }))
     .filter(
       (piece) =>
-        hasPermission(input.role, "PIECE_MANAGE") ||
-        piece.sheetFiles.length > 0 ||
-        piece.audioFiles.length > 0 ||
-        true, // published pieces stay listed even without files
+        isAdmin || piece.sheetFiles.length > 0 || piece.audioFiles.length > 0,
     );
 }
 
+/** @deprecated Prefer listLibraryPiecesForUser */
+export const listPublishedPiecesForUser = listLibraryPiecesForUser;
+
 export function serializeLibraryPiece(
-  piece: Awaited<ReturnType<typeof listPublishedPiecesForUser>>[number],
+  piece: Awaited<ReturnType<typeof listLibraryPiecesForUser>>[number],
   userVoice: string | null,
 ) {
   const myVoice = normalizeVoiceLabel(userVoice);
@@ -85,7 +88,6 @@ export function serializeLibraryPiece(
     rehearsal_status: piece.rehearsalStatus,
     rehearsal_notes: piece.rehearsalNotes,
     description: piece.description,
-    published_at: piece.publishedAt?.toISOString() ?? null,
     sheet_files: piece.sheetFiles.map((sheet) => ({
       id: sheet.id,
       sheet_type: sheet.sheetType,
