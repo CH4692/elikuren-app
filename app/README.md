@@ -66,7 +66,7 @@ npm run dev
 
 ## Tests
 
-Drei Ebenen — Integration/UI brauchen eine erreichbare **Neon**-Datenbank (lokal via `.env.local`, CI via GitHub Secrets `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AUTH_SECRET`):
+Drei Ebenen — Integration/UI brauchen eine erreichbare **Neon**-Datenbank (lokal via `.env.local`; CI via **Repository Secrets** `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AUTH_SECRET` — nicht Environment Secrets):
 
 | Befehl | Ebene | Was wird geprüft |
 |---|---|---|
