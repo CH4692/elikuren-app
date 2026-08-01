@@ -1,13 +1,22 @@
 import { config as loadEnv } from "dotenv";
 import { defineConfig, devices } from "@playwright/test";
 
-// Safe defaults first, then Neon + secrets from .env.local (or CI-generated .env.local).
+// Safe defaults first, then local secrets / CI-generated .env.local.
 loadEnv({ path: ".env.test" });
 loadEnv({ path: ".env.local", override: true });
 
 const isCI = !!process.env.CI;
+const previewUrl = (
+  process.env.PLAYWRIGHT_BASE_URL ||
+  process.env.BASE_URL ||
+  ""
+).replace(/\/$/, "");
+const againstRemote = previewUrl.length > 0;
+
 const port = process.env.PLAYWRIGHT_PORT ?? "3005";
-const baseURL = `http://127.0.0.1:${port}`;
+const baseURL = againstRemote ? previewUrl : `http://127.0.0.1:${port}`;
+
+const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
 
 export default defineConfig({
   testDir: "./tests",
@@ -17,7 +26,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 1,
-  // Shared E2E users on Neon — keep serial to avoid CredentialsSignin races.
+  // Shared E2E users on Neon — serial avoids login races.
   workers: 1,
   reporter: isCI ? "github" : "html",
   timeout: 60_000,
@@ -26,6 +35,14 @@ export default defineConfig({
     baseURL,
     trace: "on-first-retry",
     navigationTimeout: 45_000,
+    ...(bypass
+      ? {
+          extraHTTPHeaders: {
+            "x-vercel-protection-bypass": bypass,
+            "x-vercel-set-bypass-cookie": "true",
+          },
+        }
+      : {}),
   },
   projects: [
     {
@@ -33,19 +50,23 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: {
-    // CI already runs `npm run build`; production server is faster/stabler than `next dev`.
-    command: isCI
-      ? `npx next start --port ${port}`
-      : `npm run dev -- --port ${port}`,
-    url: baseURL,
-    reuseExistingServer: !isCI,
-    timeout: 180_000,
-    env: {
-      ...process.env,
-      PORT: port,
-      NEXT_PUBLIC_SITE_URL: baseURL,
-      AUTH_URL: baseURL,
-    },
-  },
+  // Only spin up a local server when not targeting a Preview / remote URL.
+  ...(againstRemote
+    ? {}
+    : {
+        webServer: {
+          command: isCI
+            ? `npx next start --port ${port}`
+            : `npm run dev -- --port ${port}`,
+          url: baseURL,
+          reuseExistingServer: !isCI,
+          timeout: 180_000,
+          env: {
+            ...process.env,
+            PORT: port,
+            NEXT_PUBLIC_SITE_URL: baseURL,
+            AUTH_URL: baseURL,
+          },
+        },
+      }),
 });

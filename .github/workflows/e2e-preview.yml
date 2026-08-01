@@ -1,0 +1,95 @@
+# Playwright against a live Vercel Preview (best practice for Next.js on Vercel).
+# Triggers when Vercel reports a successful Preview deployment.
+#
+# Required repository secrets:
+#   DATABASE_URL, DATABASE_URL_UNPOOLED, AUTH_SECRET
+#     → same Neon DB the Preview uses (for E2E user seed in global-setup)
+# Optional:
+#   VERCEL_AUTOMATION_BYPASS_SECRET
+#     → if Deployment Protection is on (Vercel → Deployment Protection → Bypass)
+name: e2e-preview
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Preview URL to test (e.g. https://….vercel.app)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-preview-${{ github.event.deployment_status.environment || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  playwright:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       contains(github.event.deployment_status.environment, 'Preview'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Load Neon credentials for E2E seed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$DATABASE_URL_UNPOOLED" ] || [ -z "$AUTH_SECRET" ]; then
+            echo "::error::Missing repository secrets DATABASE_URL, DATABASE_URL_UNPOOLED, AUTH_SECRET (needed to seed E2E users in Neon)."
+            exit 1
+          fi
+          {
+            echo "DATABASE_URL<<EOF"
+            echo "$DATABASE_URL"
+            echo "EOF"
+            echo "DATABASE_URL_UNPOOLED<<EOF"
+            echo "$DATABASE_URL_UNPOOLED"
+            echo "EOF"
+            echo "AUTH_SECRET<<EOF"
+            echo "$AUTH_SECRET"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
+
+      - name: Write .env.local for Playwright seed helpers
+        run: node scripts/write-ci-env.mjs
+
+      - name: Resolve preview URL
+        id: url
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "base_url=${{ inputs.base_url }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "base_url=${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E against Preview
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ steps.url.outputs.base_url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          echo "Testing $PLAYWRIGHT_BASE_URL"
+          npx playwright test tests/integration tests/pages tests/smoke

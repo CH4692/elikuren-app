@@ -20,11 +20,11 @@ cp .env.example .env.local
 # Neon DATABASE_URL + DATABASE_URL_UNPOOLED, AUTH_SECRET, RESEND_API_KEY, …
 ```
 
-Tests and local dev use **Neon** via `.env.local` (same as production). No local Postgres/Docker required.
+Local dev and local E2E use **Neon** via `.env.local`. GitHub `web-ci` only runs lint/typecheck/unit/build; Playwright runs against **Vercel Preview** (see below).
 
 ```bash
 npm run db:migrate
-npm run test
+npm run test          # unit + Playwright locally
 ```
 
 ## Local development
@@ -66,33 +66,35 @@ npm run dev
 
 ## Tests
 
-Drei Ebenen — Integration/UI brauchen eine erreichbare **Neon**-Datenbank (lokal via `.env.local`; CI via **Repository Secrets** `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AUTH_SECRET` — nicht Environment Secrets):
+### Wo läuft was?
 
-| Befehl | Ebene | Was wird geprüft |
+| Ort | Was | Warum |
 |---|---|---|
-| `npm run test:unit` | Unit | Permissions, Rate-Limits, Geldformat, Upload-Validierung, neutrale Membership-Texte |
-| `npm run test:integration` | Integration | API-Flows ohne Browser (Membership, Mitglieder, Library, Ankündigungen, Events, Rechnungen, Kontakte, Audit) |
-| `npm run test:ui` | UI | Playwright-Seitenflows (Login, Admin, Mitgliederbereich, Marketing-Smoke) |
-| `npm run test` | Alle | Unit → Integration → UI nacheinander |
+| **Lokal** (`npm run test`) | Unit + Playwright gegen `next dev` + Neon | Schnelles Feedback beim Entwickeln |
+| **GitHub `web-ci`** | Lint, typecheck, unit, build | Schnell, stabil, kein Browser/DB auf dem Runner |
+| **GitHub `e2e-preview`** | Playwright gegen **Vercel Preview-URL** | Entspricht dem produktiven Stack (Edge/Serverless), nicht einem selbst gehosteten CI-Server |
 
-### Abdeckung nach Feature
+Playwright gegen Neon auf jedem Push im Runner ist **kein** Best Practice (langsam, flaky, teuer). Üblich bei Vercel: Preview deployen → E2E gegen die Preview-URL (`deployment_status`).
 
-| Modul | Unit | Integration | UI |
-|---|---|---|---|
-| **Membership / Auth** | `membership-requests`, `rate-limit`, `admin-access` | `integration/membership-api` | `pages/approval`, `pages/auth`, `pages/membership` |
-| **Permissions / Dateien** | `permissions`, `invoice-permissions` | `pages/api-authz` (UI+API) | — |
-| **Mitglieder (Admin)** | — | `integration/membership-api` | `pages/members` |
-| **Profil** | — | — | `pages/profile` |
-| **Dashboard** | — | — | `pages/dashboard` |
-| **Library (Noten/Audio)** | `permissions` (accessScope) | `integration/features-api` | `pages/library`, `pages/pieces` |
-| **Ankündigungen** | — | `integration/features-api` | `pages/announcements` |
-| **Termine / RSVP** | — | `integration/features-api` | `pages/events` |
-| **Rechnungen** | `invoice-permissions`, `money` | `integration/features-api` | `pages/invoices` |
-| **Kontakte / Audit** | `contact-types` | `integration/admin-api` | `pages/contacts-admin` |
-| **Admin-Shell / Nav** | — | `integration/admin-api` (health) | `pages/member-area`, `pages/profile`, `smoke/nav` |
-| **Marketing / Smoke** | — | — | `pages/home`, `pages/contact`, `smoke/*` |
+Lokal gegen eine Preview:
 
-E2E-Testnutzer werden in `tests/global-setup.ts` via `tests/ensure-e2e-admin.ts` angelegt (Admin, Mitglied, Kassenprüfer).
+```bash
+PLAYWRIGHT_BASE_URL=https://your-preview.vercel.app npm run test:e2e
+```
+
+Optional bei Deployment Protection: `VERCEL_AUTOMATION_BYPASS_SECRET=…`.
+
+### Befehle
+
+| Befehl | Ebene |
+|---|---|
+| `npm run test:unit` | Unit (Permissions, Rate-Limits, Money, …) |
+| `npm run test:integration` | Playwright API-Flows |
+| `npm run test:ui` | Playwright UI |
+| `npm run test:e2e` | Integration + UI |
+| `npm run test` | Unit + E2E |
+
+E2E-Nutzer werden in `tests/global-setup.ts` angelegt (Admin, Mitglied, Kassenprüfer) — dafür braucht der Seed Zugriff auf dieselbe Neon-DB wie die Preview.
 
 ## Scripts
 
@@ -100,13 +102,11 @@ E2E-Testnutzer werden in `tests/global-setup.ts` via `tests/ensure-e2e-admin.ts`
 |---|---|
 | `npm run dev` | Local Next.js |
 | `npm run build` | `prisma generate` + Next build |
-| `npm run db:migrate` | Apply migrations (production/CI) |
+| `npm run db:migrate` | Apply migrations |
 | `npm run db:migrate:dev` | Create/apply migrations locally |
-| `npm run test:unit` | Node unit tests (`tsx --test`) |
-| `npm run test:integration` | Playwright API integration tests |
-| `npm run test:ui` | Playwright UI tests |
-| `npm run test` | All test layers |
-| `npm run test:e2e` | All Playwright tests (integration + UI) |
+| `npm run test:unit` | Node unit tests |
+| `npm run test:e2e` | Playwright (local server or `PLAYWRIGHT_BASE_URL`) |
+| `npm run test` | Unit + E2E |
 
 ## Deploy
 
