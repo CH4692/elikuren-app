@@ -152,7 +152,57 @@ export function MemberDashboard({
         </section>
       ) : null}
 
-      {/* 3. What’s happening — important announcements */}
+      {/* 3. Quick access — above the fold (high-frequency destinations) */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold tracking-tight">Schnellzugriff</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {quickLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "group flex items-start gap-3 rounded-2xl border border-[#d9d2c4] bg-white/80 p-4 transition",
+                  "hover:border-[#C8A24D]/55 hover:shadow-sm",
+                )}
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#C8A24D]/12 text-[#8a6d2a] transition group-hover:bg-[#C8A24D]/20">
+                  <Icon className="size-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-medium text-[#1f1f23]">
+                    {link.title}
+                  </span>
+                  <span className="mt-0.5 block text-sm text-[#5c574e]">
+                    {link.description}
+                  </span>
+                </span>
+              </Link>
+            );
+          })}
+          {showAdmin ? (
+            <Link
+              href="/admin"
+              className="group flex items-start gap-3 rounded-2xl border border-[#1e3a2f]/25 bg-[#1e3a2f]/5 p-4 transition hover:border-[#1e3a2f]/45 hover:shadow-sm"
+            >
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#1e3a2f]/12 text-[#1e3a2f]">
+                <Shield className="size-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-medium text-[#1f1f23]">
+                  Verwaltung
+                </span>
+                <span className="mt-0.5 block text-sm text-[#5c574e]">
+                  Stücke, Mitglieder und Mitteilungen
+                </span>
+              </span>
+            </Link>
+          ) : null}
+        </div>
+      </section>
+
+      {/* 4. What’s happening — important announcements */}
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3">
           <h2 className="text-lg font-semibold tracking-tight">
@@ -204,7 +254,7 @@ export function MemberDashboard({
         )}
       </section>
 
-      {/* 4. Next actions / context — events + rehearsal */}
+      {/* 5. Context — events + rehearsal */}
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3">
           <div className="flex items-end justify-between gap-3">
@@ -286,7 +336,7 @@ export function MemberDashboard({
         </div>
       </section>
 
-      {/* 5. New resources */}
+      {/* 6. New resources */}
       {recentSheets.length > 0 ? (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold tracking-tight">Neue Noten</h2>
@@ -310,56 +360,6 @@ export function MemberDashboard({
           </ul>
         </section>
       ) : null}
-
-      {/* 6. Quick access — one primary task cluster */}
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-tight">Schnellzugriff</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {quickLinks.map((link) => {
-            const Icon = link.icon;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "group flex items-start gap-3 rounded-2xl border border-[#d9d2c4] bg-white/80 p-4 transition",
-                  "hover:border-[#C8A24D]/55 hover:shadow-sm",
-                )}
-              >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#C8A24D]/12 text-[#8a6d2a] transition group-hover:bg-[#C8A24D]/20">
-                  <Icon className="size-5" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block font-medium text-[#1f1f23]">
-                    {link.title}
-                  </span>
-                  <span className="mt-0.5 block text-sm text-[#5c574e]">
-                    {link.description}
-                  </span>
-                </span>
-              </Link>
-            );
-          })}
-          {showAdmin ? (
-            <Link
-              href="/admin"
-              className="group flex items-start gap-3 rounded-2xl border border-[#1e3a2f]/25 bg-[#1e3a2f]/5 p-4 transition hover:border-[#1e3a2f]/45 hover:shadow-sm"
-            >
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#1e3a2f]/12 text-[#1e3a2f]">
-                <Shield className="size-5" />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-medium text-[#1f1f23]">
-                  Verwaltung
-                </span>
-                <span className="mt-0.5 block text-sm text-[#5c574e]">
-                  Stücke, Mitglieder und Mitteilungen
-                </span>
-              </span>
-            </Link>
-          ) : null}
-        </div>
-      </section>
     </div>
   );
 }
