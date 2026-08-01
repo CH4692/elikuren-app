@@ -32,12 +32,14 @@ export function AuthEmailForm({
   const showPassword = passwordLoginEnabled();
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-[#C8A24D]/40 bg-[#1F1F23] p-8 text-[#F4F1EB] shadow-xl">
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-      <p className="mt-2 text-sm text-[#F4F1EB]/75">{subtitle}</p>
+    <div className="w-full max-w-md rounded-2xl border border-[#C8A24D]/40 bg-[#1F1F23]/95 p-6 text-[#F4F1EB] shadow-xl backdrop-blur-sm sm:p-7">
+      <h1 className="font-heading text-xl font-semibold tracking-tight sm:text-2xl">
+        {title}
+      </h1>
+      <p className="mt-1.5 text-sm leading-snug text-[#F4F1EB]/75">{subtitle}</p>
 
       <form
-        className="mt-8 flex flex-col gap-4"
+        className="mt-5 flex flex-col gap-3"
         action={async (formData) => {
           "use server";
           const email = normalizeEmail(String(formData.get("email") ?? ""));
@@ -80,7 +82,7 @@ export function AuthEmailForm({
             name="email"
             autoComplete="email"
             placeholder="name@example.com"
-            className="rounded-lg border border-[#C8A24D]/50 bg-[#121216] px-3 py-2 text-[#F4F1EB] outline-none ring-[#C8A24D] focus:ring-2"
+            className="h-9 rounded-lg border border-[#C8A24D]/50 bg-[#121216] px-3 py-2 text-sm text-[#F4F1EB] outline-none ring-[#C8A24D] focus:ring-2"
           />
         </label>
         <Button
@@ -141,7 +143,7 @@ export function AuthEmailForm({
                 name="email"
                 autoComplete="username"
                 placeholder="name@example.com"
-                className="rounded-lg border border-[#C8A24D]/50 bg-[#121216] px-3 py-2 text-[#F4F1EB] outline-none ring-[#C8A24D] focus:ring-2"
+                className="h-9 rounded-lg border border-[#C8A24D]/50 bg-[#121216] px-3 py-2 text-sm text-[#F4F1EB] outline-none ring-[#C8A24D] focus:ring-2"
               />
             </label>
             <label className="flex flex-col gap-2 text-sm">
@@ -151,7 +153,7 @@ export function AuthEmailForm({
                 type="password"
                 name="password"
                 autoComplete="current-password"
-                className="rounded-lg border border-[#C8A24D]/50 bg-[#121216] px-3 py-2 text-[#F4F1EB] outline-none ring-[#C8A24D] focus:ring-2"
+                className="h-9 rounded-lg border border-[#C8A24D]/50 bg-[#121216] px-3 py-2 text-sm text-[#F4F1EB] outline-none ring-[#C8A24D] focus:ring-2"
               />
             </label>
             <Button

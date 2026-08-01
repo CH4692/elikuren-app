@@ -13,6 +13,11 @@ type AuthNavProps = {
   onNavigate?: () => void;
 };
 
+/**
+ * Hierarchy (navbar CTA best practice):
+ * - One primary: „Mitglied werden“ (solid brand gold)
+ * - One secondary: „Login“ (ghost on dark header — never white fill)
+ */
 export function AuthNav({ variant = "desktop", onNavigate }: AuthNavProps) {
   const { data: session, status } = useSession();
 
@@ -46,14 +51,14 @@ export function AuthNav({ variant = "desktop", onNavigate }: AuthNavProps) {
         <Link
           href="/auth/sign-in"
           onNavigate={onNavigate}
-          className="text-lg hover:text-primary flex items-center border border-second-background p-3 rounded-lg shadow-md"
+          className="flex items-center rounded-lg border border-primary/45 bg-transparent p-3 text-lg text-foreground transition-colors hover:border-primary hover:bg-primary/10"
         >
           Mitglieder Login
         </Link>
         <Link
           href="/auth/sign-up"
           onNavigate={onNavigate}
-          className="text-lg hover:text-foreground text-background flex items-center gap-2 bg-primary p-3 rounded-lg shadow-md"
+          className="flex items-center gap-2 rounded-lg bg-primary p-3 text-lg text-[#1F1F23] shadow-md transition-colors hover:bg-primary/90"
         >
           Mitglied werden
         </Link>
@@ -62,11 +67,16 @@ export function AuthNav({ variant = "desktop", onNavigate }: AuthNavProps) {
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <Button size="xl" variant="outline" asChild>
+    <div className="flex items-center gap-2">
+      <Button
+        size="xl"
+        variant="ghost"
+        asChild
+        className="border border-primary/45 bg-transparent text-[#F4F1EB] hover:border-primary hover:bg-primary/12 hover:text-[#F4F1EB]"
+      >
         <Link href="/auth/sign-in">Login</Link>
       </Button>
-      <Button size="xl" asChild>
+      <Button size="xl" asChild className="text-[#1F1F23]">
         <Link href="/auth/sign-up">Mitglied werden</Link>
       </Button>
     </div>
