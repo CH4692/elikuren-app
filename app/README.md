@@ -35,6 +35,14 @@ npm run dev
 3. Bei Freigabe wird ein `User` (`mitglied`, `isActive`) angelegt; optional Magic-Link-Einladung
 4. Login/Magic Link nur für aktive User unter `/auth/sign-in` — sonst neutrale Meldung ohne Enumeration
 
+## Mitglieder- & Admin-Bereich
+
+- Eingeloggt: Avatar-Menü (Dashboard, Profil, Noten, Audio, Termine, Mitteilungen; Admin nur mit Admin-Rechten). Login/„Mitglied werden“ sind ausgeblendet.
+- `/admin` nutzt eine eigene Shell mit berechtigungsbasierter Sidebar (ohne Marketing-Navbar).
+- Neue Permissions: `CONTACT_MANAGE`, `AUDIT_READ` (Vorstand). Unbekannte `/admin/*`-Pfade werden verweigert.
+- Kontakte sind ein separates Prisma-Modell `Contact` (optional `linkedUserId`); Auth/Rollen bleiben auf `User`.
+- Admin-Listen: Table + Drawer/Dialog; flache Datei-Übersichten unter `/admin/scores` und `/admin/audio`.
+
 ## API routes
 
 | Route | Purpose |
@@ -42,6 +50,9 @@ npm run dev
 | `GET/PATCH/DELETE /api/me` | Current user (Auth.js session) |
 | `POST /api/membership-requests` | Public membership application |
 | `GET/PATCH /api/admin/membership-requests` | Admin review (role `vorstand`) |
+| `GET/POST /api/admin/contacts` | Adressbuch (`CONTACT_MANAGE`) |
+| `GET /api/admin/audit` | Audit-Log (`AUDIT_READ`) |
+| `GET /api/admin/scores` · `/api/admin/audio` | Flache Noten-/Audio-Listen |
 | `GET/POST /api/auth/*` | Auth.js handlers |
 | `POST /api/contact` | Contact form via Resend |
 | `GET /api/health` | Health check |

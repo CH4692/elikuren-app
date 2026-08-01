@@ -20,46 +20,202 @@ enum MembershipRequestStatus {
   rejected
 }
 
-enum AccessAuditAction {
-  request_created
-  approved
-  rejected
-  disabled
-  enabled
-  magic_link_denied
-  magic_link_sent
+enum RehearsalStatus {
+  PLANNED
+  REHEARSING
+  PERFORMANCE_READY
+  ARCHIVED
+}
+
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SheetType {
+  FULL_SCORE
+  CHOIR_SCORE
+  SOPRANO
+  ALTO
+  TENOR
+  BASS
+  PIANO
+  OTHER
+}
+
+enum AudioType {
+  FULL_RECORDING
+  SOPRANO
+  ALTO
+  TENOR
+  BASS
+  PIANO
+  REHEARSAL
+  PRONUNCIATION
+  CONCERT_RECORDING
+  OTHER
+}
+
+enum VoiceGroup {
+  SOPRANO
+  ALTO
+  TENOR
+  BASS
+  OTHER
+}
+
+enum FileAccessScope {
+  ALL_MEMBERS
+  VOICE_GROUP_ONLY
+  ADMIN_ONLY
+}
+
+enum StoredFileCategory {
+  SHEET
+  AUDIO
+  INVOICE
+  ANNOUNCEMENT
+  OTHER
+}
+
+enum FileVisibility {
+  MEMBERS
+  ADMIN
+}
+
+enum UploadStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  DELETED
+}
+
+enum FavoriteTargetType {
+  PIECE
+  SHEET
+  AUDIO
+}
+
+enum ContactType {
+  CHOIR_MEMBER
+  FORMER_MEMBER
+  MUSICIAN
+  SOLOIST
+  ORGANIZER
+  PARISH
+  VENDOR
+  OTHER
+}
+
+enum ContentEventType {
+  VIEWED
+  PLAYED
+  DOWNLOADED
+}
+
+enum EventType {
+  REHEARSAL
+  SPECIAL_REHEARSAL
+  GENERAL_REHEARSAL
+  CONCERT
+  SERVICE
+  PERFORMANCE
+  OTHER
+}
+
+enum RsvpStatus {
+  YES
+  NO
+  MAYBE
+}
+
+enum AnnouncementAudience {
+  ALL_MEMBERS
+  ROLE
+  VOICE_GROUP
+}
+
+enum InvoiceDocumentType {
+  INCOME
+  EXPENSE
+  INVOICE
+  RECEIPT
+  CREDIT_NOTE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  OVERDUE
+  CANCELLED
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime? @map("email_verified")
-  image         String?
-  firstname     String?
-  lastname      String?
-  street        String?
-  houseNumber   String?   @map("house_number")
-  postalCode    String?   @map("postal_code")
-  location      String?
-  phone         String?
-  birthday      DateTime? @db.Date
-  voice         String?
-  isActive      Boolean   @default(true) @map("is_active")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  lastSignedIn  DateTime? @map("last_signed_in")
-  updatedAt     DateTime? @updatedAt @map("updated_at")
-  memberSince   DateTime? @map("member_since") @db.Date
-  role          Role      @default(mitglied)
-  passwordHash  String?   @map("password_hash")
-  accounts      Account[]
-  sessions      Session[]
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime? @map("email_verified")
+  image          String?
+  firstname      String?
+  lastname       String?
+  street         String?
+  houseNumber    String?   @map("house_number")
+  postalCode     String?   @map("postal_code")
+  location       String?
+  phone          String?
+  birthday       DateTime? @db.Date
+  voice          String?
+  isActive       Boolean   @default(true) @map("is_active")
+  sessionVersion Int       @default(0) @map("session_version")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  lastSignedIn   DateTime? @map("last_signed_in")
+  updatedAt      DateTime? @updatedAt @map("updated_at")
+  memberSince    DateTime? @map("member_since") @db.Date
+  role           Role      @default(mitglied)
+  passwordHash   String?   @map("password_hash")
+  accounts       Account[]
+  sessions       Session[]
   approvedRequests MembershipRequest[] @relation("ApprovedBy")
   rejectedRequests MembershipRequest[] @relation("RejectedBy")
+  uploadedFiles  StoredFile[]          @relation("UploadedBy")
+  favorites      UserFavorite[]
+  contentEvents  UserContentEvent[]
+  eventResponses EventResponse[]
+  announcementReads AnnouncementRead[]
+  createdInvoices Invoice[]            @relation("InvoiceCreatedBy")
+  memberInvoices Invoice[]             @relation("InvoiceMember")
+  auditLogs      AuditLog[]            @relation("AuditActor")
+  linkedContacts Contact[]             @relation("ContactLinkedUser")
 
   @@index([firstname])
   @@index([lastname])
   @@map("users")
+}
+
+model Contact {
+  id            String      @id @default(cuid())
+  type          ContactType @default(OTHER)
+  firstname     String?
+  lastname      String?
+  email         String?
+  organization  String?
+  phone         String?
+  notes         String?     @db.Text
+  linkedUserId  String?     @map("linked_user_id")
+  linkedUser    User?       @relation("ContactLinkedUser", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  archivedAt    DateTime?   @map("archived_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([email])
+  @@index([lastname])
+  @@index([linkedUserId])
+  @@index([archivedAt])
+  @@map("contacts")
 }
 
 model MembershipRequest {
@@ -84,19 +240,267 @@ model MembershipRequest {
   @@map("membership_requests")
 }
 
-model AccessAuditLog {
-  id          String            @id @default(cuid())
-  action      AccessAuditAction
-  actorUserId String?           @map("actor_user_id")
-  targetEmail String            @map("target_email")
-  requestId   String?           @map("request_id")
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?  @map("actor_user_id")
+  actor       User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  action      String
+  entityType  String   @map("entity_type")
+  entityId    String?  @map("entity_id")
   metadata    Json?
-  createdAt   DateTime          @default(now()) @map("created_at")
+  createdAt   DateTime @default(now()) @map("created_at")
 
-  @@index([targetEmail])
   @@index([action])
+  @@index([entityType, entityId])
+  @@index([actorUserId])
   @@index([createdAt])
-  @@map("access_audit_logs")
+  @@map("audit_logs")
+}
+
+model StoredFile {
+  id           String            @id @default(cuid())
+  objectKey    String            @unique @map("object_key")
+  originalName String            @map("original_name")
+  mimeType     String            @map("mime_type")
+  sizeBytes    Int               @map("size_bytes")
+  checksum     String?
+  etag         String?
+  category     StoredFileCategory
+  visibility   FileVisibility    @default(MEMBERS)
+  uploadStatus UploadStatus      @default(PENDING) @map("upload_status")
+  uploadedById String?           @map("uploaded_by_id")
+  uploadedBy   User?             @relation("UploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  deletedAt    DateTime?         @map("deleted_at")
+  sheetFiles   SheetFile[]
+  audioFiles   AudioFile[]
+  invoices     Invoice[]
+  announcementAttachments AnnouncementAttachment[]
+
+  @@index([uploadStatus])
+  @@index([category])
+  @@map("stored_files")
+}
+
+model MusicPiece {
+  id                 String            @id @default(cuid())
+  title              String
+  composer           String
+  arranger           String?
+  category           String?
+  epoch              String?
+  instrumentation    String?
+  difficulty         String?
+  rehearsalStatus    RehearsalStatus   @default(PLANNED) @map("rehearsal_status")
+  publicationStatus  PublicationStatus @default(DRAFT) @map("publication_status")
+  rehearsalNotes     String?           @db.Text @map("rehearsal_notes")
+  description        String?           @db.Text
+  publishedAt        DateTime?         @map("published_at")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  sheetFiles         SheetFile[]
+  audioFiles         AudioFile[]
+  events             Event[]
+
+  @@index([title])
+  @@index([composer])
+  @@index([publicationStatus])
+  @@index([rehearsalStatus])
+  @@map("music_pieces")
+}
+
+model SheetFile {
+  id           String          @id @default(cuid())
+  pieceId      String          @map("piece_id")
+  piece        MusicPiece      @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  storedFileId String          @map("stored_file_id")
+  storedFile   StoredFile      @relation(fields: [storedFileId], references: [id], onDelete: Restrict)
+  sheetType    SheetType       @default(OTHER) @map("sheet_type")
+  voiceGroup   VoiceGroup?     @map("voice_group")
+  accessScope  FileAccessScope @default(ALL_MEMBERS) @map("access_scope")
+  version      String          @default("1")
+  isCurrent    Boolean         @default(true) @map("is_current")
+  changelog    String?         @db.Text
+  publishedAt  DateTime?       @map("published_at")
+  sortOrder    Int             @default(0) @map("sort_order")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  @@index([pieceId])
+  @@index([voiceGroup])
+  @@map("sheet_files")
+}
+
+model AudioFile {
+  id              String          @id @default(cuid())
+  pieceId         String          @map("piece_id")
+  piece           MusicPiece      @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  storedFileId    String          @map("stored_file_id")
+  storedFile      StoredFile      @relation(fields: [storedFileId], references: [id], onDelete: Restrict)
+  audioType       AudioType       @default(OTHER) @map("audio_type")
+  voiceGroup      VoiceGroup?     @map("voice_group")
+  accessScope     FileAccessScope @default(ALL_MEMBERS) @map("access_scope")
+  durationSeconds Int?            @map("duration_seconds")
+  sortOrder       Int             @default(0) @map("sort_order")
+  publishedAt     DateTime?       @map("published_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@index([pieceId])
+  @@index([audioType])
+  @@map("audio_files")
+}
+
+model UserFavorite {
+  id         String             @id @default(cuid())
+  userId     String             @map("user_id")
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetType FavoriteTargetType @map("target_type")
+  targetId   String             @map("target_id")
+  createdAt  DateTime           @default(now()) @map("created_at")
+
+  @@unique([userId, targetType, targetId])
+  @@index([userId])
+  @@map("user_favorites")
+}
+
+model UserContentEvent {
+  id             String           @id @default(cuid())
+  userId         String           @map("user_id")
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventType      ContentEventType @map("event_type")
+  targetType     FavoriteTargetType @map("target_type")
+  targetId       String           @map("target_id")
+  lastPositionMs Int?             @map("last_position_ms")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  @@index([userId, eventType])
+  @@index([targetType, targetId])
+  @@map("user_content_events")
+}
+
+model Event {
+  id           String    @id @default(cuid())
+  title        String
+  type         EventType @default(REHEARSAL)
+  startsAt     DateTime  @map("starts_at")
+  endsAt       DateTime? @map("ends_at")
+  location     String?
+  description  String?   @db.Text
+  rsvpDeadline DateTime? @map("rsvp_deadline")
+  pieceId      String?   @map("piece_id")
+  piece        MusicPiece? @relation(fields: [pieceId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  responses    EventResponse[]
+
+  @@index([startsAt])
+  @@index([type])
+  @@map("events")
+}
+
+model EventResponse {
+  id        String     @id @default(cuid())
+  eventId   String     @map("event_id")
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String     @map("user_id")
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    RsvpStatus
+  note      String?    @db.Text
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@unique([eventId, userId])
+  @@map("event_responses")
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  body        String    @db.Text
+  isImportant Boolean   @default(false) @map("is_important")
+  publishedAt DateTime? @map("published_at")
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  targets     AnnouncementTarget[]
+  reads       AnnouncementRead[]
+  attachments AnnouncementAttachment[]
+
+  @@index([publishedAt])
+  @@map("announcements")
+}
+
+model AnnouncementTarget {
+  id             String               @id @default(cuid())
+  announcementId String               @map("announcement_id")
+  announcement   Announcement         @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  audience       AnnouncementAudience
+  role           Role?
+  voiceGroup     VoiceGroup?          @map("voice_group")
+
+  @@index([announcementId])
+  @@map("announcement_targets")
+}
+
+model AnnouncementRead {
+  id             String       @id @default(cuid())
+  announcementId String       @map("announcement_id")
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId         String       @map("user_id")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt         DateTime     @default(now()) @map("read_at")
+
+  @@unique([announcementId, userId])
+  @@map("announcement_reads")
+}
+
+model AnnouncementAttachment {
+  id             String       @id @default(cuid())
+  announcementId String       @map("announcement_id")
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  storedFileId   String       @map("stored_file_id")
+  storedFile     StoredFile   @relation(fields: [storedFileId], references: [id], onDelete: Restrict)
+
+  @@map("announcement_attachments")
+}
+
+model Invoice {
+  id               String              @id @default(cuid())
+  invoiceNumber    String              @unique @map("invoice_number")
+  documentType     InvoiceDocumentType @map("document_type")
+  recipientName    String              @map("recipient_name")
+  recipientEmail   String?             @map("recipient_email")
+  recipientAddress String?             @map("recipient_address") @db.Text
+  supplierName     String?             @map("supplier_name")
+  description      String?             @db.Text
+  category         String?
+  amountCents      Int                 @map("amount_cents")
+  taxAmountCents   Int                 @default(0) @map("tax_amount_cents")
+  currency         String              @default("EUR")
+  issueDate        DateTime            @map("issue_date") @db.Date
+  dueDate          DateTime?           @map("due_date") @db.Date
+  paidAt           DateTime?           @map("paid_at")
+  paymentMethod    String?             @map("payment_method")
+  status           InvoiceStatus       @default(DRAFT)
+  note             String?             @db.Text
+  storedFileId     String?             @map("stored_file_id")
+  storedFile       StoredFile?         @relation(fields: [storedFileId], references: [id], onDelete: SetNull)
+  memberId         String?             @map("member_id")
+  member           User?               @relation("InvoiceMember", fields: [memberId], references: [id], onDelete: SetNull)
+  eventId          String?             @map("event_id")
+  createdById      String?             @map("created_by_id")
+  createdBy        User?               @relation("InvoiceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  archivedAt       DateTime?           @map("archived_at")
+
+  @@index([status])
+  @@index([issueDate])
+  @@index([dueDate])
+  @@map("invoices")
 }
 
 model Account {

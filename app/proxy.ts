@@ -1,10 +1,21 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
-import { hasPermission } from "@/lib/permissions";
+import { hasAdminAreaAccess, hasPermission } from "@/lib/permissions";
 import type { Permission } from "@/lib/permissions";
 
-const memberPrefixes = ["/profile", "/api/me"];
+const memberPrefixes = [
+  "/dashboard",
+  "/profile",
+  "/library",
+  "/events",
+  "/announcements",
+  "/api/me",
+  "/api/library",
+  "/api/files",
+  "/api/events",
+  "/api/announcements",
+];
 
 const adminPrefixes = ["/admin", "/api/admin"];
 
@@ -14,7 +25,9 @@ function matchPrefix(pathname: string, prefixes: string[]) {
   );
 }
 
-function permissionForAdminPath(pathname: string): Permission | Permission[] | null {
+function permissionForAdminPath(
+  pathname: string,
+): Permission | Permission[] | "deny" | null {
   if (
     pathname.startsWith("/admin/requests") ||
     pathname.startsWith("/api/admin/membership-requests")
@@ -27,10 +40,66 @@ function permissionForAdminPath(pathname: string): Permission | Permission[] | n
   ) {
     return "MEMBER_MANAGE";
   }
-  if (pathname === "/admin" || pathname === "/api/admin") {
-    return ["ACCESS_REQUEST_MANAGE", "MEMBER_MANAGE"];
+  if (
+    pathname.startsWith("/admin/contacts") ||
+    pathname.startsWith("/api/admin/contacts")
+  ) {
+    return "CONTACT_MANAGE";
   }
-  return "ACCESS_REQUEST_MANAGE";
+  if (
+    pathname.startsWith("/admin/pieces") ||
+    pathname.startsWith("/admin/scores") ||
+    pathname.startsWith("/admin/audio") ||
+    pathname.startsWith("/api/admin/pieces") ||
+    pathname.startsWith("/api/admin/files") ||
+    pathname.startsWith("/api/admin/sheets") ||
+    pathname.startsWith("/api/admin/audio") ||
+    pathname.startsWith("/api/admin/scores")
+  ) {
+    return "PIECE_MANAGE";
+  }
+  if (
+    pathname.startsWith("/admin/events") ||
+    pathname.startsWith("/api/admin/events")
+  ) {
+    return "EVENT_MANAGE";
+  }
+  if (
+    pathname.startsWith("/admin/announcements") ||
+    pathname.startsWith("/api/admin/announcements")
+  ) {
+    return "ANNOUNCEMENT_MANAGE";
+  }
+  if (
+    pathname.startsWith("/admin/invoices") ||
+    pathname.startsWith("/api/admin/invoices")
+  ) {
+    return "INVOICE_READ";
+  }
+  if (
+    pathname.startsWith("/admin/audit") ||
+    pathname.startsWith("/api/admin/audit")
+  ) {
+    return "AUDIT_READ";
+  }
+  // Generic /admin hub: any admin-area permission
+  if (pathname === "/admin" || pathname === "/api/admin") {
+    return [
+      "ACCESS_REQUEST_MANAGE",
+      "MEMBER_MANAGE",
+      "PIECE_MANAGE",
+      "EVENT_MANAGE",
+      "ANNOUNCEMENT_MANAGE",
+      "INVOICE_READ",
+      "CONTACT_MANAGE",
+      "AUDIT_READ",
+    ];
+  }
+  // Unknown /admin/* paths: deny (no ACCESS_REQUEST_MANAGE fallback)
+  if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
+    return "deny";
+  }
+  return null;
 }
 
 export default auth((req) => {
@@ -57,7 +126,26 @@ export default auth((req) => {
   const role = req.auth.user.role;
 
   if (isAdminRoute) {
+    if (!hasAdminAreaAccess(role)) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { detail: "Forbidden", code: "http_403" },
+          { status: 403 },
+        );
+      }
+      return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
+    }
+
     const needed = permissionForAdminPath(pathname);
+    if (needed === "deny") {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { detail: "Forbidden", code: "http_403" },
+          { status: 403 },
+        );
+      }
+      return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
+    }
     if (needed) {
       const allowed = Array.isArray(needed)
         ? needed.some((p) => hasPermission(role, p))
@@ -69,7 +157,7 @@ export default auth((req) => {
             { status: 403 },
           );
         }
-        return NextResponse.redirect(new URL("/profile", req.nextUrl.origin));
+        return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
       }
     }
   }

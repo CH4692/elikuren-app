@@ -1,0 +1,131 @@
+import { NextResponse } from "next/server";
+
+import { writeAuditLog } from "@/lib/audit";
+import { requireAnyPermission } from "@/lib/authz";
+import { prisma } from "@/lib/db";
+import {
+  objectKeyFor,
+  validateUploadInput,
+} from "@/lib/files";
+import type { StoredFileCategory } from "@/lib/generated/prisma/client";
+import { createPresignedPutUrl, r2Configured } from "@/lib/r2";
+
+type Body = {
+  category?: StoredFileCategory;
+  originalName?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  pieceId?: string;
+  invoiceId?: string;
+  announcementId?: string;
+};
+
+function permissionForCategory(category: StoredFileCategory) {
+  if (category === "INVOICE") {
+    return ["INVOICE_WRITE"] as const;
+  }
+  if (category === "ANNOUNCEMENT") {
+    return ["ANNOUNCEMENT_MANAGE"] as const;
+  }
+  return ["PIECE_MANAGE"] as const;
+}
+
+export async function POST(request: Request) {
+  if (!r2Configured()) {
+    return NextResponse.json(
+      { detail: "Dateispeicher ist nicht konfiguriert", code: "r2_unconfigured" },
+      { status: 503 },
+    );
+  }
+
+  const body = (await request.json()) as Body;
+  const category = body.category;
+  if (!category) {
+    return NextResponse.json(
+      { detail: "category fehlt", code: "validation_error" },
+      { status: 400 },
+    );
+  }
+
+  const gate = await requireAnyPermission(permissionForCategory(category));
+  if (!gate.ok) return gate.response;
+
+  const originalName = String(body.originalName ?? "").trim();
+  const mimeType = String(body.mimeType ?? "").trim();
+  const sizeBytes = Number(body.sizeBytes);
+  if (!originalName || !mimeType || !Number.isFinite(sizeBytes)) {
+    return NextResponse.json(
+      { detail: "Ungültige Upload-Metadaten", code: "validation_error" },
+      { status: 400 },
+    );
+  }
+
+  const validated = validateUploadInput({
+    category,
+    originalName,
+    mimeType,
+    sizeBytes,
+  });
+  if (!validated.ok) {
+    return NextResponse.json(
+      { detail: validated.error, code: "validation_error" },
+      { status: 400 },
+    );
+  }
+
+  const objectKey = objectKeyFor({
+    category,
+    pieceId: body.pieceId,
+    invoiceId: body.invoiceId,
+    announcementId: body.announcementId,
+    extension: validated.extension,
+  });
+
+  const stored = await prisma.storedFile.create({
+    data: {
+      objectKey,
+      originalName,
+      mimeType,
+      sizeBytes,
+      category,
+      uploadStatus: "PENDING",
+      uploadedById: gate.user.id,
+    },
+  });
+
+  try {
+    const { url, expiresIn } = await createPresignedPutUrl({
+      objectKey,
+      contentType: mimeType,
+      contentLength: sizeBytes,
+    });
+
+    await writeAuditLog({
+      action: "file.upload_intent",
+      entityType: "stored_file",
+      entityId: stored.id,
+      actorUserId: gate.user.id,
+      metadata: { category, sizeBytes, mimeType },
+    });
+
+    return NextResponse.json({
+      fileId: stored.id,
+      uploadUrl: url,
+      expiresIn,
+      headers: {
+        "Content-Type": mimeType,
+        "Content-Length": String(sizeBytes),
+      },
+    });
+  } catch (error) {
+    await prisma.storedFile.update({
+      where: { id: stored.id },
+      data: { uploadStatus: "FAILED" },
+    });
+    console.error("presign failed", error);
+    return NextResponse.json(
+      { detail: "Upload-URL konnte nicht erzeugt werden", code: "http_500" },
+      { status: 500 },
+    );
+  }
+}

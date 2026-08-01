@@ -7,6 +7,11 @@ export function serializeMember(user: User) {
     email: user.email,
     firstname: user.firstname,
     lastname: user.lastname,
+    phone: user.phone,
+    street: user.street,
+    house_number: user.houseNumber,
+    postal_code: user.postalCode,
+    location: user.location,
     voice: user.voice,
     role: user.role,
     is_active: user.isActive,
@@ -42,6 +47,38 @@ export async function updateMemberVoice(userId: string, voice: string | null) {
   return prisma.user.update({
     where: { id: userId },
     data: { voice },
+  });
+}
+
+export type MemberProfileInput = {
+  firstname?: string | null;
+  lastname?: string | null;
+  phone?: string | null;
+  street?: string | null;
+  houseNumber?: string | null;
+  postalCode?: string | null;
+  location?: string | null;
+};
+
+export async function updateMemberProfile(
+  userId: string,
+  data: MemberProfileInput,
+) {
+  const patch: Prisma.UserUpdateInput = {};
+  if ("firstname" in data) patch.firstname = data.firstname?.trim() || null;
+  if ("lastname" in data) patch.lastname = data.lastname?.trim() || null;
+  if ("phone" in data) patch.phone = data.phone?.trim() || null;
+  if ("street" in data) patch.street = data.street?.trim() || null;
+  if ("houseNumber" in data)
+    patch.houseNumber = data.houseNumber?.trim() || null;
+  if ("postalCode" in data) patch.postalCode = data.postalCode?.trim() || null;
+  if ("location" in data) patch.location = data.location?.trim() || null;
+
+  if (Object.keys(patch).length === 0) return getMemberById(userId);
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: patch,
   });
 }
 
