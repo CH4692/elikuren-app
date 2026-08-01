@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { writeAuditLog } from "@/lib/audit";
 import { requireActiveSession } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { canAccessScopedFile } from "@/lib/files";
@@ -111,14 +110,6 @@ export async function GET(request: Request, { params }: Params) {
       fileName: file.originalName,
       contentType: file.mimeType,
       disposition,
-    });
-
-    await writeAuditLog({
-      action: "file.url_issued",
-      entityType: "stored_file",
-      entityId: file.id,
-      actorUserId: gate.user.id,
-      metadata: { disposition },
     });
 
     return NextResponse.json({ url, expiresIn, mimeType: file.mimeType });

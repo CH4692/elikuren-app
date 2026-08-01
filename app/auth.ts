@@ -4,7 +4,6 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Resend from "next-auth/providers/resend";
 
-import { writeAccessAudit } from "@/lib/audit";
 import { normalizeEmail } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
 import type { Role } from "@/lib/generated/prisma/client";
@@ -96,16 +95,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!user.email) return false;
         const allowed = await canRequestMagicLink(user.email);
         if (!allowed) {
-          await writeAccessAudit({
-            action: "magic_link_denied",
-            targetEmail: user.email,
-          });
           return false;
         }
-        await writeAccessAudit({
-          action: "magic_link_sent",
-          targetEmail: user.email,
-        });
         return true;
       }
 

@@ -151,7 +151,6 @@ model User {
   contentEvents  UserContentEvent[]
   createdInvoices Invoice[]            @relation("InvoiceCreatedBy")
   memberInvoices Invoice[]             @relation("InvoiceMember")
-  auditLogs      AuditLog[]            @relation("AuditActor")
 
   @@index([firstname])
   @@index([lastname])
@@ -178,23 +177,6 @@ model MembershipRequest {
   @@index([email])
   @@index([status])
   @@map("membership_requests")
-}
-
-model AuditLog {
-  id          String   @id @default(cuid())
-  actorUserId String?  @map("actor_user_id")
-  actor       User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-  action      String
-  entityType  String   @map("entity_type")
-  entityId    String?  @map("entity_id")
-  metadata    Json?
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  @@index([action])
-  @@index([entityType, entityId])
-  @@index([actorUserId])
-  @@index([createdAt])
-  @@map("audit_logs")
 }
 
 model StoredFile {

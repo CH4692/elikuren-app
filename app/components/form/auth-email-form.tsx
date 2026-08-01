@@ -2,7 +2,6 @@ import { AuthError } from "next-auth";
 import { headers } from "next/headers";
 
 import { signIn } from "@/auth";
-import { writeAccessAudit } from "@/lib/access-audit";
 import { prisma } from "@/lib/db";
 import { normalizeEmail } from "@/lib/permissions";
 import { postLoginPath } from "@/lib/post-login-path";
@@ -63,11 +62,6 @@ export function AuthEmailForm({
           const allowed = rateOk && (await canRequestMagicLink(email));
 
           if (!allowed) {
-            await writeAccessAudit({
-              action: "magic_link_denied",
-              targetEmail: email,
-              metadata: { reason: rateOk ? "not_approved" : "rate_limited" },
-            });
             const { redirect } = await import("next/navigation");
             redirect("/auth/error?error=AccessDenied");
           }

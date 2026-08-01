@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/db";
-import { writeAuditLog } from "@/lib/audit";
 import type { Role } from "@/lib/generated/prisma/client";
 
 /** Bump sessionVersion so existing JWTs become invalid. */
@@ -23,14 +22,6 @@ export async function setUserActiveState(input: {
     },
   });
 
-  await writeAuditLog({
-    action: input.isActive ? "user.enabled" : "user.disabled",
-    entityType: "user",
-    entityId: input.userId,
-    actorUserId: input.actorUserId,
-    metadata: { email: updated.email },
-  });
-
   return updated;
 }
 
@@ -45,14 +36,6 @@ export async function changeUserRole(input: {
       role: input.role,
       sessionVersion: { increment: 1 },
     },
-  });
-
-  await writeAuditLog({
-    action: "user.role_changed",
-    entityType: "user",
-    entityId: input.userId,
-    actorUserId: input.actorUserId,
-    metadata: { role: input.role, email: updated.email },
   });
 
   return updated;

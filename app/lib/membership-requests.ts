@@ -1,6 +1,5 @@
 import type { MembershipRequestStatus } from "@/lib/generated/prisma/client";
 
-import { writeAccessAudit } from "@/lib/access-audit";
 import { normalizeEmail } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
 
@@ -35,7 +34,7 @@ export async function createMembershipRequest(input: {
     return { ok: true, created: false };
   }
 
-  const created = await prisma.membershipRequest.create({
+  await prisma.membershipRequest.create({
     data: {
       email,
       firstname: input.firstname?.trim() || null,
@@ -43,12 +42,6 @@ export async function createMembershipRequest(input: {
       message: input.message?.trim() || null,
       voice: input.voice?.trim() || null,
     },
-  });
-
-  await writeAccessAudit({
-    action: "request_created",
-    targetEmail: email,
-    requestId: created.id,
   });
 
   return { ok: true, created: true };
@@ -106,13 +99,6 @@ export async function reviewMembershipRequest(input: {
       },
     });
 
-    await writeAccessAudit({
-      action: "rejected",
-      targetEmail: updated.email,
-      actorUserId: input.reviewerId,
-      requestId: updated.id,
-    });
-
     return updated;
   }
 
@@ -164,14 +150,6 @@ export async function reviewMembershipRequest(input: {
         approvedById: input.reviewerId,
       },
     });
-  });
-
-  await writeAccessAudit({
-    action: "approved",
-    targetEmail: updated.email,
-    actorUserId: input.reviewerId,
-    requestId: updated.id,
-    metadata: { voice },
   });
 
   return updated;

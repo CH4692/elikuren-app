@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { writeAuditLog } from "@/lib/audit";
 import { requireAnyPermission } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import {
@@ -101,14 +100,6 @@ export async function POST(request: Request) {
       objectKey,
       contentType: mimeType,
       contentLength: sizeBytes,
-    });
-
-    await writeAuditLog({
-      action: "file.upload_intent",
-      entityType: "stored_file",
-      entityId: stored.id,
-      actorUserId: gate.user.id,
-      metadata: { category, sizeBytes, mimeType },
     });
 
     return NextResponse.json({

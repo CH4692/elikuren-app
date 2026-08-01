@@ -43,17 +43,11 @@ test.describe("API AuthZ", () => {
       "/api/admin/members",
       "/api/admin/invoices",
       "/api/admin/membership-requests",
-      "/api/admin/audit",
       "/api/admin/scores",
       "/api/admin/audio",
     ]) {
       expect((await page.request.get(path)).ok()).toBeTruthy();
     }
-  });
-
-  test("member denied for audit API", async ({ page }) => {
-    await loginAsMember(page);
-    expect((await page.request.get("/api/admin/audit")).status()).toBe(403);
   });
 
   test("presign without R2 or without permission is rejected for members", async ({

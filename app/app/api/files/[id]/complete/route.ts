@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { writeAuditLog } from "@/lib/audit";
 import { requireActiveSession } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { hasPermission } from "@/lib/permissions";
@@ -85,14 +84,6 @@ export async function POST(_request: Request, { params }: Params) {
         uploadStatus: "READY",
         etag: head.ETag?.replaceAll('"', "") ?? null,
       },
-    });
-
-    await writeAuditLog({
-      action: "file.upload_completed",
-      entityType: "stored_file",
-      entityId: updated.id,
-      actorUserId: gate.user.id,
-      metadata: { sizeBytes: updated.sizeBytes },
     });
 
     return NextResponse.json({

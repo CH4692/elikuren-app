@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { writeAuditLog } from "@/lib/audit";
 import { requirePermission } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import type { FileAccessScope, SheetType, VoiceGroup } from "@/lib/generated/prisma/client";
@@ -49,17 +48,6 @@ export async function PATCH(request: Request, { params }: Params) {
     },
   });
 
-  await writeAuditLog({
-    action: "sheet.updated",
-    entityType: "sheet_file",
-    entityId: id,
-    actorUserId: gate.user.id,
-    metadata: {
-      published: Boolean(updated.publishedAt),
-      accessScope: updated.accessScope,
-    },
-  });
-
   return NextResponse.json({
     id: updated.id,
     published_at: updated.publishedAt?.toISOString() ?? null,
@@ -86,13 +74,6 @@ export async function DELETE(_request: Request, { params }: Params) {
       data: { deletedAt: new Date(), uploadStatus: "DELETED" },
     }),
   ]);
-
-  await writeAuditLog({
-    action: "sheet.deleted",
-    entityType: "sheet_file",
-    entityId: id,
-    actorUserId: gate.user.id,
-  });
 
   return NextResponse.json({ deleted: true });
 }

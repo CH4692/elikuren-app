@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { writeAuditLog } from "@/lib/audit";
 import { requirePermission } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { getPieceById, serializePiece } from "@/lib/pieces";
@@ -122,17 +121,6 @@ export async function PATCH(request: Request, { params }: Params) {
     },
   });
 
-  await writeAuditLog({
-    action: "piece.updated",
-    entityType: "music_piece",
-    entityId: piece.id,
-    actorUserId: gate.user.id,
-    metadata: {
-      publicationStatus: piece.publicationStatus,
-      rehearsalStatus: piece.rehearsalStatus,
-    },
-  });
-
   return NextResponse.json(serializePiece(piece));
 }
 
@@ -152,13 +140,6 @@ export async function DELETE(_request: Request, { params }: Params) {
   await prisma.musicPiece.update({
     where: { id },
     data: { publicationStatus: "ARCHIVED" },
-  });
-
-  await writeAuditLog({
-    action: "piece.archived",
-    entityType: "music_piece",
-    entityId: id,
-    actorUserId: gate.user.id,
   });
 
   return NextResponse.json({ archived: true });

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { writeAuditLog } from "@/lib/audit";
 import { requireActiveSession, requirePermission } from "@/lib/authz";
 import type { Role } from "@/lib/generated/prisma/client";
 import {
@@ -83,13 +82,6 @@ export async function PATCH(request: Request, { params }: Params) {
     const voice = body.voice?.trim() || null;
     if (voice !== member.voice) {
       await updateMemberVoice(id, voice);
-      await writeAuditLog({
-        action: "user.voice_changed",
-        entityType: "user",
-        entityId: id,
-        actorUserId: gate.user.id,
-        metadata: { voice, email: member.email },
-      });
     }
   }
 
@@ -116,13 +108,6 @@ export async function PATCH(request: Request, { params }: Params) {
       houseNumber: body.house_number,
       postalCode: body.postal_code,
       location: body.location,
-    });
-    await writeAuditLog({
-      action: "user.profile_updated",
-      entityType: "user",
-      entityId: id,
-      actorUserId: gate.user.id,
-      metadata: { email: member.email },
     });
   }
 

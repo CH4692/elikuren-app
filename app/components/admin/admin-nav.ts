@@ -5,7 +5,6 @@ import {
   FileText,
   LayoutDashboard,
   Music2,
-  ScrollText,
   Users,
   UserPlus,
 } from "lucide-react";
@@ -62,12 +61,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Rechnungen & Belege",
     icon: FileText,
     permission: "INVOICE_READ",
-  },
-  {
-    href: "/admin/audit",
-    label: "Audit-Log",
-    icon: ScrollText,
-    permission: "AUDIT_READ",
   },
 ];
 

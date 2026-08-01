@@ -46,7 +46,7 @@ npm run dev
 
 - Eingeloggt: Avatar-Menü (Dashboard, Profil, Noten, Audio; Admin nur mit Admin-Rechten). Login/„Mitglied werden“ sind ausgeblendet.
 - `/admin` nutzt eine eigene Shell mit berechtigungsbasierter Sidebar (ohne Marketing-Navbar).
-- Neue Permissions: `AUDIT_READ` (Vorstand). Unbekannte `/admin/*`-Pfade werden verweigert.
+- Unbekannte `/admin/*`-Pfade werden verweigert.
 - Admin-Listen: Table + Drawer/Dialog; flache Datei-Übersichten unter `/admin/scores` und `/admin/audio`.
 
 ## API routes
@@ -56,7 +56,6 @@ npm run dev
 | `GET/PATCH /api/me` | Current user (Auth.js session) |
 | `POST /api/membership-requests` | Public membership application |
 | `GET/PATCH /api/admin/membership-requests` | Admin review (role `vorstand`) |
-| `GET /api/admin/audit` | Audit-Log (`AUDIT_READ`) |
 | `GET /api/admin/scores` · `/api/admin/audio` | Flache Noten-/Audio-Listen |
 | `GET/POST /api/auth/*` | Auth.js handlers |
 | `POST /api/contact` | Contact form via Resend |

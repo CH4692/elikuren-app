@@ -54,12 +54,6 @@ function permissionForAdminPath(
   ) {
     return "INVOICE_READ";
   }
-  if (
-    pathname.startsWith("/admin/audit") ||
-    pathname.startsWith("/api/admin/audit")
-  ) {
-    return "AUDIT_READ";
-  }
   // Generic /admin hub: any admin-area permission
   if (pathname === "/admin" || pathname === "/api/admin") {
     return [
@@ -67,7 +61,6 @@ function permissionForAdminPath(
       "MEMBER_MANAGE",
       "PIECE_MANAGE",
       "INVOICE_READ",
-      "AUDIT_READ",
     ];
   }
   // Unknown /admin/* paths: deny (no ACCESS_REQUEST_MANAGE fallback)

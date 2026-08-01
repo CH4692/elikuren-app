@@ -1,13 +1,13 @@
 # Mitgliederbereich V1 – Foundation
 
-Stand: fokussierter Mitgliederbereich mit Permission-Layer, Auth/Aktivstatus, AuditLog, Prisma-Modelle und R2-Grundlage.
+Stand: fokussierter Mitgliederbereich mit Permission-Layer, Auth/Aktivstatus, Prisma-Modelle und R2-Grundlage.
 
 ## V1 Scope (bewusst fokussiert)
 
 - Dashboard
 - Noten/PDF-Stücke und MP3-Aufnahmen (`/library/*`)
 - Profil
-- Admin: Freigaben, Mitglieder, Stücke, Rechnungen, Audit-UI
+- Admin: Freigaben, Mitglieder, Stücke, Rechnungen
 
 Termine und Mitteilungen werden über Spond verwaltet und sind in der App nicht enthalten.
 
@@ -24,12 +24,7 @@ Termine und Mitteilungen werden über Spond verwaltet und sind in der App nicht 
 - `lib/session-security.ts`: Deaktivierung / Rollenwechsel erhöht `sessionVersion`.
 - Freigabe der Mitgliedschaft sendet Info-E-Mail mit Link zu `/auth/sign-in` (kein automatischer Magic Link).
 
-## 3. Audit-Log
-
-- `AccessAuditLog` → `AuditLog` (`audit_logs`), Migration erhält Bestandsdaten.
-- Schreiben über `lib/audit.ts` inkl. Metadaten-Sanitizer (keine Tokens/Secrets/Presigned-URLs).
-
-## 4. Prisma & R2
+## 3. Prisma & R2
 
 - Modelle u. a. `StoredFile`, `MusicPiece`, `SheetFile`, `AudioFile`, `accessScope`, Publish-Felder.
 - R2-Client: `lib/r2.ts` (Presigned PUT/GET, Head/Delete). Secrets nur serverseitig.

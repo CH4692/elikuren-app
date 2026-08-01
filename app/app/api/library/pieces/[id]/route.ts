@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { writeAuditLog } from "@/lib/audit";
 import { requirePermission } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { listPublishedPiecesForUser, serializeLibraryPiece } from "@/lib/library";
@@ -31,13 +30,6 @@ export async function GET(_request: Request, { params }: Params) {
       targetType: "PIECE",
       targetId: piece.id,
     },
-  });
-
-  await writeAuditLog({
-    action: "library.piece_viewed",
-    entityType: "music_piece",
-    entityId: piece.id,
-    actorUserId: gate.user.id,
   });
 
   return NextResponse.json(serializeLibraryPiece(piece, gate.user.voice));

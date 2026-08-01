@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { writeAuditLog } from "@/lib/audit";
 import { requirePermission } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import type {
@@ -68,18 +67,6 @@ export async function POST(request: Request, { params }: Params) {
       version: body.version?.trim() || "1",
       changelog: body.changelog?.trim() || null,
       publishedAt: publish ? new Date() : null,
-    },
-  });
-
-  await writeAuditLog({
-    action: "piece.sheet_attached",
-    entityType: "music_piece",
-    entityId: pieceId,
-    actorUserId: gate.user.id,
-    metadata: {
-      storedFileId: stored.id,
-      sheetType: body.sheetType ?? "OTHER",
-      published: publish,
     },
   });
 

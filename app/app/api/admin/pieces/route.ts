@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { writeAuditLog } from "@/lib/audit";
 import { requirePermission } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { listPiecesAdmin, serializePiece } from "@/lib/pieces";
@@ -59,14 +58,6 @@ export async function POST(request: Request) {
       sheetFiles: { include: { storedFile: true } },
       audioFiles: { include: { storedFile: true } },
     },
-  });
-
-  await writeAuditLog({
-    action: "piece.created",
-    entityType: "music_piece",
-    entityId: piece.id,
-    actorUserId: gate.user.id,
-    metadata: { title, composer },
   });
 
   return NextResponse.json(serializePiece(piece), { status: 201 });

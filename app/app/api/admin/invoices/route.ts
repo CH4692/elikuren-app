@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { writeAuditLog } from "@/lib/audit";
 import { requirePermission } from "@/lib/authz";
 import {
   createInvoice,
@@ -92,17 +91,6 @@ export async function POST(request: Request) {
     },
     gate.user.id,
   );
-
-  await writeAuditLog({
-    action: "invoice.created",
-    entityType: "invoice",
-    entityId: invoice.id,
-    actorUserId: gate.user.id,
-    metadata: {
-      invoiceNumber,
-      amountCents,
-    },
-  });
 
   return NextResponse.json(serializeInvoice(invoice), { status: 201 });
 }

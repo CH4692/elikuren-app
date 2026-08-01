@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { writeAuditLog } from "@/lib/audit";
 import { requireActiveSession, requirePermission } from "@/lib/authz";
 import { hasPermission } from "@/lib/permissions";
 import {
@@ -137,17 +136,6 @@ export async function PATCH(request: Request, { params }: Params) {
         ? new Date().toISOString()
         : body.paid_at,
     paymentMethod: body.payment_method,
-  });
-
-  await writeAuditLog({
-    action: wantsPayment ? "invoice.payment_recorded" : "invoice.updated",
-    entityType: "invoice",
-    entityId: id,
-    actorUserId: session.user.id,
-    metadata: {
-      invoiceNumber: updated.invoiceNumber,
-      status: updated.status,
-    },
   });
 
   return NextResponse.json(serializeInvoice(updated));
