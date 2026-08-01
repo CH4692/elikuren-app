@@ -1,14 +1,15 @@
 import { test, expect } from "@playwright/test";
 
-test("sign-in page", async ({ page }) => {
+test("sign-in page is magic-link first", async ({ page }) => {
   await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded" });
   await expect(
     page.getByRole("heading", { name: "Mitglieder Login" }),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Anmelden" })).toBeVisible();
-  await expect(page.locator('input[name="password"]')).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Login-Link senden" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Mitgliedschaft beantragen" }),
   ).toBeVisible();
 });
 

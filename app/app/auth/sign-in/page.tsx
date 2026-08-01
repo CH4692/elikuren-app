@@ -11,7 +11,7 @@ export default async function SignInPage({
     <div className="relative flex min-h-screen items-center justify-center bg-background px-4 pb-12 pt-28 font-sans dark:bg-black">
       <AuthEmailForm
         title="Mitglieder Login"
-        subtitle="Mit Passwort anmelden oder Magic Link für freigeschaltete Mitglieder anfordern."
+        subtitle="Freigeschaltete Mitglieder erhalten einen Magic Link per E-Mail. Eine Mitgliedschaft beantragst du unter „Mitglied werden“."
         submitLabel="Login-Link senden"
         callbackUrl={params.callbackUrl ?? "/dashboard"}
       />

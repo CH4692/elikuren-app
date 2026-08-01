@@ -18,12 +18,19 @@ type AuthEmailFormProps = {
   callbackUrl?: string;
 };
 
+/** Password login is for local/E2E only — not shown on Vercel Preview/Production. */
+function passwordLoginEnabled() {
+  return process.env.AUTH_ENABLE_PASSWORD_LOGIN === "1";
+}
+
 export function AuthEmailForm({
   title,
   subtitle,
   submitLabel,
   callbackUrl = "/dashboard",
 }: AuthEmailFormProps) {
+  const showPassword = passwordLoginEnabled();
+
   return (
     <div className="w-full max-w-md rounded-2xl border border-[#C8A24D]/40 bg-[#1F1F23] p-8 text-[#F4F1EB] shadow-xl">
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
@@ -31,61 +38,6 @@ export function AuthEmailForm({
 
       <form
         className="mt-8 flex flex-col gap-4"
-        action={async (formData) => {
-          "use server";
-          const email = String(formData.get("email") ?? "").trim().toLowerCase();
-          const password = String(formData.get("password") ?? "");
-          if (!email || !password) return;
-
-          try {
-            await signIn("credentials", {
-              email,
-              password,
-              redirectTo: callbackUrl,
-            });
-          } catch (error) {
-            if (error instanceof AuthError) {
-              const { redirect } = await import("next/navigation");
-              redirect(`/auth/error?error=${error.type}`);
-            }
-            throw error;
-          }
-        }}
-      >
-        <label className="flex flex-col gap-2 text-sm">
-          <span>E-Mail</span>
-          <input
-            required
-            type="email"
-            name="email"
-            autoComplete="username"
-            placeholder="name@example.com"
-            className="rounded-lg border border-[#C8A24D]/50 bg-[#121216] px-3 py-2 text-[#F4F1EB] outline-none ring-[#C8A24D] focus:ring-2"
-          />
-        </label>
-        <label className="flex flex-col gap-2 text-sm">
-          <span>Passwort</span>
-          <input
-            required
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            className="rounded-lg border border-[#C8A24D]/50 bg-[#121216] px-3 py-2 text-[#F4F1EB] outline-none ring-[#C8A24D] focus:ring-2"
-          />
-        </label>
-        <Button
-          type="submit"
-          className="bg-[#C8A24D] text-[#1F1F23] hover:bg-[#d4b35e]"
-        >
-          Anmelden
-        </Button>
-      </form>
-
-      <div className="my-6 border-t border-[#C8A24D]/30" />
-
-      <p className="text-sm text-[#F4F1EB]/75">Oder Magic Link:</p>
-      <form
-        className="mt-3 flex flex-col gap-4"
         action={async (formData) => {
           "use server";
           const email = normalizeEmail(String(formData.get("email") ?? ""));
@@ -133,8 +85,7 @@ export function AuthEmailForm({
         </label>
         <Button
           type="submit"
-          variant="outline"
-          className="border-[#C8A24D] text-[#F4F1EB]"
+          className="bg-[#C8A24D] text-[#1F1F23] hover:bg-[#d4b35e]"
         >
           {submitLabel}
         </Button>
@@ -148,6 +99,71 @@ export function AuthEmailForm({
           </a>
         </p>
       </form>
+
+      {showPassword ? (
+        <>
+          <div className="my-6 border-t border-[#C8A24D]/30" />
+          <p className="text-sm text-[#F4F1EB]/75">
+            Dev/E2E: Passwort-Login
+          </p>
+          <form
+            className="mt-3 flex flex-col gap-4"
+            action={async (formData) => {
+              "use server";
+              if (!passwordLoginEnabled()) return;
+
+              const email = String(formData.get("email") ?? "")
+                .trim()
+                .toLowerCase();
+              const password = String(formData.get("password") ?? "");
+              if (!email || !password) return;
+
+              try {
+                await signIn("credentials", {
+                  email,
+                  password,
+                  redirectTo: callbackUrl,
+                });
+              } catch (error) {
+                if (error instanceof AuthError) {
+                  const { redirect } = await import("next/navigation");
+                  redirect(`/auth/error?error=${error.type}`);
+                }
+                throw error;
+              }
+            }}
+          >
+            <label className="flex flex-col gap-2 text-sm">
+              <span>E-Mail</span>
+              <input
+                required
+                type="email"
+                name="email"
+                autoComplete="username"
+                placeholder="name@example.com"
+                className="rounded-lg border border-[#C8A24D]/50 bg-[#121216] px-3 py-2 text-[#F4F1EB] outline-none ring-[#C8A24D] focus:ring-2"
+              />
+            </label>
+            <label className="flex flex-col gap-2 text-sm">
+              <span>Passwort</span>
+              <input
+                required
+                type="password"
+                name="password"
+                autoComplete="current-password"
+                className="rounded-lg border border-[#C8A24D]/50 bg-[#121216] px-3 py-2 text-[#F4F1EB] outline-none ring-[#C8A24D] focus:ring-2"
+              />
+            </label>
+            <Button
+              type="submit"
+              variant="outline"
+              className="border-[#C8A24D] text-[#F4F1EB]"
+            >
+              Anmelden
+            </Button>
+          </form>
+        </>
+      ) : null}
     </div>
   );
 }
