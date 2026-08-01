@@ -1,6 +1,6 @@
 export default function VerifyRequestPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 font-sans dark:bg-black">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 pb-12 pt-28 font-sans dark:bg-black">
       <div className="w-full max-w-md rounded-2xl border border-[#C8A24D]/40 bg-[#1F1F23] p-8 text-[#F4F1EB] shadow-xl">
         <h1 className="text-2xl font-semibold tracking-tight">
           E-Mail prüfen
