@@ -20,6 +20,10 @@ jobs:
     defaults:
       run:
         working-directory: app
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
 
     steps:
       - uses: actions/checkout@v4
@@ -33,18 +37,19 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Create .env.local from Neon secrets
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      - name: Verify Neon secrets
         run: |
-          cp .env.test .env.local
-          {
-            echo "DATABASE_URL=$DATABASE_URL"
-            echo "DATABASE_URL_UNPOOLED=$DATABASE_URL_UNPOOLED"
-            echo "AUTH_SECRET=$AUTH_SECRET"
-          } >> .env.local
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL secret is missing or empty"
+            exit 1
+          fi
+          if [ -z "$AUTH_SECRET" ]; then
+            echo "::error::AUTH_SECRET secret is missing or empty"
+            exit 1
+          fi
+
+      - name: Use Playwright test defaults
+        run: node scripts/write-ci-env.mjs
 
       - name: Migrate test database
         run: npm run db:migrate
