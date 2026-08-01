@@ -84,7 +84,7 @@ test.describe("Members API integration", () => {
   }) => {
     const email = `deact-api-${Date.now()}@example.com`;
     const password = "E2E-Temp-Deact-Password!";
-    const user = await upsertCredentialUser({
+    const user = upsertCredentialUser({
       email,
       password,
       voice: "Bass",

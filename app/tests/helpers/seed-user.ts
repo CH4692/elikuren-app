@@ -1,64 +1,40 @@
-import { config as loadEnv } from "dotenv";
-import bcrypt from "bcryptjs";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import { execSync } from "node:child_process";
+import path from "node:path";
 
-import { PrismaClient, type Role } from "../../lib/generated/prisma/client";
-import { pgSslForConnectionString } from "../../lib/pg-connection";
-
-loadEnv({ path: ".env.test" });
-loadEnv({ path: ".env.local", override: true });
-
-/** Upsert an active user with password (for isolation in Playwright tests). */
-export async function upsertCredentialUser(input: {
+/**
+ * Upsert an active credential user via tsx CLI (avoids loading Prisma inside Playwright's ESM runner).
+ */
+export function upsertCredentialUser(input: {
   email: string;
   password: string;
-  role?: Role;
+  role?: string;
   firstname?: string;
   lastname?: string;
   voice?: string;
-}) {
-  const connectionString =
-    process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is required");
-  }
-
-  const pool = new Pool({
-    connectionString,
-    ssl: pgSslForConnectionString(connectionString),
+}): { id: string; email: string } {
+  const out = execSync("npx tsx ./tests/seed-temp-user.ts", {
+    cwd: path.join(__dirname, ".."),
+    env: {
+      ...process.env,
+      E2E_TEMP_EMAIL: input.email,
+      E2E_TEMP_PASSWORD: input.password,
+      E2E_TEMP_ROLE: input.role ?? "mitglied",
+      E2E_TEMP_FIRSTNAME: input.firstname ?? "E2E",
+      E2E_TEMP_LASTNAME: input.lastname ?? "Temp",
+      E2E_TEMP_VOICE: input.voice ?? "Alt",
+    },
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
   });
-  const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
-  try {
-    const passwordHash = await bcrypt.hash(input.password, 12);
-    const firstname = input.firstname ?? "E2E";
-    const lastname = input.lastname ?? "Temp";
-    return prisma.user.upsert({
-      where: { email: input.email },
-      create: {
-        email: input.email,
-        emailVerified: new Date(),
-        firstname,
-        lastname,
-        name: `${firstname} ${lastname}`,
-        role: input.role ?? "mitglied",
-        voice: input.voice ?? "Alt",
-        passwordHash,
-        isActive: true,
-        memberSince: new Date(),
-      },
-      update: {
-        role: input.role ?? "mitglied",
-        voice: input.voice ?? "Alt",
-        passwordHash,
-        isActive: true,
-        emailVerified: new Date(),
-        sessionVersion: 0,
-      },
-    });
-  } finally {
-    await prisma.$disconnect();
-    await pool.end();
+  const line = out
+    .trim()
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .pop();
+  if (!line) {
+    throw new Error("seed-temp-user produced no output");
   }
+  return JSON.parse(line) as { id: string; email: string };
 }
