@@ -82,8 +82,8 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
 
   return (
     <>
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] text-[var(--sidebar-foreground)] lg:flex">
-        <div className="border-b border-[var(--sidebar-border)] px-5 py-5">
+      <aside className="hidden h-dvh w-64 shrink-0 flex-col border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] text-[var(--sidebar-foreground)] lg:flex">
+        <div className="shrink-0 border-b border-[var(--sidebar-border)] px-5 py-5">
           <Link href="/admin" className="block">
             <p className="text-xs uppercase tracking-[0.2em] text-[#C8A24D]/80">
               Elikuren
@@ -93,15 +93,15 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
             </p>
           </Link>
         </div>
-        <div className="flex-1 overflow-y-auto py-3">
+        <div className="min-h-0 flex-1 overflow-y-auto py-3">
           <NavList role={role} pathname={pathname} />
         </div>
-        <div className="border-t border-[var(--sidebar-border)] px-3 py-3">
+        <div className="shrink-0 border-t border-[var(--sidebar-border)] px-3 py-3">
           <LogoutButton />
         </div>
       </aside>
 
-      <div className="flex items-center gap-3 border-b border-[#ebe4d8] bg-white/80 px-4 py-3 lg:hidden">
+      <div className="flex shrink-0 items-center gap-3 border-b border-[#ebe4d8] bg-white/80 px-4 py-3 lg:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <Button
             type="button"
@@ -114,19 +114,19 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
           </Button>
           <SheetContent
             side="left"
-            className="flex w-72 flex-col border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] p-0 text-[var(--sidebar-foreground)]"
+            className="flex h-dvh max-h-dvh w-72 flex-col border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] p-0 text-[var(--sidebar-foreground)]"
           >
-            <SheetHeader className="border-b border-[var(--sidebar-border)] px-4 py-4">
+            <SheetHeader className="shrink-0 border-b border-[var(--sidebar-border)] px-4 py-4">
               <SheetTitle className="text-[#F4F1EB]">Verwaltung</SheetTitle>
             </SheetHeader>
-            <div className="flex-1 overflow-y-auto py-3">
+            <div className="min-h-0 flex-1 overflow-y-auto py-3">
               <NavList
                 role={role}
                 pathname={pathname}
                 onNavigate={() => setOpen(false)}
               />
             </div>
-            <div className="border-t border-[var(--sidebar-border)] px-3 py-3">
+            <div className="shrink-0 border-t border-[var(--sidebar-border)] px-3 py-3">
               <LogoutButton onNavigate={() => setOpen(false)} />
             </div>
           </SheetContent>
