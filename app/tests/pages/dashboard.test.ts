@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-import { createAnnouncement, createEvent } from "../helpers/api";
+import { createEvent } from "../helpers/api";
 import { loginAsAdmin, loginAsMember } from "../helpers/auth";
 
 test.describe("Dashboard", () => {
@@ -10,35 +10,37 @@ test.describe("Dashboard", () => {
     await loginAsMember(page);
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: /Hallo/i })).toBeVisible();
+    await expect(
+      page.getByText(
+        /Schön, dass du da bist\. Alle wichtigen Unterlagen für das aktuelle Chorprojekt findest du hier\./,
+      ),
+    ).toBeVisible();
     const hub = page.locator("main");
     await expect(hub.getByRole("link", { name: /Noten/i }).first()).toBeVisible();
     await expect(hub.getByRole("link", { name: /Audio/i }).first()).toBeVisible();
-    await expect(
-      hub.getByRole("link", { name: /Termine/i }).first(),
-    ).toBeVisible();
-    await expect(
-      hub.getByRole("link", { name: /Mitteilungen/i }).first(),
-    ).toBeVisible();
     await expect(hub.getByRole("link", { name: /Profil/i }).first()).toBeVisible();
+    await expect(
+      hub.getByRole("link", { name: /Mitteilungen/i }),
+    ).toHaveCount(0);
+    await expect(hub.getByRole("heading", { name: "Schnellzugriff" })).toBeVisible();
+    await expect(
+      hub.getByRole("heading", { name: "Aktuelles Projekt" }),
+    ).toBeVisible();
   });
 
-  test("dashboard shows important announcement and next-event card", async ({
-    page,
-  }) => {
+  test("dashboard shows next event card", async ({ page }) => {
     await loginAsAdmin(page);
-    const title = `Dash Mitteilung ${Date.now()}`;
     const eventTitle = `Dash Termin ${Date.now()}`;
-    await createAnnouncement(page.request, { title, publish: true });
     await createEvent(page.request, {
       title: eventTitle,
       startsAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     });
 
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(page.getByText("Wichtige Mitteilungen")).toBeVisible();
-    await expect(page.getByText(title)).toBeVisible();
-    await expect(page.getByText("Nächste Termine")).toBeVisible();
+    await expect(page.getByText("Nächster Termin")).toBeVisible();
     await expect(page.getByText(eventTitle)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/Probenraum/)).toBeVisible();
+    await expect(page.getByText("Wichtige Mitteilungen")).toHaveCount(0);
   });
 
   test("admin sees Verwaltung card, member does not", async ({ page }) => {

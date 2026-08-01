@@ -24,17 +24,7 @@ export default async function DashboardPage() {
   if (!user?.isActive) redirect("/auth/sign-in");
 
   const now = new Date();
-  const [importantAnnouncements, pieces, events] = await Promise.all([
-    prisma.announcement.findMany({
-      where: {
-        publishedAt: { not: null, lte: now },
-        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-        isImportant: true,
-      },
-      orderBy: { publishedAt: "desc" },
-      take: 3,
-      select: { id: true, title: true, publishedAt: true },
-    }),
+  const [pieces, events] = await Promise.all([
     listPublishedPiecesForUser({
       role: user.role,
       voice: user.voice,
@@ -42,30 +32,57 @@ export default async function DashboardPage() {
     listEventsForMember(session.user.id, now),
   ]);
 
-  const rehearsing = pieces
-    .filter((p) => p.rehearsalStatus === "REHEARSING")
-    .slice(0, 5)
-    .map((p) => ({ id: p.id, title: p.title, composer: p.composer }));
+  const rehearsing = pieces.filter((p) => p.rehearsalStatus === "REHEARSING");
+  const featured = rehearsing[0] ?? null;
 
-  const recentSheets = pieces
-    .flatMap((p) =>
+  const currentProject = featured
+    ? {
+        id: featured.id,
+        title: featured.title,
+        composer: featured.composer,
+        sheetCount: featured.sheetFiles.length,
+        audioCount: featured.audioFiles.length,
+      }
+    : null;
+
+  const recentLibrary = [
+    ...pieces.flatMap((p) =>
       p.sheetFiles.map((s) => ({
         pieceId: p.id,
-        title: p.title,
+        pieceTitle: p.title,
         name: s.storedFile.originalName,
+        kind: "score" as const,
         at: s.publishedAt,
       })),
-    )
+    ),
+    ...pieces.flatMap((p) =>
+      p.audioFiles.map((a) => ({
+        pieceId: p.id,
+        pieceTitle: p.title,
+        name: a.storedFile.originalName,
+        kind: "audio" as const,
+        at: a.publishedAt,
+      })),
+    ),
+  ]
     .sort((a, b) => (b.at?.getTime() ?? 0) - (a.at?.getTime() ?? 0))
     .slice(0, 5)
-    .map(({ pieceId, title, name }) => ({ pieceId, title, name }));
+    .map(({ pieceId, pieceTitle, name, kind }) => ({
+      pieceId,
+      pieceTitle,
+      name,
+      kind,
+    }));
 
-  const upcomingEvents = events.slice(0, 4).map((e) => ({
-    id: e.id,
-    title: e.title,
-    startsAt: e.startsAt,
-    location: e.location,
-  }));
+  const next = events[0] ?? null;
+  const nextEvent = next
+    ? {
+        id: next.id,
+        title: next.title,
+        startsAt: next.startsAt,
+        location: next.location,
+      }
+    : null;
 
   return (
     <MemberShell>
@@ -73,10 +90,9 @@ export default async function DashboardPage() {
         firstname={user.firstname}
         voice={user.voice}
         showAdmin={hasAdminAreaAccess(user.role)}
-        announcements={importantAnnouncements}
-        upcomingEvents={upcomingEvents}
-        rehearsing={rehearsing}
-        recentSheets={recentSheets}
+        nextEvent={nextEvent}
+        currentProject={currentProject}
+        recentLibrary={recentLibrary}
       />
     </MemberShell>
   );
