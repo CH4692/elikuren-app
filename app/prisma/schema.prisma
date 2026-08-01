@@ -98,6 +98,17 @@ enum FavoriteTargetType {
   AUDIO
 }
 
+enum ContactType {
+  CHOIR_MEMBER
+  FORMER_MEMBER
+  MUSICIAN
+  SOLOIST
+  ORGANIZER
+  PARISH
+  VENDOR
+  OTHER
+}
+
 enum ContentEventType {
   VIEWED
   PLAYED
@@ -177,10 +188,34 @@ model User {
   createdInvoices Invoice[]            @relation("InvoiceCreatedBy")
   memberInvoices Invoice[]             @relation("InvoiceMember")
   auditLogs      AuditLog[]            @relation("AuditActor")
+  linkedContacts Contact[]             @relation("ContactLinkedUser")
 
   @@index([firstname])
   @@index([lastname])
   @@map("users")
+}
+
+model Contact {
+  id            String      @id @default(cuid())
+  type          ContactType @default(OTHER)
+  firstname     String?
+  lastname      String?
+  email         String?
+  organization  String?
+  phone         String?
+  notes         String?     @db.Text
+  linkedUserId  String?     @map("linked_user_id")
+  linkedUser    User?       @relation("ContactLinkedUser", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  archivedAt    DateTime?   @map("archived_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([email])
+  @@index([lastname])
+  @@index([linkedUserId])
+  @@index([archivedAt])
+  @@map("contacts")
 }
 
 model MembershipRequest {

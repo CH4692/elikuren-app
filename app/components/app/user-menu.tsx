@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CalendarDays,
   FileMusic,
   Headphones,
   LayoutDashboard,
@@ -63,6 +64,7 @@ const memberLinks = [
   { href: "/profile", label: "Mein Profil", icon: UserRound },
   { href: "/library/scores", label: "Noten & Stücke", icon: FileMusic },
   { href: "/library/audio", label: "Audio & Üben", icon: Headphones },
+  { href: "/events", label: "Termine", icon: CalendarDays },
   { href: "/announcements", label: "Mitteilungen", icon: Megaphone },
 ] as const;
 

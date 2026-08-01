@@ -1,20 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import { ExternalLink, Music2, Plus } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { DataTableToolbar } from "@/components/app/data-table-toolbar";
+import { EmptyState } from "@/components/app/empty-state";
+import { FormDrawer } from "@/components/app/form-drawer";
+import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type PieceListItem = {
   id: string;
@@ -37,6 +44,7 @@ export function PiecesPanel() {
   const [items, setItems] = useState<PieceListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [pending, startTransition] = useTransition();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [composer, setComposer] = useState("");
 
@@ -71,6 +79,7 @@ export function PiecesPanel() {
       }
       const created = (await res.json()) as PieceListItem;
       toast.success("Entwurf angelegt");
+      setDrawerOpen(false);
       setTitle("");
       setComposer("");
       window.location.href = `/admin/pieces/${created.id}`;
@@ -78,17 +87,96 @@ export function PiecesPanel() {
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Neues Stück</CardTitle>
-          <CardDescription>
-            Neue Inhalte starten als Entwurf und werden erst nach bewusster
-            Veröffentlichung für Mitglieder sichtbar.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-          <div className="space-y-1.5">
+    <div>
+      <PageHeader
+        title="Stücke"
+        description="Neue Inhalte starten als Entwurf und werden erst nach bewusster Veröffentlichung sichtbar."
+        actions={
+          <Button type="button" onClick={() => setDrawerOpen(true)}>
+            <Plus className="size-4" />
+            Neues Stück
+          </Button>
+        }
+      />
+
+      <DataTableToolbar />
+
+      {loading ? (
+        <div className="space-y-2 rounded-2xl border border-[#ebe4d8] bg-white/70 p-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon={Music2}
+          title="Noch keine Stücke"
+          description="Lege das erste Stück als Entwurf an."
+          action={
+            <Button type="button" onClick={() => setDrawerOpen(true)}>
+              Neues Stück
+            </Button>
+          }
+        />
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-[#ebe4d8] bg-white/70">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Titel</TableHead>
+                <TableHead>Komponist</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Noten</TableHead>
+                <TableHead>Audio</TableHead>
+                <TableHead className="text-right">Aktionen</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.title}</TableCell>
+                  <TableCell>{item.composer}</TableCell>
+                  <TableCell>{statusBadge(item.publication_status)}</TableCell>
+                  <TableCell>{item.sheet_files.length}</TableCell>
+                  <TableCell>{item.audio_files.length}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="border-[#d9d2c4]"
+                      asChild
+                    >
+                      <Link href={`/admin/pieces/${item.id}`}>
+                        <ExternalLink className="size-3.5" />
+                        Öffnen
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <FormDrawer
+        open={drawerOpen}
+        onOpenChange={(open) => {
+          setDrawerOpen(open);
+          if (!open) {
+            setTitle("");
+            setComposer("");
+          }
+        }}
+        title="Neues Stück"
+        description="Nach dem Anlegen wirst du zum Stück-Editor weitergeleitet."
+        loading={pending}
+        onSubmit={createPiece}
+        submitLabel="Entwurf anlegen"
+      >
+        <div className="space-y-4">
+          <div>
             <Label htmlFor="piece-title">Titel</Label>
             <Input
               id="piece-title"
@@ -97,7 +185,7 @@ export function PiecesPanel() {
               placeholder="z. B. Ave Maria"
             />
           </div>
-          <div className="space-y-1.5">
+          <div>
             <Label htmlFor="piece-composer">Komponist</Label>
             <Input
               id="piece-composer"
@@ -106,48 +194,8 @@ export function PiecesPanel() {
               placeholder="z. B. Schubert"
             />
           </div>
-          <div className="flex items-end">
-            <Button
-              disabled={pending || !title.trim() || !composer.trim()}
-              onClick={createPiece}
-            >
-              Entwurf anlegen
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-medium">Alle Stücke</h2>
-        {loading ? (
-          <p className="text-sm text-[#5c574e]">Laden …</p>
-        ) : items.length === 0 ? (
-          <p className="text-sm text-[#5c574e]">Noch keine Stücke vorhanden.</p>
-        ) : (
-          <ul className="space-y-2">
-            {items.map((item) => (
-              <li key={item.id}>
-                <Link
-                  href={`/admin/pieces/${item.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#C8A24D]/25 bg-white/70 px-4 py-3 transition hover:border-[#C8A24D]/60"
-                >
-                  <div>
-                    <p className="font-medium text-[#1F1F23]">{item.title}</p>
-                    <p className="text-sm text-[#5c574e]">{item.composer}</p>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-[#5c574e]">
-                    {statusBadge(item.publication_status)}
-                    <span>
-                      {item.sheet_files.length} Noten · {item.audio_files.length}{" "}
-                      Audio
-                    </span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        </div>
+      </FormDrawer>
     </div>
   );
 }

@@ -1,25 +1,37 @@
 "use client";
 
+import { Pencil, Users } from "lucide-react";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { DataTableToolbar } from "@/components/app/data-table-toolbar";
+import { EmptyState } from "@/components/app/empty-state";
+import { FormDrawer } from "@/components/app/form-drawer";
+import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type MemberItem = {
   id: string;
   email: string | null;
   firstname: string | null;
   lastname: string | null;
+  phone: string | null;
+  street: string | null;
+  house_number: string | null;
+  postal_code: string | null;
+  location: string | null;
   voice: string | null;
   role: string;
   is_active: boolean;
@@ -27,21 +39,50 @@ type MemberItem = {
   last_signed_in: string | null;
 };
 
-type Draft = {
+type MemberDraft = {
   role: string;
   voice: string;
+  voiceSelect: string;
   isActive: boolean;
+  firstname: string;
+  lastname: string;
+  phone: string;
+  street: string;
+  house_number: string;
+  postal_code: string;
+  location: string;
 };
 
 const ROLES = ["mitglied", "vorstand", "kassenwart", "kassenpruefer"] as const;
 const VOICE_OPTIONS = ["Sopran", "Alt", "Tenor", "Bass"] as const;
+const selectClass =
+  "flex h-10 w-full rounded-xl border border-[#d9d2c4] bg-white px-3 py-2 text-sm text-[#1f1f23]";
 
-function draftFromItem(item: MemberItem): Draft {
+function memberName(item: MemberItem) {
+  return [item.firstname, item.lastname].filter(Boolean).join(" ") || "Ohne Name";
+}
+
+function draftFromItem(item: MemberItem): MemberDraft {
+  const voice = item.voice ?? "";
+  const known = VOICE_OPTIONS.includes(voice as (typeof VOICE_OPTIONS)[number]);
   return {
     role: item.role,
-    voice: item.voice ?? "",
+    voice,
+    voiceSelect: known ? voice : voice ? "__custom" : "",
     isActive: item.is_active,
+    firstname: item.firstname ?? "",
+    lastname: item.lastname ?? "",
+    phone: item.phone ?? "",
+    street: item.street ?? "",
+    house_number: item.house_number ?? "",
+    postal_code: item.postal_code ?? "",
+    location: item.location ?? "",
   };
+}
+
+function resolvedVoice(draft: MemberDraft): string | null {
+  if (draft.voiceSelect === "__custom") return draft.voice.trim() || null;
+  return draft.voiceSelect.trim() || null;
 }
 
 function statusBadge(active: boolean) {
@@ -55,10 +96,11 @@ function statusBadge(active: boolean) {
 export function MembersPanel() {
   const [items, setItems] = useState<MemberItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [pending, startTransition] = useTransition();
-  const [drafts, setDrafts] = useState<Record<string, Draft>>({});
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editing, setEditing] = useState<MemberItem | null>(null);
+  const [draft, setDraft] = useState<MemberDraft | null>(null);
 
   async function load(q?: string) {
     setLoading(true);
@@ -68,13 +110,6 @@ export function MembersPanel() {
       if (!res.ok) throw new Error("load failed");
       const data = (await res.json()) as { items: MemberItem[] };
       setItems(data.items);
-      setDrafts((prev) => {
-        const next = { ...prev };
-        for (const item of data.items) {
-          if (!next[item.id]) next[item.id] = draftFromItem(item);
-        }
-        return next;
-      });
     } catch {
       toast.error("Mitglieder konnten nicht geladen werden");
     } finally {
@@ -87,29 +122,39 @@ export function MembersPanel() {
   }, []);
 
   const visible = useMemo(() => {
-    return [...items].sort((a, b) => {
-      const an = `${a.lastname ?? ""} ${a.firstname ?? ""}`.trim();
-      const bn = `${b.lastname ?? ""} ${b.firstname ?? ""}`.trim();
-      return an.localeCompare(bn, "de");
-    });
+    return [...items].sort((a, b) =>
+      memberName(a).localeCompare(memberName(b), "de"),
+    );
   }, [items]);
 
-  function updateDraft(id: string, patch: Partial<Draft>) {
-    setDrafts((prev) => ({
-      ...prev,
-      [id]: { ...(prev[id] ?? draftFromItem(items.find((i) => i.id === id)!)), ...patch },
-    }));
+  function openEdit(item: MemberItem) {
+    setEditing(item);
+    setDraft(draftFromItem(item));
+    setDrawerOpen(true);
   }
 
-  function save(id: string) {
-    const item = items.find((entry) => entry.id === id);
-    const draft = drafts[id] ?? (item ? draftFromItem(item) : null);
-    if (!item || !draft) return;
+  function save() {
+    if (!editing || !draft) return;
 
     const patch: Record<string, unknown> = {};
-    if (draft.role !== item.role) patch.role = draft.role;
-    if (draft.voice !== (item.voice ?? "")) patch.voice = draft.voice.trim() || null;
-    if (draft.isActive !== item.is_active) patch.is_active = draft.isActive;
+    if (draft.role !== editing.role) patch.role = draft.role;
+    const voice = resolvedVoice(draft);
+    if (voice !== (editing.voice ?? "")) patch.voice = voice;
+    if (draft.isActive !== editing.is_active) patch.is_active = draft.isActive;
+    if (draft.firstname.trim() !== (editing.firstname ?? ""))
+      patch.firstname = draft.firstname.trim() || null;
+    if (draft.lastname.trim() !== (editing.lastname ?? ""))
+      patch.lastname = draft.lastname.trim() || null;
+    if (draft.phone.trim() !== (editing.phone ?? ""))
+      patch.phone = draft.phone.trim() || null;
+    if (draft.street.trim() !== (editing.street ?? ""))
+      patch.street = draft.street.trim() || null;
+    if (draft.house_number.trim() !== (editing.house_number ?? ""))
+      patch.house_number = draft.house_number.trim() || null;
+    if (draft.postal_code.trim() !== (editing.postal_code ?? ""))
+      patch.postal_code = draft.postal_code.trim() || null;
+    if (draft.location.trim() !== (editing.location ?? ""))
+      patch.location = draft.location.trim() || null;
 
     if (Object.keys(patch).length === 0) {
       toast.message("Keine Änderungen");
@@ -117,7 +162,7 @@ export function MembersPanel() {
     }
 
     startTransition(async () => {
-      const res = await fetch(`/api/admin/members/${id}`, {
+      const res = await fetch(`/api/admin/members/${editing.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
@@ -127,166 +172,243 @@ export function MembersPanel() {
         return;
       }
       toast.success("Mitglied aktualisiert");
+      setDrawerOpen(false);
+      setEditing(null);
+      setDraft(null);
       await load(search || undefined);
     });
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Mitglieder</CardTitle>
-        <CardDescription>
-          Rollen, Stimmen und Aktivstatus verwalten. Rollenänderungen erfordern
-          entsprechende Berechtigung.
-        </CardDescription>
-        <form
-          className="flex gap-2 pt-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setSearch(query);
-            void load(query || undefined);
-          }}
-        >
-          <Input
-            placeholder="Suche nach Name, E-Mail, Stimme…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="max-w-md"
-          />
-          <Button type="submit" size="sm" variant="outline" className="border-[#cfc8bb] bg-transparent">
+    <div>
+      <PageHeader
+        title="Mitglieder"
+        description="Rollen, Stimmen, Profildaten und Aktivstatus verwalten."
+      />
+
+      <DataTableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Name, E-Mail, Stimme…"
+        actions={
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void load(search || undefined)}
+          >
             Suchen
           </Button>
-        </form>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <p className="text-sm text-[#5c574e]">Lädt…</p>
-        ) : visible.length === 0 ? (
-          <p className="text-sm text-[#5c574e]">Keine Mitglieder gefunden.</p>
-        ) : (
-          <ul className="space-y-4">
-            {visible.map((item) => {
-              const draft = drafts[item.id] ?? draftFromItem(item);
-              const changed =
-                draft.role !== item.role ||
-                draft.voice !== (item.voice ?? "") ||
-                draft.isActive !== item.is_active;
+        }
+      />
 
-              return (
-                <li
-                  key={item.id}
-                  className="rounded-2xl border border-[#d9d2c4] p-4"
+      {loading ? (
+        <div className="space-y-2 rounded-2xl border border-[#ebe4d8] bg-white/70 p-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      ) : visible.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="Keine Mitglieder gefunden"
+          description="Passe die Suche an oder lege neue Mitglieder über Zugangsanfragen an."
+        />
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-[#ebe4d8] bg-white/70">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>E-Mail</TableHead>
+                <TableHead>Stimme</TableHead>
+                <TableHead>Rolle</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Aktionen</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visible.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{memberName(item)}</TableCell>
+                  <TableCell className="text-[#5c574e]">{item.email}</TableCell>
+                  <TableCell>{item.voice ?? "—"}</TableCell>
+                  <TableCell>{item.role}</TableCell>
+                  <TableCell>{statusBadge(item.is_active)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 font-medium text-[#1f1f23]"
+                      onClick={() => openEdit(item)}
+                      aria-label={`${memberName(item)} bearbeiten`}
+                    >
+                      <Pencil className="size-3.5 text-[#C8A24D]" />
+                      Bearbeiten
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <FormDrawer
+        open={drawerOpen}
+        onOpenChange={(open) => {
+          setDrawerOpen(open);
+          if (!open) {
+            setEditing(null);
+            setDraft(null);
+          }
+        }}
+        title="Mitglied bearbeiten"
+        description={editing ? `${memberName(editing)} · ${editing.email}` : undefined}
+        loading={pending}
+        onSubmit={save}
+      >
+        {draft ? (
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="mem-firstname">Vorname</Label>
+                <Input
+                  id="mem-firstname"
+                  value={draft.firstname}
+                  onChange={(e) =>
+                    setDraft({ ...draft, firstname: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="mem-lastname">Nachname</Label>
+                <Input
+                  id="mem-lastname"
+                  value={draft.lastname}
+                  onChange={(e) =>
+                    setDraft({ ...draft, lastname: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="mem-phone">Telefon</Label>
+              <Input
+                id="mem-phone"
+                value={draft.phone}
+                onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+              <div>
+                <Label htmlFor="mem-street">Straße</Label>
+                <Input
+                  id="mem-street"
+                  value={draft.street}
+                  onChange={(e) =>
+                    setDraft({ ...draft, street: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="mem-house">Nr.</Label>
+                <Input
+                  id="mem-house"
+                  value={draft.house_number}
+                  onChange={(e) =>
+                    setDraft({ ...draft, house_number: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="mem-plz">PLZ</Label>
+                <Input
+                  id="mem-plz"
+                  value={draft.postal_code}
+                  onChange={(e) =>
+                    setDraft({ ...draft, postal_code: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="mem-location">Ort</Label>
+                <Input
+                  id="mem-location"
+                  value={draft.location}
+                  onChange={(e) =>
+                    setDraft({ ...draft, location: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="mem-role">Rolle</Label>
+                <select
+                  id="mem-role"
+                  className={selectClass}
+                  value={draft.role}
+                  onChange={(e) => setDraft({ ...draft, role: e.target.value })}
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-[#1f1f23]">
-                        {[item.firstname, item.lastname]
-                          .filter(Boolean)
-                          .join(" ") || "Ohne Name"}
-                      </p>
-                      <p className="text-sm text-[#5c574e]">{item.email}</p>
-                      {item.last_signed_in ? (
-                        <p className="mt-1 text-xs text-[#5c574e]">
-                          Zuletzt angemeldet:{" "}
-                          {new Date(item.last_signed_in).toLocaleString("de-DE")}
-                        </p>
-                      ) : null}
-
-                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                        <div>
-                          <Label htmlFor={`role-${item.id}`}>Rolle</Label>
-                          <select
-                            id={`role-${item.id}`}
-                            className="flex h-11 w-full rounded-xl border border-[#cfc8bb] bg-[#f7f4ee] px-3 py-2 text-sm"
-                            value={draft.role}
-                            onChange={(e) =>
-                              updateDraft(item.id, { role: e.target.value })
-                            }
-                          >
-                            {ROLES.map((role) => (
-                              <option key={role} value={role}>
-                                {role}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <Label htmlFor={`voice-${item.id}`}>Stimme</Label>
-                          <select
-                            id={`voice-${item.id}`}
-                            className="flex h-11 w-full rounded-xl border border-[#cfc8bb] bg-[#f7f4ee] px-3 py-2 text-sm"
-                            value={
-                              VOICE_OPTIONS.includes(
-                                draft.voice as (typeof VOICE_OPTIONS)[number],
-                              )
-                                ? draft.voice
-                                : draft.voice
-                                  ? "__custom"
-                                  : ""
-                            }
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              updateDraft(item.id, {
-                                voice: v === "__custom" ? draft.voice : v,
-                              });
-                            }}
-                          >
-                            <option value="">—</option>
-                            {VOICE_OPTIONS.map((v) => (
-                              <option key={v} value={v}>
-                                {v}
-                              </option>
-                            ))}
-                            <option value="__custom">Andere…</option>
-                          </select>
-                          {!VOICE_OPTIONS.includes(
-                            draft.voice as (typeof VOICE_OPTIONS)[number],
-                          ) &&
-                          draft.voice ? (
-                            <Input
-                              className="mt-2"
-                              value={draft.voice}
-                              onChange={(e) =>
-                                updateDraft(item.id, { voice: e.target.value })
-                              }
-                            />
-                          ) : null}
-                        </div>
-                        <div>
-                          <Label htmlFor={`active-${item.id}`}>Status</Label>
-                          <select
-                            id={`active-${item.id}`}
-                            className="flex h-11 w-full rounded-xl border border-[#cfc8bb] bg-[#f7f4ee] px-3 py-2 text-sm"
-                            value={draft.isActive ? "active" : "inactive"}
-                            onChange={(e) =>
-                              updateDraft(item.id, {
-                                isActive: e.target.value === "active",
-                              })
-                            }
-                          >
-                            <option value="active">Aktiv</option>
-                            <option value="inactive">Inaktiv</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      {statusBadge(item.is_active)}
-                      <Button
-                        size="sm"
-                        disabled={pending || !changed}
-                        onClick={() => save(item.id)}
-                      >
-                        Speichern
-                      </Button>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+                  {ROLES.map((role) => (
+                    <option key={role} value={role}>
+                      {role}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="mem-voice">Stimme</Label>
+                <select
+                  id="mem-voice"
+                  className={selectClass}
+                  value={draft.voiceSelect}
+                  onChange={(e) =>
+                    setDraft({ ...draft, voiceSelect: e.target.value })
+                  }
+                >
+                  <option value="">—</option>
+                  {VOICE_OPTIONS.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                  <option value="__custom">Andere…</option>
+                </select>
+                {draft.voiceSelect === "__custom" ? (
+                  <Input
+                    className="mt-2"
+                    value={draft.voice}
+                    onChange={(e) =>
+                      setDraft({ ...draft, voice: e.target.value })
+                    }
+                  />
+                ) : null}
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="mem-active">Status</Label>
+              <select
+                id="mem-active"
+                className={selectClass}
+                value={draft.isActive ? "active" : "inactive"}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    isActive: e.target.value === "active",
+                  })
+                }
+              >
+                <option value="active">Aktiv</option>
+                <option value="inactive">Inaktiv</option>
+              </select>
+            </div>
+          </div>
+        ) : null}
+      </FormDrawer>
+    </div>
   );
 }

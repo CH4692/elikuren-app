@@ -1,17 +1,14 @@
 "use client";
 
+import { Megaphone } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { EmptyState } from "@/components/app/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type AnnouncementItem = {
   id: string;
@@ -61,18 +58,20 @@ export function AnnouncementsPanel() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Mitteilungen</CardTitle>
-        <CardDescription>
-          Aktuelle Hinweise und Ankündigungen vom Vorstand.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Card className="border-[#ebe4d8] bg-white/80">
+      <CardContent className="pt-6">
         {loading ? (
-          <p className="text-sm text-[#5c574e]">Lädt…</p>
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 w-full rounded-2xl" />
+            ))}
+          </div>
         ) : items.length === 0 ? (
-          <p className="text-sm text-[#5c574e]">Keine Mitteilungen.</p>
+          <EmptyState
+            icon={Megaphone}
+            title="Keine Mitteilungen"
+            description="Sobald der Vorstand etwas veröffentlicht, erscheint es hier."
+          />
         ) : (
           <ul className="space-y-4">
             {items.map((item) => (
@@ -81,12 +80,12 @@ export function AnnouncementsPanel() {
                 className={`rounded-2xl border p-4 ${
                   item.is_important
                     ? "border-amber-500/40 bg-amber-500/5"
-                    : "border-[#d9d2c4]"
+                    : "border-[#ebe4d8] bg-white/60"
                 } ${item.is_read ? "opacity-80" : ""}`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium">{item.title}</p>
+                    <p className="font-medium text-[#1f1f23]">{item.title}</p>
                     {item.published_at ? (
                       <p className="text-xs text-[#5c574e]">
                         {new Date(item.published_at).toLocaleString("de-DE")}
