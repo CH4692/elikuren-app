@@ -20,11 +20,11 @@ cp .env.example .env.local
 # Neon DATABASE_URL + DATABASE_URL_UNPOOLED, AUTH_SECRET, RESEND_API_KEY, …
 ```
 
-Local dev and local E2E use **Neon** via `.env.local`. GitHub `web-ci` only runs lint/typecheck/unit/build; Playwright runs against **Vercel Preview** (see below).
+Local dev and full E2E use **Neon** via `.env.local`. GitHub CI is minimal (like charles-portfolio): typecheck, lint, build, public smoke tests — no Neon.
 
 ```bash
 npm run db:migrate
-npm run test          # unit + Playwright locally
+npm run test          # unit + full Playwright locally
 ```
 
 ## Local development
@@ -68,33 +68,22 @@ npm run dev
 
 ### Wo läuft was?
 
-| Ort | Was | Warum |
-|---|---|---|
-| **Lokal** (`npm run test`) | Unit + Playwright gegen `next dev` + Neon | Schnelles Feedback beim Entwickeln |
-| **GitHub `web-ci`** | Lint, typecheck, unit, build | Schnell, stabil, kein Browser/DB auf dem Runner |
-| **GitHub `e2e-preview`** | Playwright gegen **Vercel Preview-URL** | Entspricht dem produktiven Stack (Edge/Serverless), nicht einem selbst gehosteten CI-Server |
+| Ort | Was |
+|---|---|
+| **GitHub `CI`** | Typecheck, lint, build, public Playwright smoke (wie charles-portfolio) |
+| **Lokal** (`npm run test`) | Unit + volles Playwright inkl. Auth/Admin gegen Neon |
 
-Playwright gegen Neon auf jedem Push im Runner ist **kein** Best Practice (langsam, flaky, teuer). Üblich bei Vercel: Preview deployen → E2E gegen die Preview-URL (`deployment_status`).
-
-Lokal gegen eine Preview:
-
-```bash
-PLAYWRIGHT_BASE_URL=https://your-preview.vercel.app npm run test:e2e
-```
-
-Optional bei Deployment Protection: `VERCEL_AUTOMATION_BYPASS_SECRET=…`.
+Auth-/Mitglieder-E2E laufen **nicht** in GitHub Actions (brauchen Neon + E2E-User).
 
 ### Befehle
 
 | Befehl | Ebene |
 |---|---|
-| `npm run test:unit` | Unit (Permissions, Rate-Limits, Money, …) |
-| `npm run test:integration` | Playwright API-Flows |
-| `npm run test:ui` | Playwright UI |
-| `npm run test:e2e` | Integration + UI |
+| `npm run test:unit` | Unit |
+| `npm run test:e2e` | Playwright (Integration + UI) |
 | `npm run test` | Unit + E2E |
 
-E2E-Nutzer werden in `tests/global-setup.ts` angelegt (Admin, Mitglied, Kassenprüfer) — dafür braucht der Seed Zugriff auf dieselbe Neon-DB wie die Preview.
+E2E-Nutzer: `tests/global-setup.ts` → `tests/ensure-e2e-admin.ts` (braucht Neon in `.env.local`).
 
 ## Scripts
 

@@ -39,16 +39,7 @@ npx prisma migrate deploy && npm run build
 2. Sign-in / sign-up: `/auth/sign-in`, `/auth/sign-up`
 3. Magic-link callback goes through `/api/auth/*`
 
-## 4. Preview E2E (optional but recommended)
-
-After each Preview deploy, GitHub workflow `e2e-preview` runs Playwright against the Preview URL.
-
-1. Ensure Vercel Git integration creates Preview deployments for PRs / `dev`.
-2. Repository secrets (same Neon as Preview): `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AUTH_SECRET`.
-3. If Deployment Protection is enabled: set `VERCEL_AUTOMATION_BYPASS_SECRET` (Vercel → Deployment Protection → Protection Bypass for Automation) and add it as a GitHub secret.
-4. Manual: Actions → **e2e-preview** → Run workflow → paste Preview URL.
-
-## 5. Verify
+## 4. Verify
 
 - `https://kammerchor-elikuren.de/api/health`
 - Contact form
