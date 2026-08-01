@@ -7,6 +7,7 @@ import type {
   FileAccessScope,
   VoiceGroup,
 } from "@/lib/generated/prisma/client";
+import { serializeAudio } from "@/lib/audio-library";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -15,7 +16,20 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!gate.ok) return gate.response;
 
   const { id } = await params;
-  const existing = await prisma.audioFile.findUnique({ where: { id } });
+  const existing = await prisma.audioFile.findUnique({
+    where: { id },
+    include: {
+      storedFile: {
+        select: {
+          id: true,
+          originalName: true,
+          mimeType: true,
+          sizeBytes: true,
+          uploadStatus: true,
+        },
+      },
+    },
+  });
   if (!existing) {
     return NextResponse.json(
       { detail: "Audiodatei nicht gefunden", code: "http_404" },
@@ -24,26 +38,50 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   const body = (await request.json()) as {
-    audioType?: AudioType;
+    title?: string;
+    composer?: string | null;
     voiceGroup?: VoiceGroup | null;
+    audioType?: AudioType;
     accessScope?: FileAccessScope;
     isVisible?: boolean;
   };
 
+  const title =
+    body.title !== undefined ? String(body.title).trim() : existing.title;
+  if (!title) {
+    return NextResponse.json(
+      { detail: "Titel ist Pflicht", code: "validation_error" },
+      { status: 400 },
+    );
+  }
+
   const updated = await prisma.audioFile.update({
     where: { id },
     data: {
-      audioType: body.audioType,
+      title,
+      composer:
+        body.composer !== undefined
+          ? String(body.composer ?? "").trim()
+          : undefined,
       voiceGroup: body.voiceGroup === undefined ? undefined : body.voiceGroup,
+      audioType: body.audioType,
       accessScope: body.accessScope,
       isVisible: body.isVisible,
     },
+    include: {
+      storedFile: {
+        select: {
+          id: true,
+          originalName: true,
+          mimeType: true,
+          sizeBytes: true,
+          uploadStatus: true,
+        },
+      },
+    },
   });
 
-  return NextResponse.json({
-    id: updated.id,
-    is_visible: updated.isVisible,
-  });
+  return NextResponse.json(serializeAudio(updated));
 }
 
 export async function DELETE(_request: Request, { params }: Params) {

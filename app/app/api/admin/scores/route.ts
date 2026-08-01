@@ -1,61 +1,53 @@
 import { NextResponse } from "next/server";
 
 import { requirePermission } from "@/lib/authz";
-import { prisma } from "@/lib/db";
+import type { FileAccessScope, VoiceGroup } from "@/lib/generated/prisma/client";
+import { createScore, listScoresAdmin, serializeScore } from "@/lib/scores";
 
 export async function GET(request: Request) {
   const gate = await requirePermission("PIECE_MANAGE");
   if (!gate.ok) return gate.response;
 
-  const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q")?.trim();
+  const q = new URL(request.url).searchParams.get("q")?.trim();
+  const sheets = await listScoresAdmin(q || undefined);
+  return NextResponse.json({ items: sheets.map(serializeScore) });
+}
 
-  const sheets = await prisma.sheetFile.findMany({
-    where: q
-      ? {
-          OR: [
-            { piece: { title: { contains: q, mode: "insensitive" } } },
-            { piece: { composer: { contains: q, mode: "insensitive" } } },
-            { storedFile: { originalName: { contains: q, mode: "insensitive" } } },
-          ],
-        }
-      : undefined,
-    include: {
-      piece: { select: { id: true, title: true, composer: true } },
-      storedFile: {
-        select: {
-          id: true,
-          originalName: true,
-          mimeType: true,
-          sizeBytes: true,
-          uploadStatus: true,
-        },
-      },
-    },
-    orderBy: [{ updatedAt: "desc" }],
-    take: 200,
-  });
+export async function POST(request: Request) {
+  const gate = await requirePermission("PIECE_MANAGE");
+  if (!gate.ok) return gate.response;
 
-  return NextResponse.json({
-    items: sheets.map((sheet) => ({
-      id: sheet.id,
-      piece_id: sheet.pieceId,
-      piece_title: sheet.piece.title,
-      piece_composer: sheet.piece.composer,
-      sheet_type: sheet.sheetType,
-      voice_group: sheet.voiceGroup,
-      access_scope: sheet.accessScope,
-      version: sheet.version,
-      is_visible: sheet.isVisible,
-      stored_file: {
-        id: sheet.storedFile.id,
-        original_name: sheet.storedFile.originalName,
-        mime_type: sheet.storedFile.mimeType,
-        size_bytes: sheet.storedFile.sizeBytes,
-        upload_status: sheet.storedFile.uploadStatus,
-      },
-      created_at: sheet.createdAt.toISOString(),
-      updated_at: sheet.updatedAt.toISOString(),
-    })),
-  });
+  const body = (await request.json()) as {
+    storedFileId?: string;
+    title?: string;
+    composer?: string | null;
+    voiceGroup?: VoiceGroup | null;
+    accessScope?: FileAccessScope;
+    isVisible?: boolean;
+  };
+
+  if (!body.storedFileId) {
+    return NextResponse.json(
+      { detail: "storedFileId fehlt", code: "validation_error" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const sheet = await createScore({
+      storedFileId: body.storedFileId,
+      title: String(body.title ?? ""),
+      composer: body.composer,
+      voiceGroup: body.voiceGroup,
+      accessScope: body.accessScope,
+      isVisible: body.isVisible,
+    });
+    return NextResponse.json(serializeScore(sheet), { status: 201 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Anlegen fehlgeschlagen";
+    return NextResponse.json(
+      { detail: message, code: "validation_error" },
+      { status: 400 },
+    );
+  }
 }

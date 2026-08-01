@@ -5,9 +5,9 @@ Stand: fokussierter Mitgliederbereich mit Permission-Layer, Auth/Aktivstatus, Pr
 ## V1 Scope (bewusst fokussiert)
 
 - Dashboard
-- Noten/PDF-Stücke und MP3-Aufnahmen (`/library/*`)
+- Flache Bibliothek: Noten/PDFs und Audio (`/library/scores`, `/library/audio`)
 - Profil
-- Admin: Freigaben, Mitglieder, Stücke, Rechnungen
+- Admin: Freigaben, Mitglieder, Noten, Audio, Rechnungen
 
 Termine und Mitteilungen werden über Spond verwaltet und sind in der App nicht enthalten.
 
@@ -26,12 +26,14 @@ Termine und Mitteilungen werden über Spond verwaltet und sind in der App nicht 
 
 ## 3. Prisma & R2
 
-- Modelle u. a. `StoredFile`, `MusicPiece`, `SheetFile`, `AudioFile`, `accessScope`, Publish-Felder.
+- Modelle u. a. `StoredFile`, `SheetFile`, `AudioFile` (flach, mit Titel/Komponist/`accessScope`/`isVisible`).
 - R2-Client: `lib/r2.ts` (Presigned PUT/GET, Head/Delete). Secrets nur serverseitig.
 - Upload-Flow APIs:
   - `POST /api/admin/files/presign` → PENDING + Presigned PUT
   - `POST /api/files/[id]/complete` → Head-Check → READY
-  - `GET /api/files/[id]/url` → AuthZ inkl. `accessScope` / Publish → Presigned GET
+  - `GET /api/files/[id]/url` → AuthZ inkl. `accessScope` → Presigned GET
+- Admin-Bibliothek: `POST /api/admin/scores`, `POST /api/admin/audio`; PATCH/DELETE über `/api/admin/sheets/[id]` bzw. `/api/admin/audio/[id]`.
+- Mitglieder-Bibliothek: `GET /api/library/scores`, `GET /api/library/audio`.
 
 ## Env (R2)
 

@@ -1,7 +1,7 @@
 import {
   ArrowUpRight,
+  FileMusic,
   FileText,
-  Music2,
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
@@ -156,6 +156,6 @@ function KpiTile({ kpi }: { kpi: AdminKpi }) {
 
 export const ADMIN_KPI_ICONS = {
   requests: UserPlus,
-  pieces: Music2,
+  library: FileMusic,
   invoices: FileText,
 } as const;

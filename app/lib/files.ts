@@ -62,28 +62,17 @@ export function validateUploadInput(input: {
 
 export function objectKeyFor(input: {
   category: StoredFileCategory;
-  pieceId?: string;
   invoiceId?: string;
   fileId?: string;
   extension: string;
 }): string {
   const fileId = input.fileId ?? randomUUID();
   const ext = input.extension.replace(/^\./, "");
-  if (input.category === "SHEET" && input.pieceId) {
-    return buildObjectKey([
-      "pieces",
-      input.pieceId,
-      "sheets",
-      `${fileId}.${ext}`,
-    ]);
+  if (input.category === "SHEET") {
+    return buildObjectKey(["sheets", `${fileId}.${ext}`]);
   }
-  if (input.category === "AUDIO" && input.pieceId) {
-    return buildObjectKey([
-      "pieces",
-      input.pieceId,
-      "audio",
-      `${fileId}.${ext}`,
-    ]);
+  if (input.category === "AUDIO") {
+    return buildObjectKey(["audio", `${fileId}.${ext}`]);
   }
   if (input.category === "INVOICE" && input.invoiceId) {
     return buildObjectKey([

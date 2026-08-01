@@ -1,23 +1,21 @@
 import { test, expect } from "@playwright/test";
 
-import { createInvoice, createPiece } from "../helpers/api";
+import { createInvoice } from "../helpers/api";
 import { loginAsAdmin, loginAsAuditor, loginAsMember } from "../helpers/auth";
 
 test.describe("Library API integration", () => {
-  test("member can list library; empty piece is omitted", async ({ page }) => {
-    await loginAsAdmin(page);
-    const piece = await createPiece(page.request, {
-      title: `Int Library ${Date.now()}`,
-    });
-
-    await page.context().clearCookies();
+  test("member can list flat scores and audio", async ({ page }) => {
     await loginAsMember(page);
-    const res = await page.request.get("/api/library/pieces");
-    expect(res.ok()).toBeTruthy();
-    const body = (await res.json()) as {
-      items: Array<{ id: string; title: string }>;
-    };
-    expect(body.items.some((item) => item.id === piece.id)).toBeFalsy();
+
+    const scoresRes = await page.request.get("/api/library/scores");
+    expect(scoresRes.ok()).toBeTruthy();
+    const scoresBody = (await scoresRes.json()) as { items: unknown[] };
+    expect(Array.isArray(scoresBody.items)).toBe(true);
+
+    const audioRes = await page.request.get("/api/library/audio");
+    expect(audioRes.ok()).toBeTruthy();
+    const audioBody = (await audioRes.json()) as { items: unknown[] };
+    expect(Array.isArray(audioBody.items)).toBe(true);
   });
 });
 

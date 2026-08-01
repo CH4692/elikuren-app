@@ -15,33 +15,42 @@ export default async function AdminIndexPage() {
 
   const role = session.user.role;
   const canRequests = hasPermission(role, "ACCESS_REQUEST_MANAGE");
-  const canPieces = hasPermission(role, "PIECE_MANAGE");
+  const canLibrary = hasPermission(role, "PIECE_MANAGE");
   const canInvoices = hasPermission(role, "INVOICE_READ");
 
   const now = new Date();
-  const [openRequests, libraryPieces, overdueInvoices] = await Promise.all([
-    canRequests
-      ? prisma.membershipRequest.count({ where: { status: "pending" } })
-      : Promise.resolve(null),
-    canPieces
-      ? prisma.musicPiece.count({
-          where: { rehearsalStatus: { not: "ARCHIVED" } },
-        })
-      : Promise.resolve(null),
-    canInvoices
-      ? prisma.invoice.count({
-          where: {
-            OR: [
-              { status: "OVERDUE" },
-              {
-                status: "OPEN",
-                dueDate: { lt: now },
-              },
-            ],
-          },
-        })
-      : Promise.resolve(null),
-  ]);
+  const [openRequests, sheetCount, audioCount, overdueInvoices] =
+    await Promise.all([
+      canRequests
+        ? prisma.membershipRequest.count({ where: { status: "pending" } })
+        : Promise.resolve(null),
+      canLibrary
+        ? prisma.sheetFile.count({
+            where: { storedFile: { deletedAt: null } },
+          })
+        : Promise.resolve(null),
+      canLibrary
+        ? prisma.audioFile.count({
+            where: { storedFile: { deletedAt: null } },
+          })
+        : Promise.resolve(null),
+      canInvoices
+        ? prisma.invoice.count({
+            where: {
+              OR: [
+                { status: "OVERDUE" },
+                {
+                  status: "OPEN",
+                  dueDate: { lt: now },
+                },
+              ],
+            },
+          })
+        : Promise.resolve(null),
+    ]);
+
+  const libraryCount =
+    sheetCount != null && audioCount != null ? sheetCount + audioCount : null;
 
   const kpis: AdminKpi[] = [
     canRequests
@@ -54,13 +63,13 @@ export default async function AdminIndexPage() {
           attention: true,
         }
       : null,
-    canPieces
+    canLibrary
       ? {
-          href: "/admin/pieces",
-          title: "Stücke",
-          value: libraryPieces ?? 0,
-          description: "In der Bibliothek",
-          icon: ADMIN_KPI_ICONS.pieces,
+          href: "/admin/scores",
+          title: "Bibliothek",
+          value: libraryCount ?? 0,
+          description: "Noten & Audiodateien",
+          icon: ADMIN_KPI_ICONS.library,
         }
       : null,
     canInvoices

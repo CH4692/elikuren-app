@@ -4,7 +4,6 @@ import {
   FileMusic,
   FileText,
   LayoutDashboard,
-  Music2,
   Users,
   UserPlus,
 } from "lucide-react";
@@ -37,12 +36,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Zugangsanfragen",
     icon: UserPlus,
     permission: "ACCESS_REQUEST_MANAGE",
-  },
-  {
-    href: "/admin/pieces",
-    label: "Stücke",
-    icon: Music2,
-    permission: "PIECE_MANAGE",
   },
   {
     href: "/admin/scores",

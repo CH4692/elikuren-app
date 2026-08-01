@@ -14,7 +14,6 @@ type Body = {
   originalName?: string;
   mimeType?: string;
   sizeBytes?: number;
-  pieceId?: string;
   invoiceId?: string;
 };
 
@@ -78,7 +77,6 @@ export async function POST(request: Request) {
 
   const objectKey = objectKeyFor({
     category,
-    pieceId: body.pieceId,
     invoiceId: body.invoiceId,
     extension: validated.extension,
   });

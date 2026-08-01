@@ -20,24 +20,6 @@ enum MembershipRequestStatus {
   rejected
 }
 
-enum RehearsalStatus {
-  PLANNED
-  REHEARSING
-  PERFORMANCE_READY
-  ARCHIVED
-}
-
-enum SheetType {
-  FULL_SCORE
-  CHOIR_SCORE
-  SOPRANO
-  ALTO
-  TENOR
-  BASS
-  PIANO
-  OTHER
-}
-
 enum AudioType {
   FULL_RECORDING
   SOPRANO
@@ -198,47 +180,20 @@ model StoredFile {
   @@map("stored_files")
 }
 
-model MusicPiece {
-  id              String          @id @default(cuid())
-  title           String
-  composer        String          @default("")
-  arranger        String?
-  category        String?
-  epoch           String?
-  instrumentation String?
-  difficulty      String?
-  rehearsalStatus RehearsalStatus @default(PLANNED) @map("rehearsal_status")
-  rehearsalNotes  String?         @db.Text @map("rehearsal_notes")
-  description     String?         @db.Text
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
-  sheetFiles      SheetFile[]
-  audioFiles      AudioFile[]
-
-  @@index([title])
-  @@index([composer])
-  @@index([rehearsalStatus])
-  @@map("music_pieces")
-}
-
 model SheetFile {
   id           String          @id @default(cuid())
-  pieceId      String          @map("piece_id")
-  piece        MusicPiece      @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  title        String
+  composer     String          @default("")
   storedFileId String          @map("stored_file_id")
   storedFile   StoredFile      @relation(fields: [storedFileId], references: [id], onDelete: Restrict)
-  sheetType    SheetType       @default(OTHER) @map("sheet_type")
   voiceGroup   VoiceGroup?     @map("voice_group")
   accessScope  FileAccessScope @default(ALL_MEMBERS) @map("access_scope")
-  version      String          @default("1")
-  isCurrent    Boolean         @default(true) @map("is_current")
-  changelog    String?         @db.Text
   isVisible    Boolean         @default(true) @map("is_visible")
-  sortOrder    Int             @default(0) @map("sort_order")
   createdAt    DateTime        @default(now()) @map("created_at")
   updatedAt    DateTime        @updatedAt @map("updated_at")
 
-  @@index([pieceId])
+  @@index([title])
+  @@index([composer])
   @@index([voiceGroup])
   @@index([isVisible])
   @@map("sheet_files")
@@ -246,21 +201,22 @@ model SheetFile {
 
 model AudioFile {
   id              String          @id @default(cuid())
-  pieceId         String          @map("piece_id")
-  piece           MusicPiece      @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  title           String
+  composer        String          @default("")
   storedFileId    String          @map("stored_file_id")
   storedFile      StoredFile      @relation(fields: [storedFileId], references: [id], onDelete: Restrict)
   audioType       AudioType       @default(OTHER) @map("audio_type")
   voiceGroup      VoiceGroup?     @map("voice_group")
   accessScope     FileAccessScope @default(ALL_MEMBERS) @map("access_scope")
   durationSeconds Int?            @map("duration_seconds")
-  sortOrder       Int             @default(0) @map("sort_order")
   isVisible       Boolean         @default(true) @map("is_visible")
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
-  @@index([pieceId])
+  @@index([title])
+  @@index([composer])
   @@index([audioType])
+  @@index([voiceGroup])
   @@index([isVisible])
   @@map("audio_files")
 }

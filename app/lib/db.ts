@@ -32,8 +32,8 @@ function createPrismaClient() {
 
 function getOrCreatePrismaClient() {
   const cached = globalForPrisma.prisma;
-  // Dev/HMR can keep an old PrismaClient after `prisma generate` adds models.
-  if (cached && "musicPiece" in cached && cached.musicPiece) {
+  // Dev/HMR can keep an old PrismaClient after `prisma generate` changes models.
+  if (cached && "sheetFile" in cached && cached.sheetFile) {
     return cached;
   }
   const client = createPrismaClient();

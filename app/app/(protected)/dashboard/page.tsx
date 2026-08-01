@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { MemberDashboard } from "@/components/dashboard/member-dashboard";
 import { MemberShell } from "@/components/app/member-shell";
 import { prisma } from "@/lib/db";
-import { listPublishedPiecesForUser } from "@/lib/library";
+import { listLibraryAudio, listLibraryScores } from "@/lib/library";
 import { hasAdminAreaAccess } from "@/lib/permissions";
 
 export default async function DashboardPage() {
@@ -25,59 +25,34 @@ export default async function DashboardPage() {
   // Admin-Rollen starten im Verwaltungsbereich, nicht im Mitglieder-Dashboard.
   if (hasAdminAreaAccess(user.role)) redirect("/admin");
 
-  const pieces = await listPublishedPiecesForUser({
-    role: user.role,
-    voice: user.voice,
-  });
-
-  const rehearsing = pieces.filter((p) => p.rehearsalStatus === "REHEARSING");
-  const featured = rehearsing[0] ?? null;
-
-  const currentProject = featured
-    ? {
-        id: featured.id,
-        title: featured.title,
-        composer: featured.composer,
-        sheetCount: featured.sheetFiles.length,
-        audioCount: featured.audioFiles.length,
-      }
-    : null;
+  const [scores, audios] = await Promise.all([
+    listLibraryScores({ role: user.role, voice: user.voice }),
+    listLibraryAudio({ role: user.role, voice: user.voice }),
+  ]);
 
   const recentLibrary = [
-    ...pieces.flatMap((p) =>
-      p.sheetFiles.map((s) => ({
-        pieceId: p.id,
-        pieceTitle: p.title,
-        name: s.storedFile.originalName,
-        kind: "score" as const,
-        at: s.createdAt,
-      })),
-    ),
-    ...pieces.flatMap((p) =>
-      p.audioFiles.map((a) => ({
-        pieceId: p.id,
-        pieceTitle: p.title,
-        name: a.storedFile.originalName,
-        kind: "audio" as const,
-        at: a.createdAt,
-      })),
-    ),
+    ...scores.map((s) => ({
+      title: s.title,
+      name: s.original_name,
+      kind: "score" as const,
+      at: s.created_at,
+    })),
+    ...audios.map((a) => ({
+      title: a.title,
+      name: a.original_name,
+      kind: "audio" as const,
+      at: a.created_at,
+    })),
   ]
-    .sort((a, b) => b.at.getTime() - a.at.getTime())
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
     .slice(0, 5)
-    .map(({ pieceId, pieceTitle, name, kind }) => ({
-      pieceId,
-      pieceTitle,
-      name,
-      kind,
-    }));
+    .map(({ title, name, kind }) => ({ title, name, kind }));
 
   return (
     <MemberShell>
       <MemberDashboard
         firstname={user.firstname}
         voice={user.voice}
-        currentProject={currentProject}
         recentLibrary={recentLibrary}
       />
     </MemberShell>

@@ -11,7 +11,7 @@ test.describe("Dashboard", () => {
     await expect(page.getByRole("heading", { name: /Hallo/i })).toBeVisible();
     await expect(
       page.getByText(
-        /Schön, dass du da bist\. Alle wichtigen Unterlagen für das aktuelle Chorprojekt findest du hier\./,
+        /Schön, dass du da bist\. Noten und Übematerial findest du in der Bibliothek\./,
       ),
     ).toBeVisible();
     const hub = page.locator("main");
@@ -24,7 +24,7 @@ test.describe("Dashboard", () => {
     await expect(hub.getByRole("heading", { name: "Schnellzugriff" })).toBeVisible();
     await expect(
       hub.getByRole("heading", { name: "Aktuelles Projekt" }),
-    ).toBeVisible();
+    ).toHaveCount(0);
   });
 
   test("admin lands on admin overview, not member dashboard", async ({

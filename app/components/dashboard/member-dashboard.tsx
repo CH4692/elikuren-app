@@ -6,21 +6,11 @@ import {
   UserRound,
 } from "lucide-react";
 
-import { EmptyState } from "@/components/app/empty-state";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export type DashboardProject = {
-  id: string;
-  title: string;
-  composer: string;
-  sheetCount: number;
-  audioCount: number;
-};
-
 export type DashboardLibraryItem = {
-  pieceId: string;
-  pieceTitle: string;
+  title: string;
   name: string;
   kind: "score" | "audio";
 };
@@ -28,7 +18,6 @@ export type DashboardLibraryItem = {
 type MemberDashboardProps = {
   firstname: string | null;
   voice: string | null;
-  currentProject: DashboardProject | null;
   recentLibrary: DashboardLibraryItem[];
 };
 
@@ -56,7 +45,6 @@ const quickLinks = [
 export function MemberDashboard({
   firstname,
   voice,
-  currentProject,
   recentLibrary,
 }: MemberDashboardProps) {
   const greetingName = firstname?.trim() || "dort";
@@ -78,8 +66,8 @@ export function MemberDashboard({
               Hallo {greetingName}
             </h1>
             <p className="max-w-xl text-sm leading-relaxed text-[#f4f1eb]/70 sm:text-base">
-              Schön, dass du da bist. Alle wichtigen Unterlagen für das aktuelle
-              Chorprojekt findest du hier.
+              Schön, dass du da bist. Noten und Übematerial findest du in der
+              Bibliothek.
             </p>
           </div>
           <Button
@@ -140,52 +128,6 @@ export function MemberDashboard({
         </div>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-tight">
-          Aktuelles Projekt
-        </h2>
-        {currentProject ? (
-          <div className="rounded-3xl border border-[#C8A24D]/35 bg-white/80 p-5 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-[#8a6d2a]">
-              {currentProject.composer}
-            </p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-[#1f1f23]">
-              {currentProject.title}
-            </h3>
-            <dl className="mt-4 grid grid-cols-2 gap-3 sm:max-w-md">
-              <div className="rounded-2xl bg-[#C8A24D]/10 px-3 py-2.5">
-                <dt className="text-xs text-[#5c574e]">Noten</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-[#1f1f23]">
-                  {currentProject.sheetCount}
-                </dd>
-              </div>
-              <div className="rounded-2xl bg-[#C8A24D]/10 px-3 py-2.5">
-                <dt className="text-xs text-[#5c574e]">Audios</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-[#1f1f23]">
-                  {currentProject.audioCount}
-                </dd>
-              </div>
-            </dl>
-            <Button
-              asChild
-              className="mt-5 w-full bg-[#C8A24D] text-[#1f1f23] hover:bg-[#d4b35e] sm:w-auto"
-            >
-              <Link href={`/library/pieces/${currentProject.id}`}>
-                Zur Bibliothek
-                <ArrowRight className="ml-1.5 size-4" />
-              </Link>
-            </Button>
-          </div>
-        ) : (
-          <EmptyState
-            icon={FileMusic}
-            title="Kein aktuelles Projekt"
-            description="Sobald ein Stück in Probe ist, erscheint es hier mit Noten und Audio."
-            className="py-10"
-          />
-        )}
-      </section>
-
       {recentLibrary.length > 0 ? (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold tracking-tight">
@@ -193,14 +135,16 @@ export function MemberDashboard({
           </h2>
           <ul className="divide-y divide-[#ebe4d8] overflow-hidden rounded-2xl border border-[#d9d2c4] bg-white/70">
             {recentLibrary.map((item) => (
-              <li key={`${item.kind}-${item.pieceId}-${item.name}`}>
+              <li key={`${item.kind}-${item.title}-${item.name}`}>
                 <Link
-                  href={`/library/pieces/${item.pieceId}`}
+                  href={
+                    item.kind === "score" ? "/library/scores" : "/library/audio"
+                  }
                   className="flex items-center justify-between gap-3 px-4 py-3 text-sm transition hover:bg-[#C8A24D]/08"
                 >
                   <span className="min-w-0">
                     <span className="font-medium text-[#1f1f23]">
-                      {item.pieceTitle}
+                      {item.title}
                     </span>
                     <span className="mt-0.5 block truncate text-[#5c574e]">
                       {item.kind === "score" ? "Note" : "Audio"} · {item.name}

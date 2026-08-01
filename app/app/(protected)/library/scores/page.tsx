@@ -6,7 +6,7 @@ export default function LibraryScoresPage() {
   return (
     <MemberShell>
       <MemberPageIntro
-        title="Noten & Stücke"
+        title="Noten"
         description="Partituren und Stimmen – suchen, filtern und in der Vorschau öffnen."
       />
       <LibraryScores />

@@ -1,8 +1,7 @@
 "use client";
 
-import { Music2 } from "lucide-react";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { FileMusic } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/app/empty-state";
@@ -11,36 +10,26 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-type Sheet = {
-  id: string;
-  sheet_type: string;
-  voice_group: string | null;
-  version: string;
-  is_my_voice: boolean;
-  stored_file_id: string;
-  original_name: string;
-  piece_id: string;
-  piece_title: string;
-  composer: string;
-};
-
-type Piece = {
+type ScoreItem = {
   id: string;
   title: string;
   composer: string;
-  sheet_files: Array<{
-    id: string;
-    sheet_type: string;
-    voice_group: string | null;
-    version: string;
-    is_my_voice: boolean;
-    stored_file_id: string;
-    original_name: string;
-  }>;
+  voice_group: string | null;
+  is_my_voice: boolean;
+  stored_file_id: string;
+  original_name: string;
+};
+
+const VOICE_LABELS: Record<string, string> = {
+  SOPRANO: "Sopran",
+  ALTO: "Alt",
+  TENOR: "Tenor",
+  BASS: "Bass",
+  OTHER: "Sonstige",
 };
 
 export function LibraryScores() {
-  const [pieces, setPieces] = useState<Piece[]>([]);
+  const [items, setItems] = useState<ScoreItem[]>([]);
   const [q, setQ] = useState("");
   const [myVoiceOnly, setMyVoiceOnly] = useState(false);
   const [preview, setPreview] = useState<{
@@ -51,32 +40,19 @@ export function LibraryScores() {
   useEffect(() => {
     void (async () => {
       try {
-        const res = await fetch(
-          `/api/library/pieces${q ? `?q=${encodeURIComponent(q)}` : ""}`,
-        );
+        const params = new URLSearchParams();
+        if (q.trim()) params.set("q", q.trim());
+        if (myVoiceOnly) params.set("myVoice", "1");
+        const qs = params.toString();
+        const res = await fetch(`/api/library/scores${qs ? `?${qs}` : ""}`);
         if (!res.ok) throw new Error("load failed");
-        const data = (await res.json()) as { items: Piece[] };
-        setPieces(data.items);
+        const data = (await res.json()) as { items: ScoreItem[] };
+        setItems(data.items);
       } catch {
         toast.error("Noten konnten nicht geladen werden");
       }
     })();
-  }, [q]);
-
-  const sheets = useMemo(() => {
-    const rows: Sheet[] = [];
-    for (const piece of pieces) {
-      for (const sheet of piece.sheet_files) {
-        rows.push({
-          ...sheet,
-          piece_id: piece.id,
-          piece_title: piece.title,
-          composer: piece.composer,
-        });
-      }
-    }
-    return myVoiceOnly ? rows.filter((row) => row.is_my_voice) : rows;
-  }, [pieces, myVoiceOnly]);
+  }, [q, myVoiceOnly]);
 
   return (
     <div className="space-y-4">
@@ -96,9 +72,9 @@ export function LibraryScores() {
           Meine Stimme
         </label>
       </div>
-      {sheets.length === 0 ? (
+      {items.length === 0 ? (
         <EmptyState
-          icon={Music2}
+          icon={FileMusic}
           title="Keine Noten"
           description={
             myVoiceOnly
@@ -108,34 +84,34 @@ export function LibraryScores() {
         />
       ) : (
         <ul className="space-y-2">
-          {sheets.map((sheet) => (
+          {items.map((item) => (
             <li
-              key={sheet.id}
+              key={item.id}
               className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#ebe4d8] bg-white/80 px-4 py-3"
             >
               <div>
-                <p className="font-medium">
-                  <Link
-                    href={`/library/pieces/${sheet.piece_id}`}
-                    className="text-[#1f1f23] hover:text-[#C8A24D] hover:underline"
-                  >
-                    {sheet.piece_title}
-                  </Link>
-                </p>
+                <p className="font-medium text-[#1f1f23]">{item.title}</p>
                 <p className="text-sm text-[#5c574e]">
-                  {sheet.composer} · {sheet.original_name} · v{sheet.version}
+                  {[
+                    item.composer || null,
+                    item.voice_group
+                      ? (VOICE_LABELS[item.voice_group] ?? item.voice_group)
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || item.original_name}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {sheet.is_my_voice ? (
+                {item.is_my_voice ? (
                   <Badge variant="success">Meine Stimme</Badge>
                 ) : null}
                 <Button
                   size="sm"
                   onClick={() =>
                     setPreview({
-                      fileId: sheet.stored_file_id,
-                      title: sheet.original_name,
+                      fileId: item.stored_file_id,
+                      title: item.title,
                     })
                   }
                 >

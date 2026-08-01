@@ -1,61 +1,63 @@
 import { NextResponse } from "next/server";
 
 import { requirePermission } from "@/lib/authz";
-import { prisma } from "@/lib/db";
+import type {
+  AudioType,
+  FileAccessScope,
+  VoiceGroup,
+} from "@/lib/generated/prisma/client";
+import {
+  createAudio,
+  listAudioAdmin,
+  serializeAudio,
+} from "@/lib/audio-library";
 
 export async function GET(request: Request) {
   const gate = await requirePermission("PIECE_MANAGE");
   if (!gate.ok) return gate.response;
 
-  const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q")?.trim();
+  const q = new URL(request.url).searchParams.get("q")?.trim();
+  const items = await listAudioAdmin(q || undefined);
+  return NextResponse.json({ items: items.map(serializeAudio) });
+}
 
-  const audios = await prisma.audioFile.findMany({
-    where: q
-      ? {
-          OR: [
-            { piece: { title: { contains: q, mode: "insensitive" } } },
-            { piece: { composer: { contains: q, mode: "insensitive" } } },
-            { storedFile: { originalName: { contains: q, mode: "insensitive" } } },
-          ],
-        }
-      : undefined,
-    include: {
-      piece: { select: { id: true, title: true, composer: true } },
-      storedFile: {
-        select: {
-          id: true,
-          originalName: true,
-          mimeType: true,
-          sizeBytes: true,
-          uploadStatus: true,
-        },
-      },
-    },
-    orderBy: [{ updatedAt: "desc" }],
-    take: 200,
-  });
+export async function POST(request: Request) {
+  const gate = await requirePermission("PIECE_MANAGE");
+  if (!gate.ok) return gate.response;
 
-  return NextResponse.json({
-    items: audios.map((audio) => ({
-      id: audio.id,
-      piece_id: audio.pieceId,
-      piece_title: audio.piece.title,
-      piece_composer: audio.piece.composer,
-      audio_type: audio.audioType,
-      voice_group: audio.voiceGroup,
-      access_scope: audio.accessScope,
-      duration_seconds: audio.durationSeconds,
-      is_visible: audio.isVisible,
-      stored_file: {
-        id: audio.storedFile.id,
-        original_name: audio.storedFile.originalName,
-        mime_type: audio.storedFile.mimeType,
-        size_bytes: audio.storedFile.sizeBytes,
-        upload_status: audio.storedFile.uploadStatus,
-      },
-      created_at: audio.createdAt.toISOString(),
-      updated_at: audio.updatedAt.toISOString(),
-    })),
-  });
+  const body = (await request.json()) as {
+    storedFileId?: string;
+    title?: string;
+    composer?: string | null;
+    voiceGroup?: VoiceGroup | null;
+    audioType?: AudioType;
+    accessScope?: FileAccessScope;
+    isVisible?: boolean;
+  };
+
+  if (!body.storedFileId) {
+    return NextResponse.json(
+      { detail: "storedFileId fehlt", code: "validation_error" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const audio = await createAudio({
+      storedFileId: body.storedFileId,
+      title: String(body.title ?? ""),
+      composer: body.composer,
+      voiceGroup: body.voiceGroup,
+      audioType: body.audioType,
+      accessScope: body.accessScope,
+      isVisible: body.isVisible,
+    });
+    return NextResponse.json(serializeAudio(audio), { status: 201 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Anlegen fehlgeschlagen";
+    return NextResponse.json(
+      { detail: message, code: "validation_error" },
+      { status: 400 },
+    );
+  }
 }

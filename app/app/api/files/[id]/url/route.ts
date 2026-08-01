@@ -27,12 +27,8 @@ export async function GET(request: Request, { params }: Params) {
   const file = await prisma.storedFile.findUnique({
     where: { id },
     include: {
-      sheetFiles: {
-        include: { piece: { select: { rehearsalStatus: true } } },
-      },
-      audioFiles: {
-        include: { piece: { select: { rehearsalStatus: true } } },
-      },
+      sheetFiles: true,
+      audioFiles: true,
       invoices: { select: { id: true } },
     },
   });
@@ -71,8 +67,7 @@ export async function GET(request: Request, { params }: Params) {
       }
     } else {
       const isAdmin = hasPermission(gate.user.role, "PIECE_MANAGE");
-      const archived = link.piece.rehearsalStatus === "ARCHIVED";
-      if ((!link.isVisible || archived) && !isAdmin) {
+      if (!link.isVisible && !isAdmin) {
         return NextResponse.json(
           { detail: "Forbidden", code: "http_403" },
           { status: 403 },

@@ -4,7 +4,6 @@
 export async function uploadFileViaPresign(input: {
   file: File;
   category: "SHEET" | "AUDIO" | "INVOICE" | "OTHER";
-  pieceId?: string;
   invoiceId?: string;
 }): Promise<{ fileId: string }> {
   const intentRes = await fetch("/api/admin/files/presign", {
@@ -15,7 +14,6 @@ export async function uploadFileViaPresign(input: {
       originalName: input.file.name,
       mimeType: input.file.type || guessMime(input.file.name),
       sizeBytes: input.file.size,
-      pieceId: input.pieceId,
       invoiceId: input.invoiceId,
     }),
   });

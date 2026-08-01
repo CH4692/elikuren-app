@@ -5,31 +5,6 @@ export function authedRequest(page: Page): APIRequestContext {
   return page.request;
 }
 
-export async function createPiece(
-  request: APIRequestContext,
-  input?: { title?: string; composer?: string },
-) {
-  const title = input?.title ?? `E2E Piece ${Date.now()}`;
-  const composer = input?.composer ?? "E2E Composer";
-  const res = await request.post("/api/admin/pieces", {
-    data: { title, composer },
-  });
-  expect(res.ok()).toBeTruthy();
-  return res.json() as Promise<{ id: string; title: string }>;
-}
-
-/** Mark piece as currently in rehearsal (dashboard “aktuelles Projekt”). */
-export async function setPieceRehearsing(
-  request: APIRequestContext,
-  id: string,
-) {
-  const res = await request.patch(`/api/admin/pieces/${id}`, {
-    data: { rehearsalStatus: "REHEARSING" },
-  });
-  expect(res.ok()).toBeTruthy();
-  return res.json();
-}
-
 export async function createInvoice(
   request: APIRequestContext,
   input?: { invoiceNumber?: string; amountCents?: number },

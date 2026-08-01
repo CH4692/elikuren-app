@@ -1,17 +1,38 @@
 import { prisma } from "@/lib/db";
 import { canAccessScopedFile, normalizeVoiceLabel } from "@/lib/files";
-import type { Role } from "@/lib/generated/prisma/client";
+import type { AudioType, Role, VoiceGroup } from "@/lib/generated/prisma/client";
 import { hasPermission } from "@/lib/permissions";
 
-/** Pieces with visible, ready files the user may access. */
-export async function listLibraryPiecesForUser(input: {
+function canSeeLibraryEntry(input: {
+  isVisible: boolean;
+  accessScope: "ALL_MEMBERS" | "VOICE_GROUP_ONLY" | "ADMIN_ONLY";
+  voiceGroup: VoiceGroup | null;
+  role: Role | string;
+  voice: string | null;
+}) {
+  if (hasPermission(input.role, "PIECE_MANAGE")) return true;
+  if (!input.isVisible) return false;
+  return canAccessScopedFile({
+    accessScope: input.accessScope,
+    fileVoiceGroup: input.voiceGroup,
+    userRole: input.role,
+    userVoice: input.voice,
+  });
+}
+
+export async function listLibraryScores(input: {
   role: Role | string;
   voice: string | null;
   q?: string;
+  myVoiceOnly?: boolean;
 }) {
-  const pieces = await prisma.musicPiece.findMany({
+  const myVoice = normalizeVoiceLabel(input.voice);
+  const sheets = await prisma.sheetFile.findMany({
     where: {
-      rehearsalStatus: { not: "ARCHIVED" },
+      storedFile: { uploadStatus: "READY", deletedAt: null },
+      ...(hasPermission(input.role, "PIECE_MANAGE")
+        ? {}
+        : { isVisible: true }),
       ...(input.q
         ? {
             OR: [
@@ -21,86 +42,84 @@ export async function listLibraryPiecesForUser(input: {
           }
         : {}),
     },
-    include: {
-      sheetFiles: {
-        where: {
-          isVisible: true,
-          storedFile: { uploadStatus: "READY", deletedAt: null },
-        },
-        include: { storedFile: true },
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      },
-      audioFiles: {
-        where: {
-          isVisible: true,
-          storedFile: { uploadStatus: "READY", deletedAt: null },
-        },
-        include: { storedFile: true },
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      },
-    },
-    orderBy: [{ title: "asc" }],
+    include: { storedFile: true },
+    orderBy: [{ title: "asc" }, { createdAt: "desc" }],
   });
 
-  const isAdmin = hasPermission(input.role, "PIECE_MANAGE");
-
-  return pieces
-    .map((piece) => ({
-      ...piece,
-      sheetFiles: piece.sheetFiles.filter((sheet) =>
-        canAccessScopedFile({
-          accessScope: sheet.accessScope,
-          fileVoiceGroup: sheet.voiceGroup,
-          userRole: input.role,
-          userVoice: input.voice,
-        }),
-      ),
-      audioFiles: piece.audioFiles.filter((audio) =>
-        canAccessScopedFile({
-          accessScope: audio.accessScope,
-          fileVoiceGroup: audio.voiceGroup,
-          userRole: input.role,
-          userVoice: input.voice,
-        }),
-      ),
-    }))
-    .filter(
-      (piece) =>
-        isAdmin || piece.sheetFiles.length > 0 || piece.audioFiles.length > 0,
-    );
-}
-
-/** @deprecated Prefer listLibraryPiecesForUser */
-export const listPublishedPiecesForUser = listLibraryPiecesForUser;
-
-export function serializeLibraryPiece(
-  piece: Awaited<ReturnType<typeof listLibraryPiecesForUser>>[number],
-  userVoice: string | null,
-) {
-  const myVoice = normalizeVoiceLabel(userVoice);
-  return {
-    id: piece.id,
-    title: piece.title,
-    composer: piece.composer,
-    arranger: piece.arranger,
-    category: piece.category,
-    epoch: piece.epoch,
-    rehearsal_status: piece.rehearsalStatus,
-    rehearsal_notes: piece.rehearsalNotes,
-    description: piece.description,
-    sheet_files: piece.sheetFiles.map((sheet) => ({
+  return sheets
+    .filter((sheet) =>
+      canSeeLibraryEntry({
+        isVisible: sheet.isVisible,
+        accessScope: sheet.accessScope,
+        voiceGroup: sheet.voiceGroup,
+        role: input.role,
+        voice: input.voice,
+      }),
+    )
+    .filter((sheet) => {
+      if (!input.myVoiceOnly || !myVoice) return true;
+      return sheet.voiceGroup === myVoice || sheet.voiceGroup == null;
+    })
+    .map((sheet) => ({
       id: sheet.id,
-      sheet_type: sheet.sheetType,
+      title: sheet.title,
+      composer: sheet.composer,
       voice_group: sheet.voiceGroup,
       access_scope: sheet.accessScope,
-      version: sheet.version,
       is_my_voice: myVoice != null && sheet.voiceGroup === myVoice,
       stored_file_id: sheet.storedFileId,
       original_name: sheet.storedFile.originalName,
       mime_type: sheet.storedFile.mimeType,
-    })),
-    audio_files: piece.audioFiles.map((audio) => ({
+      created_at: sheet.createdAt.toISOString(),
+    }));
+}
+
+export async function listLibraryAudio(input: {
+  role: Role | string;
+  voice: string | null;
+  q?: string;
+  myVoiceOnly?: boolean;
+  audioType?: AudioType | null;
+}) {
+  const myVoice = normalizeVoiceLabel(input.voice);
+  const audios = await prisma.audioFile.findMany({
+    where: {
+      storedFile: { uploadStatus: "READY", deletedAt: null },
+      ...(hasPermission(input.role, "PIECE_MANAGE")
+        ? {}
+        : { isVisible: true }),
+      ...(input.audioType ? { audioType: input.audioType } : {}),
+      ...(input.q
+        ? {
+            OR: [
+              { title: { contains: input.q, mode: "insensitive" } },
+              { composer: { contains: input.q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
+    include: { storedFile: true },
+    orderBy: [{ title: "asc" }, { createdAt: "desc" }],
+  });
+
+  return audios
+    .filter((audio) =>
+      canSeeLibraryEntry({
+        isVisible: audio.isVisible,
+        accessScope: audio.accessScope,
+        voiceGroup: audio.voiceGroup,
+        role: input.role,
+        voice: input.voice,
+      }),
+    )
+    .filter((audio) => {
+      if (!input.myVoiceOnly || !myVoice) return true;
+      return audio.voiceGroup === myVoice || audio.voiceGroup == null;
+    })
+    .map((audio) => ({
       id: audio.id,
+      title: audio.title,
+      composer: audio.composer,
       audio_type: audio.audioType,
       voice_group: audio.voiceGroup,
       access_scope: audio.accessScope,
@@ -109,6 +128,6 @@ export function serializeLibraryPiece(
       original_name: audio.storedFile.originalName,
       mime_type: audio.storedFile.mimeType,
       duration_seconds: audio.durationSeconds,
-    })),
-  };
+      created_at: audio.createdAt.toISOString(),
+    }));
 }

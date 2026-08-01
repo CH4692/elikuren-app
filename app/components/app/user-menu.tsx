@@ -60,15 +60,15 @@ function displayName(user: UserMenuUser) {
 const memberOnlyLinks = [
   { href: "/dashboard", label: "Mitglieder-Dashboard", icon: LayoutDashboard },
   { href: "/profile", label: "Mein Profil", icon: UserRound },
-  { href: "/library/scores", label: "Noten & Stücke", icon: FileMusic },
-  { href: "/library/audio", label: "Audio & Üben", icon: Headphones },
+  { href: "/library/scores", label: "Noten", icon: FileMusic },
+  { href: "/library/audio", label: "Audio", icon: Headphones },
 ] as const;
 
 const adminLinks = [
   { href: "/admin", label: "Admin-Dashboard", icon: Shield },
   { href: "/profile", label: "Mein Profil", icon: UserRound },
-  { href: "/library/scores", label: "Noten & Stücke", icon: FileMusic },
-  { href: "/library/audio", label: "Audio & Üben", icon: Headphones },
+  { href: "/library/scores", label: "Noten", icon: FileMusic },
+  { href: "/library/audio", label: "Audio", icon: Headphones },
 ] as const;
 
 export function UserMenu({

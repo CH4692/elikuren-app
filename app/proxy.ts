@@ -10,6 +10,8 @@ const memberPrefixes = [
   "/library",
   "/api/me",
   "/api/library",
+  "/api/library/scores",
+  "/api/library/audio",
   "/api/files",
 ];
 
@@ -37,11 +39,8 @@ function permissionForAdminPath(
     return "MEMBER_MANAGE";
   }
   if (
-    pathname.startsWith("/admin/pieces") ||
     pathname.startsWith("/admin/scores") ||
     pathname.startsWith("/admin/audio") ||
-    pathname.startsWith("/api/admin/pieces") ||
-    pathname.startsWith("/api/admin/library") ||
     pathname.startsWith("/api/admin/files") ||
     pathname.startsWith("/api/admin/sheets") ||
     pathname.startsWith("/api/admin/audio") ||

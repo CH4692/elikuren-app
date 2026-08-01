@@ -4,7 +4,7 @@ import { loginAsAdmin } from "../helpers/auth";
 
 /**
  * Smoke coverage for the member-area hub.
- * Detailed feature tests live in dedicated files (pieces, invoices, …).
+ * Detailed feature tests live in dedicated files (library, invoices, …).
  */
 test.describe("Mitgliederbereich Smoke", () => {
   test("admin shell shows sidebar links and overview", async ({ page }) => {
@@ -23,7 +23,7 @@ test.describe("Mitgliederbereich Smoke", () => {
     await expect(
       sidebar.getByRole("link", { name: "Zugangsanfragen" }),
     ).toBeVisible();
-    await expect(sidebar.getByRole("link", { name: "Stücke" })).toBeVisible();
+    await expect(sidebar.getByRole("link", { name: "Stücke" })).toHaveCount(0);
     await expect(
       sidebar.getByRole("link", { name: "Noten & PDFs" }),
     ).toBeVisible();

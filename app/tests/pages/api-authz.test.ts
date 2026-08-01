@@ -4,8 +4,10 @@ import { loginAsAdmin, loginAsAuditor, loginAsMember } from "../helpers/auth";
 
 const guestDenied = [
   "/api/me",
-  "/api/library/pieces",
-  "/api/admin/pieces",
+  "/api/library/scores",
+  "/api/library/audio",
+  "/api/admin/scores",
+  "/api/admin/audio",
   "/api/admin/members",
   "/api/admin/invoices",
   "/api/admin/files/presign",
@@ -21,25 +23,27 @@ test.describe("API AuthZ", () => {
 
   test("member can read library but not admin write APIs", async ({ page }) => {
     await loginAsMember(page);
-    expect((await page.request.get("/api/library/pieces")).ok()).toBeTruthy();
+    expect((await page.request.get("/api/library/scores")).ok()).toBeTruthy();
+    expect((await page.request.get("/api/library/audio")).ok()).toBeTruthy();
     expect((await page.request.get("/api/me")).ok()).toBeTruthy();
 
-    expect((await page.request.get("/api/admin/pieces")).status()).toBe(403);
+    expect((await page.request.get("/api/admin/scores")).status()).toBe(403);
+    expect((await page.request.get("/api/admin/audio")).status()).toBe(403);
     expect((await page.request.get("/api/admin/members")).status()).toBe(403);
     expect((await page.request.get("/api/admin/invoices")).status()).toBe(403);
   });
 
-  test("auditor can read invoices but not manage pieces", async ({ page }) => {
+  test("auditor can read invoices but not manage library", async ({ page }) => {
     await loginAsAuditor(page);
     expect((await page.request.get("/api/admin/invoices")).ok()).toBeTruthy();
-    expect((await page.request.get("/api/admin/pieces")).status()).toBe(403);
+    expect((await page.request.get("/api/admin/scores")).status()).toBe(403);
+    expect((await page.request.get("/api/admin/audio")).status()).toBe(403);
     expect((await page.request.get("/api/admin/members")).status()).toBe(403);
   });
 
   test("admin can access all admin list APIs", async ({ page }) => {
     await loginAsAdmin(page);
     for (const path of [
-      "/api/admin/pieces",
       "/api/admin/members",
       "/api/admin/invoices",
       "/api/admin/membership-requests",

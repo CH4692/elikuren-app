@@ -1,23 +1,25 @@
 import { NextResponse } from "next/server";
 
 import { requirePermission } from "@/lib/authz";
-import { listPublishedPiecesForUser, serializeLibraryPiece } from "@/lib/library";
+import { listLibraryScores } from "@/lib/library";
 
 export async function GET(request: Request) {
   const gate = await requirePermission("MEMBER_CONTENT_READ");
   if (!gate.ok) return gate.response;
 
-  const q = new URL(request.url).searchParams.get("q") ?? undefined;
-  const pieces = await listPublishedPiecesForUser({
+  const { searchParams } = new URL(request.url);
+  const q = searchParams.get("q")?.trim() || undefined;
+  const myVoiceOnly = searchParams.get("myVoice") === "1";
+
+  const items = await listLibraryScores({
     role: gate.user.role,
     voice: gate.user.voice,
     q,
+    myVoiceOnly,
   });
 
   return NextResponse.json({
-    items: pieces.map((piece) =>
-      serializeLibraryPiece(piece, gate.user.voice),
-    ),
+    items,
     my_voice: gate.user.voice,
   });
 }
