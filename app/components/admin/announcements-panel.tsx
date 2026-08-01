@@ -1,6 +1,6 @@
 "use client";
 
-import { Megaphone, Plus, Trash2 } from "lucide-react";
+import { Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -55,6 +55,7 @@ export function AdminAnnouncementsPanel() {
   const [loading, setLoading] = useState(true);
   const [pending, startTransition] = useTransition();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<AnnouncementForm>(emptyForm());
   const [deleteTarget, setDeleteTarget] = useState<AnnouncementItem | null>(null);
 
@@ -76,27 +77,61 @@ export function AdminAnnouncementsPanel() {
     void load();
   }, []);
 
-  function createItem() {
+  function openCreate() {
+    setEditingId(null);
+    setForm(emptyForm());
+    setDrawerOpen(true);
+  }
+
+  function openEdit(item: AnnouncementItem) {
+    setEditingId(item.id);
+    setForm({
+      title: item.title,
+      body: item.body,
+      is_important: item.is_important,
+      expires_at: item.expires_at
+        ? new Date(item.expires_at).toISOString().slice(0, 16)
+        : "",
+      publish: Boolean(item.published_at),
+    });
+    setDrawerOpen(true);
+  }
+
+  function saveItem() {
     startTransition(async () => {
-      const res = await fetch("/api/admin/announcements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: form.title,
-          body: form.body,
-          is_important: form.is_important,
-          expires_at: form.expires_at
-            ? new Date(form.expires_at).toISOString()
-            : null,
-          publish: form.publish,
-        }),
-      });
+      const payload = {
+        title: form.title,
+        body: form.body,
+        is_important: form.is_important,
+        expires_at: form.expires_at
+          ? new Date(form.expires_at).toISOString()
+          : null,
+        publish: form.publish,
+      };
+
+      const res = await fetch(
+        editingId
+          ? `/api/admin/announcements/${editingId}`
+          : "/api/admin/announcements",
+        {
+          method: editingId ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
       if (!res.ok) {
-        toast.error("Mitteilung konnte nicht angelegt werden");
+        toast.error(
+          editingId
+            ? "Mitteilung konnte nicht gespeichert werden"
+            : "Mitteilung konnte nicht angelegt werden",
+        );
         return;
       }
-      toast.success(form.publish ? "Veröffentlicht" : "Entwurf gespeichert");
+      toast.success(
+        form.publish ? "Veröffentlicht" : editingId ? "Gespeichert" : "Entwurf gespeichert",
+      );
       setDrawerOpen(false);
+      setEditingId(null);
       setForm(emptyForm());
       await load();
     });
@@ -140,7 +175,7 @@ export function AdminAnnouncementsPanel() {
         title="Mitteilungen"
         description="Ankündigungen erstellen und veröffentlichen."
         actions={
-          <Button type="button" onClick={() => setDrawerOpen(true)}>
+          <Button type="button" onClick={openCreate}>
             <Plus className="size-4" />
             Neue Mitteilung
           </Button>
@@ -161,7 +196,7 @@ export function AdminAnnouncementsPanel() {
           title="Keine Mitteilungen"
           description="Erstelle die erste Ankündigung für den Chor."
           action={
-            <Button type="button" onClick={() => setDrawerOpen(true)}>
+            <Button type="button" onClick={openCreate}>
               Neue Mitteilung
             </Button>
           }
@@ -204,6 +239,16 @@ export function AdminAnnouncementsPanel() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="border-[#d9d2c4]"
+                        onClick={() => openEdit(item)}
+                      >
+                        <Pencil className="size-3.5" />
+                        Bearbeiten
+                      </Button>
                       {!item.published_at ? (
                         <Button
                           type="button"
@@ -236,11 +281,14 @@ export function AdminAnnouncementsPanel() {
         open={drawerOpen}
         onOpenChange={(open) => {
           setDrawerOpen(open);
-          if (!open) setForm(emptyForm());
+          if (!open) {
+            setEditingId(null);
+            setForm(emptyForm());
+          }
         }}
-        title="Neue Mitteilung"
+        title={editingId ? "Mitteilung bearbeiten" : "Neue Mitteilung"}
         loading={pending}
-        onSubmit={createItem}
+        onSubmit={saveItem}
         submitLabel="Speichern"
       >
         <div className="space-y-4">

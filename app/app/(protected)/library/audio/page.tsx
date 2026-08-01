@@ -1,11 +1,11 @@
+import { MemberPageIntro } from "@/components/app/member-page-intro";
 import { MemberShell } from "@/components/app/member-shell";
-import { PageHeader } from "@/components/app/page-header";
 import { LibraryAudio } from "@/components/library/library-audio";
 
 export default function LibraryAudioPage() {
   return (
     <MemberShell>
-      <PageHeader
+      <MemberPageIntro
         title="Audio & Üben"
         description="Übematerial zum Anhören – nach Stück oder Stimme filtern."
       />

@@ -1,11 +1,11 @@
+import { MemberPageIntro } from "@/components/app/member-page-intro";
 import { MemberShell } from "@/components/app/member-shell";
-import { PageHeader } from "@/components/app/page-header";
 import { LibraryScores } from "@/components/library/library-scores";
 
 export default function LibraryScoresPage() {
   return (
     <MemberShell>
-      <PageHeader
+      <MemberPageIntro
         title="Noten & Stücke"
         description="Partituren und Stimmen – suchen, filtern und in der Vorschau öffnen."
       />

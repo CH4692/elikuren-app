@@ -3,9 +3,10 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { auth } from "@/auth";
+import { MemberPageIntro } from "@/components/app/member-page-intro";
 import { MemberShell } from "@/components/app/member-shell";
-import { PageHeader } from "@/components/app/page-header";
 import { ProfileForm } from "@/components/profile/profile-form";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { hasAdminAreaAccess } from "@/lib/permissions";
@@ -20,11 +21,22 @@ export default async function ProfilePage() {
 
   return (
     <MemberShell narrow>
-      <PageHeader
+      <MemberPageIntro
         title="Mein Profil"
         description="Verwalte deine Mitgliedsdaten für den Kammerchor Elikuren."
+        actions={
+          hasAdminAreaAccess(user.role) ? (
+            <Button
+              asChild
+              size="xl"
+              className="bg-[#C8A24D] text-[#1f1f23] hover:bg-[#d4b35e]"
+            >
+              <Link href="/admin">Zur Verwaltung</Link>
+            </Button>
+          ) : null
+        }
       />
-      <Card className="border-[#ebe4d8] bg-white/80">
+      <Card className="border-[#d9d2c4] bg-white/80 shadow-sm">
         <CardContent className="space-y-6 pt-6">
           <Suspense
             fallback={
@@ -37,16 +49,6 @@ export default async function ProfilePage() {
           >
             <ProfileForm initialUser={serializeUser(user)} />
           </Suspense>
-          {hasAdminAreaAccess(user.role) ? (
-            <p className="text-sm text-[#5c574e]">
-              <Link
-                href="/admin"
-                className="font-medium text-[#C8A24D] underline-offset-4 hover:underline"
-              >
-                Zur Verwaltung
-              </Link>
-            </p>
-          ) : null}
         </CardContent>
       </Card>
     </MemberShell>

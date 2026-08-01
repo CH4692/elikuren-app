@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, FileMusic } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ExternalLink, FileMusic, Trash2 } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { DataTableToolbar } from "@/components/app/data-table-toolbar";
 import { EmptyState } from "@/components/app/empty-state";
 import { PageHeader } from "@/components/app/page-header";
@@ -49,6 +50,8 @@ export function ScoresPanel() {
   const [items, setItems] = useState<ScoreItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [pending, startTransition] = useTransition();
+  const [deleteTarget, setDeleteTarget] = useState<ScoreItem | null>(null);
 
   async function load(q?: string) {
     setLoading(true);
@@ -73,7 +76,12 @@ export function ScoresPanel() {
     <div>
       <PageHeader
         title="Noten & PDFs"
-        description="Alle hochgeladenen Noten und PDF-Dateien über alle Stücke hinweg."
+        description="Übersicht aller Noten. Anlegen und bearbeiten über Stücke → Stück-Editor."
+        actions={
+          <Button type="button" asChild>
+            <Link href="/admin/pieces">Zu den Stücken</Link>
+          </Button>
+        }
       />
 
       <DataTableToolbar
@@ -135,18 +143,29 @@ export function ScoresPanel() {
                     {formatBytes(item.stored_file.size_bytes)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="border-[#d9d2c4]"
-                      asChild
-                    >
-                      <Link href={`/admin/pieces/${item.piece_id}`}>
-                        <ExternalLink className="size-3.5" />
-                        Stück
-                      </Link>
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="border-[#d9d2c4]"
+                        asChild
+                      >
+                        <Link href={`/admin/pieces/${item.piece_id}`}>
+                          <ExternalLink className="size-3.5" />
+                          Stück
+                        </Link>
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="border-[#d9d2c4] text-red-700"
+                        onClick={() => setDeleteTarget(item)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -154,6 +173,35 @@ export function ScoresPanel() {
           </Table>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget != null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Note löschen?"
+        description={
+          deleteTarget
+            ? `„${deleteTarget.stored_file.original_name}“ wird entfernt.`
+            : undefined
+        }
+        confirmLabel="Löschen"
+        destructive
+        loading={pending}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          startTransition(async () => {
+            const res = await fetch(`/api/admin/sheets/${deleteTarget.id}`, {
+              method: "DELETE",
+            });
+            if (!res.ok) {
+              toast.error("Löschen fehlgeschlagen");
+              return;
+            }
+            toast.success("Gelöscht");
+            setDeleteTarget(null);
+            await load(search || undefined);
+          });
+        }}
+      />
     </div>
   );
 }
