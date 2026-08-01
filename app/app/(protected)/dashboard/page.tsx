@@ -1,16 +1,10 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
+import { MemberDashboard } from "@/components/dashboard/member-dashboard";
 import { MemberShell } from "@/components/app/member-shell";
-import { PageHeader } from "@/components/app/page-header";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { prisma } from "@/lib/db";
+import { listEventsForMember } from "@/lib/events";
 import { listPublishedPiecesForUser } from "@/lib/library";
 import { hasAdminAreaAccess } from "@/lib/permissions";
 
@@ -30,7 +24,7 @@ export default async function DashboardPage() {
   if (!user?.isActive) redirect("/auth/sign-in");
 
   const now = new Date();
-  const [importantAnnouncements, pieces] = await Promise.all([
+  const [importantAnnouncements, pieces, events] = await Promise.all([
     prisma.announcement.findMany({
       where: {
         publishedAt: { not: null, lte: now },
@@ -39,14 +33,20 @@ export default async function DashboardPage() {
       },
       orderBy: { publishedAt: "desc" },
       take: 3,
+      select: { id: true, title: true, publishedAt: true },
     }),
     listPublishedPiecesForUser({
       role: user.role,
       voice: user.voice,
     }),
+    listEventsForMember(session.user.id, now),
   ]);
 
-  const rehearsing = pieces.filter((p) => p.rehearsalStatus === "REHEARSING");
+  const rehearsing = pieces
+    .filter((p) => p.rehearsalStatus === "REHEARSING")
+    .slice(0, 5)
+    .map((p) => ({ id: p.id, title: p.title, composer: p.composer }));
+
   const recentSheets = pieces
     .flatMap((p) =>
       p.sheetFiles.map((s) => ({
@@ -57,107 +57,27 @@ export default async function DashboardPage() {
       })),
     )
     .sort((a, b) => (b.at?.getTime() ?? 0) - (a.at?.getTime() ?? 0))
-    .slice(0, 5);
+    .slice(0, 5)
+    .map(({ pieceId, title, name }) => ({ pieceId, title, name }));
 
-  const links = [
-    { href: "/library/scores", title: "Noten", description: "Partituren und Stimmen" },
-    { href: "/library/audio", title: "Audio", description: "Übematerial" },
-    {
-      href: "/announcements",
-      title: "Mitteilungen",
-      description: "Aktuelle Hinweise",
-    },
-    { href: "/profile", title: "Profil", description: "Meine Daten" },
-  ];
+  const upcomingEvents = events.slice(0, 4).map((e) => ({
+    id: e.id,
+    title: e.title,
+    startsAt: e.startsAt,
+    location: e.location,
+  }));
 
   return (
     <MemberShell>
-      <PageHeader
-        title={`Hallo${user.firstname ? ` ${user.firstname}` : ""}`}
-        description={
-          user.voice
-            ? `Deine Stimme: ${user.voice}`
-            : "Stimme noch nicht hinterlegt – bitte im Profil ergänzen."
-        }
+      <MemberDashboard
+        firstname={user.firstname}
+        voice={user.voice}
+        showAdmin={hasAdminAreaAccess(user.role)}
+        announcements={importantAnnouncements}
+        upcomingEvents={upcomingEvents}
+        rehearsing={rehearsing}
+        recentSheets={recentSheets}
       />
-
-      {importantAnnouncements.length > 0 ? (
-        <section className="mb-8 space-y-2">
-          <h2 className="text-lg font-medium">Wichtige Mitteilungen</h2>
-          <ul className="space-y-2">
-            {importantAnnouncements.map((a) => (
-              <li key={a.id}>
-                <Link
-                  href="/announcements"
-                  className="block rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm"
-                >
-                  {a.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {rehearsing.length > 0 ? (
-        <section className="mb-8 space-y-2">
-          <h2 className="text-lg font-medium">Aktuell in Probe</h2>
-          <ul className="space-y-2">
-            {rehearsing.slice(0, 6).map((p) => (
-              <li key={p.id}>
-                <Link
-                  href={`/library/pieces/${p.id}`}
-                  className="block rounded-lg border border-[#C8A24D]/25 px-4 py-3"
-                >
-                  <span className="font-medium">{p.title}</span>
-                  <span className="text-sm text-[#5c574e]"> · {p.composer}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {recentSheets.length > 0 ? (
-        <section className="mb-8 space-y-2">
-          <h2 className="text-lg font-medium">Neue Noten</h2>
-          <ul className="space-y-2 text-sm">
-            {recentSheets.map((s) => (
-              <li key={`${s.pieceId}-${s.name}`}>
-                <Link
-                  href={`/library/pieces/${s.pieceId}`}
-                  className="hover:underline"
-                >
-                  {s.title}: {s.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      <section className="grid gap-3 sm:grid-cols-2">
-        {links.map((link) => (
-          <Link key={link.href} href={link.href}>
-            <Card className="h-full transition hover:border-[#C8A24D]/50">
-              <CardHeader>
-                <CardTitle>{link.title}</CardTitle>
-                <CardDescription>{link.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
-        ))}
-        {hasAdminAreaAccess(user.role) ? (
-          <Link href="/admin">
-            <Card className="h-full transition hover:border-[#C8A24D]/50">
-              <CardHeader>
-                <CardTitle>Verwaltung</CardTitle>
-                <CardDescription>Stücke, Mitglieder und Mitteilungen</CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
-        ) : null}
-      </section>
     </MemberShell>
   );
 }

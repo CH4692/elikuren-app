@@ -11,10 +11,15 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: /Hallo/i })).toBeVisible();
     const hub = page.locator("main");
-    await expect(hub.getByRole("link", { name: "Noten" })).toBeVisible();
-    await expect(hub.getByRole("link", { name: "Audio" })).toBeVisible();
-    await expect(hub.getByRole("link", { name: "Mitteilungen" })).toBeVisible();
-    await expect(hub.getByRole("link", { name: "Profil" })).toBeVisible();
+    await expect(hub.getByRole("link", { name: /Noten/i }).first()).toBeVisible();
+    await expect(hub.getByRole("link", { name: /Audio/i }).first()).toBeVisible();
+    await expect(
+      hub.getByRole("link", { name: /Termine/i }).first(),
+    ).toBeVisible();
+    await expect(
+      hub.getByRole("link", { name: /Mitteilungen/i }).first(),
+    ).toBeVisible();
+    await expect(hub.getByRole("link", { name: /Profil/i }).first()).toBeVisible();
   });
 
   test("dashboard shows important announcement and next-event card", async ({
@@ -32,8 +37,7 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.getByText("Wichtige Mitteilungen")).toBeVisible();
     await expect(page.getByText(title)).toBeVisible();
-
-    await page.goto("/events", { waitUntil: "domcontentloaded" });
+    await expect(page.getByText("Nächste Termine")).toBeVisible();
     await expect(page.getByText(eventTitle)).toBeVisible({ timeout: 15_000 });
   });
 
@@ -41,14 +45,14 @@ test.describe("Dashboard", () => {
     await loginAsAdmin(page);
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(
-      page.locator("main").getByRole("link", { name: "Verwaltung" }),
+      page.locator("main").getByRole("link", { name: /Verwaltung/i }),
     ).toBeVisible();
 
     await page.context().clearCookies();
     await loginAsMember(page);
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(
-      page.locator("main").getByRole("link", { name: "Verwaltung" }),
+      page.locator("main").getByRole("link", { name: /Verwaltung/i }),
     ).toHaveCount(0);
   });
 });
