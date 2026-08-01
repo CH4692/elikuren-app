@@ -6,7 +6,7 @@ import {
   loginAsAdmin,
   reviewRequest,
 } from "../helpers/auth";
-import { getE2EMemberCredentials } from "../helpers/credentials";
+import { upsertCredentialUser } from "../helpers/seed-user";
 
 test.describe("Membership API integration", () => {
   test("POST /api/membership-requests validates email and returns neutral success", async ({
@@ -82,36 +82,29 @@ test.describe("Members API integration", () => {
   test("admin can deactivate member and block credentials login", async ({
     page,
   }) => {
+    const email = `deact-api-${Date.now()}@example.com`;
+    const password = "E2E-Temp-Deact-Password!";
+    const user = await upsertCredentialUser({
+      email,
+      password,
+      voice: "Bass",
+    });
+
     await loginAsAdmin(page);
-    const { email } = getE2EMemberCredentials();
-    const list = await page.request.get(`/api/admin/members?q=${encodeURIComponent(email)}`);
-    expect(list.ok()).toBeTruthy();
-    const payload = (await list.json()) as {
-      items: Array<{ id: string; email: string | null; is_active: boolean }>;
-    };
-    const member = payload.items.find((item) => item.email === email);
-    expect(member).toBeTruthy();
 
-    try {
-      const patch = await page.request.patch(`/api/admin/members/${member!.id}`, {
-        data: { is_active: false },
-      });
-      expect(patch.ok()).toBeTruthy();
+    const patch = await page.request.patch(`/api/admin/members/${user.id}`, {
+      data: { is_active: false },
+    });
+    expect(patch.ok()).toBeTruthy();
 
-      await page.context().clearCookies();
-      await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded" });
-      const loginForm = page
-        .locator("form")
-        .filter({ has: page.getByRole("button", { name: "Anmelden" }) });
-      await loginForm.locator('input[name="email"]').fill(email);
-      await loginForm.locator('input[name="password"]').fill(getE2EMemberCredentials().password);
-      await page.getByRole("button", { name: "Anmelden" }).click();
-      await expect(page).toHaveURL(/\/auth\/(sign-in|error)/, { timeout: 15_000 });
-    } finally {
-      await loginAsAdmin(page);
-      await page.request.patch(`/api/admin/members/${member!.id}`, {
-        data: { is_active: true },
-      });
-    }
+    await page.context().clearCookies();
+    await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded" });
+    const loginForm = page
+      .locator("form")
+      .filter({ has: page.getByRole("button", { name: "Anmelden" }) });
+    await loginForm.locator('input[name="email"]').fill(email);
+    await loginForm.locator('input[name="password"]').fill(password);
+    await page.getByRole("button", { name: "Anmelden" }).click();
+    await expect(page).toHaveURL(/\/auth\/(sign-in|error)/, { timeout: 15_000 });
   });
 });

@@ -16,10 +16,9 @@ export default defineConfig({
   globalTeardown: "./tests/global-teardown.ts",
   fullyParallel: true,
   forbidOnly: isCI,
-  // One retry is enough in CI; two made the 118-test suite exceed runner limits.
   retries: isCI ? 1 : 1,
-  // Serial locally (shared Neon user state); two workers in CI for wall-clock time.
-  workers: isCI ? 2 : 1,
+  // Shared E2E users on Neon — keep serial to avoid CredentialsSignin races.
+  workers: 1,
   reporter: isCI ? "github" : "html",
   timeout: 60_000,
   expect: { timeout: 10_000 },

@@ -17,6 +17,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Resend({
       apiKey: process.env.RESEND_API_KEY,
       from: process.env.EMAIL_FROM ?? "noreply@kammerchor-elikuren.de",
+      // CI / .env.test use re_test_* — skip real Resend calls so Playwright can assert gates.
+      async sendVerificationRequest(params) {
+        const apiKey = process.env.RESEND_API_KEY ?? "";
+        if (apiKey.startsWith("re_test")) {
+          console.info(
+            `[auth:e2e] magic-link skipped (test key) for ${params.identifier}`,
+          );
+          return;
+        }
+        const { identifier, url, provider } = params;
+        const res = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${provider.apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: provider.from,
+            to: identifier,
+            subject: "Anmeldelink – Kammerchor Elikuren",
+            html: `<p><a href="${url}">${url}</a></p>`,
+          }),
+        });
+        if (!res.ok) {
+          throw new Error(`Resend error: ${await res.text()}`);
+        }
+      },
     }),
     Credentials({
       name: "credentials",

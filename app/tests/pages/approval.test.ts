@@ -94,10 +94,11 @@ test.describe("Admin Freigabeprozess", () => {
     await logout(page);
     await requestMagicLink(page, email);
 
+    // Gate open → verify page (or stay off AccessDenied). With re_test key, email is mocked.
     await expect(page).not.toHaveURL(/error=AccessDenied/, {
       timeout: 20_000,
     });
-    await expect(page.getByText(/Anfrage wurde erfasst/)).toHaveCount(0);
+    await expect(page).toHaveURL(/\/auth\/verify/, { timeout: 20_000 });
   });
 
   test("rejected request still cannot receive a magic link", async ({

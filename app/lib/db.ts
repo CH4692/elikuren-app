@@ -21,18 +21,13 @@ function createPrismaClient() {
     globalForPrisma.pgPool ??
     new Pool({
       connectionString,
-      max: 5,
+      max: 10,
       ssl: pgSslForConnectionString(connectionString),
     });
+  globalForPrisma.pgPool = pool;
 
   const adapter = new PrismaPg(pool);
-  const prisma = new PrismaClient({ adapter });
-
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.pgPool = pool;
-  }
-
-  return prisma;
+  return new PrismaClient({ adapter });
 }
 
 function getOrCreatePrismaClient() {
@@ -42,9 +37,7 @@ function getOrCreatePrismaClient() {
     return cached;
   }
   const client = createPrismaClient();
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = client;
-  }
+  globalForPrisma.prisma = client;
   return client;
 }
 
