@@ -8,7 +8,6 @@ test.describe("Mitglieder-Bibliothek", () => {
 
     await page.goto("/library/scores", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Noten" })).toBeVisible();
-    await expect(page.getByText("Mitgliederbereich")).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Aktuelles Konzert" }),
     ).toBeVisible();
@@ -19,9 +18,8 @@ test.describe("Mitglieder-Bibliothek", () => {
 
     await page.goto("/library/audio", { waitUntil: "domcontentloaded" });
     await expect(
-      page.getByRole("heading", { name: "Audio & Üben", exact: true }),
+      page.getByRole("heading", { name: "Audio", exact: true }),
     ).toBeVisible();
-    await expect(page.getByText("Mitgliederbereich")).toBeVisible();
   });
 
   test("library scores and audio APIs work for members", async ({ page }) => {

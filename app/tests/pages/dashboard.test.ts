@@ -10,7 +10,7 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: /Hallo/i })).toBeVisible();
     await expect(
-      page.getByText(/Schön, dass du da bist\./),
+      page.getByText(/Aktuelles Konzertprogramm, Notenkatalog und Übedateien/),
     ).toBeVisible();
     const hub = page.locator("main");
     await expect(hub.getByRole("link", { name: /Noten/i }).first()).toBeVisible();

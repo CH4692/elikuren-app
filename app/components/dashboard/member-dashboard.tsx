@@ -1,15 +1,11 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  FileMusic,
-  Headphones,
-  UserRound,
-} from "lucide-react";
+import { FileMusic, Headphones, UserRound } from "lucide-react";
 
 import {
   ActiveConcertCard,
   type ActiveConcertSummary,
 } from "@/components/app/active-concert-card";
+import { MemberPageIntro } from "@/components/app/member-page-intro";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -49,37 +45,10 @@ export function MemberDashboard({
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-3xl border border-[#d9d2c4] bg-[#1f1f23] px-6 py-7 text-[#f4f1eb] shadow-sm sm:px-8 sm:py-8">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(200,162,77,0.28),_transparent_55%)]"
-        />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-3">
-            <p className="inline-flex items-center rounded-full border border-[#C8A24D]/40 bg-[#C8A24D]/15 px-3 py-1 text-xs font-medium tracking-wide text-[#E8D5A3]">
-              Aktives Mitglied
-              {voice ? ` · ${voice}` : ""}
-            </p>
-            <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-              Hallo {greetingName}
-            </h1>
-            <p className="max-w-xl text-sm leading-relaxed text-[#f4f1eb]/70 sm:text-base">
-              Schön, dass du da bist. Aktuelles Konzertprogramm, Notenkatalog
-              und Übematerial findest du in der Bibliothek.
-            </p>
-          </div>
-          <Button
-            asChild
-            size="xl"
-            className="shrink-0 bg-[#C8A24D] text-[#1f1f23] hover:bg-[#d4b35e]"
-          >
-            <Link href="/library/scores">
-              Zur Bibliothek
-              <ArrowRight className="ml-1.5 size-4" />
-            </Link>
-          </Button>
-        </div>
-      </section>
+      <MemberPageIntro
+        title={`Hallo ${greetingName}`}
+        description="Aktuelles Konzertprogramm, Notenkatalog und Übedateien findest du in der Bibliothek."
+      />
 
       <ActiveConcertCard concert={activeConcert} />
 

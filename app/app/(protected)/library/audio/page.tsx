@@ -6,8 +6,8 @@ export default function LibraryAudioPage() {
   return (
     <MemberShell>
       <MemberPageIntro
-        title="Audio & Üben"
-        description="Üben nach Stück und Stimme, oder Mitschnitte nach Konzert."
+        title="Audio"
+        description="Übedateien und Mitschnitte durchsuchen."
       />
       <LibraryAudio />
     </MemberShell>
