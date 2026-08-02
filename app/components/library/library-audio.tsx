@@ -61,7 +61,6 @@ export function LibraryAudio() {
   const [concerts, setConcerts] = useState<ConcertRow[]>([]);
   const [selectedConcertId, setSelectedConcertId] = useState<string>("");
   const [q, setQ] = useState("");
-  const [myVoiceOnly, setMyVoiceOnly] = useState(false);
   const [audioType, setAudioType] = useState("");
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -79,7 +78,6 @@ export function LibraryAudio() {
 
         const params = new URLSearchParams();
         if (q.trim()) params.set("q", q.trim());
-        if (myVoiceOnly) params.set("myVoice", "1");
         if (tab === "practice") {
           params.set("section", "practice");
           if (audioType) params.set("type", audioType);
@@ -96,7 +94,7 @@ export function LibraryAudio() {
         toast.error("Audio konnte nicht geladen werden");
       }
     })();
-  }, [tab, q, myVoiceOnly, audioType, selectedConcertId]);
+  }, [tab, q, audioType, selectedConcertId]);
 
   const practiceGroups = useMemo(() => {
     if (tab !== "practice") return [];
@@ -156,28 +154,18 @@ export function LibraryAudio() {
           className="max-w-sm border-[#ebe4d8] bg-white/80"
         />
         {tab === "practice" ? (
-          <>
-            <select
-              className={selectClass}
-              value={audioType}
-              onChange={(e) => setAudioType(e.target.value)}
-              aria-label="Audio-Typ"
-            >
-              {AUDIO_TYPE_OPTIONS.map((opt) => (
-                <option key={opt.value || "all"} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <label className="flex items-center gap-2 text-sm text-[#5c574e]">
-              <input
-                type="checkbox"
-                checked={myVoiceOnly}
-                onChange={(e) => setMyVoiceOnly(e.target.checked)}
-              />
-              Meine Stimme
-            </label>
-          </>
+          <select
+            className={selectClass}
+            value={audioType}
+            onChange={(e) => setAudioType(e.target.value)}
+            aria-label="Audio-Typ"
+          >
+            {AUDIO_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value || "all"} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         ) : null}
       </div>
 
@@ -272,11 +260,7 @@ export function LibraryAudio() {
           <EmptyState
             icon={Headphones}
             title="Kein Übematerial"
-            description={
-              myVoiceOnly
-                ? "Für deine Stimme ist noch kein Übematerial veröffentlicht."
-                : "Es ist noch kein Übematerial veröffentlicht."
-            }
+            description="Es ist noch kein Übematerial veröffentlicht."
           />
         ) : (
           <ul className="space-y-4">
