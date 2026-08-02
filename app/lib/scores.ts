@@ -1,4 +1,4 @@
-import { formatConcertLabel } from "@/lib/concerts";
+import { formatConcertLabel } from "@/lib/concert-label";
 import { prisma } from "@/lib/db";
 import type { FileAccessScope, VoiceGroup } from "@/lib/generated/prisma/client";
 

@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatConcertLabel } from "@/lib/concerts";
+import { formatConcertLabel } from "@/lib/concert-label";
 import { uploadFileViaPresign } from "@/lib/upload-client";
 import {
   AUDIO_TYPE_OPTIONS,

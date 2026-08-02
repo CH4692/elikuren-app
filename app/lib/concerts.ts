@@ -1,6 +1,9 @@
+import { formatConcertLabel } from "@/lib/concert-label";
 import { prisma } from "@/lib/db";
 import type { Role, VoiceGroup } from "@/lib/generated/prisma/client";
 import { hasPermission } from "@/lib/permissions";
+
+export { formatConcertLabel } from "@/lib/concert-label";
 
 function slugify(input: string) {
   return input
@@ -11,28 +14,6 @@ function slugify(input: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
-}
-
-/** Display label for concert assignments, e.g. "Sommerkonzert 2025". */
-export function formatConcertLabel(input: {
-  title: string;
-  year?: number | null;
-  date?: string | Date | null;
-}): string {
-  const title = input.title.trim();
-  let year = input.year ?? null;
-  if (year == null && input.date) {
-    if (typeof input.date === "string") {
-      const parsed = Number(input.date.slice(0, 4));
-      year = Number.isFinite(parsed) ? parsed : null;
-    } else {
-      year = input.date.getUTCFullYear();
-    }
-  }
-  if (year != null && !/\b\d{4}\s*$/.test(title)) {
-    return `${title} ${year}`;
-  }
-  return title;
 }
 
 export async function uniqueConcertSlug(base: string, excludeId?: string) {
