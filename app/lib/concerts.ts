@@ -495,3 +495,27 @@ export async function getCurrentConcert(role: Role | string) {
     },
   });
 }
+
+/** Lightweight current-concert fields for dashboard cards (no program/audio payload). */
+export async function getCurrentConcertSummary(role: Role | string) {
+  const isAdmin = hasPermission(role, "PIECE_MANAGE");
+  const concert = await prisma.concert.findFirst({
+    where: {
+      isCurrent: true,
+      ...(isAdmin ? {} : { isVisible: true }),
+    },
+    select: {
+      title: true,
+      date: true,
+      location: true,
+    },
+  });
+  if (!concert) return null;
+  const date = concert.date ? concert.date.toISOString().slice(0, 10) : null;
+  return {
+    title: concert.title,
+    date,
+    year: date ? Number(date.slice(0, 4)) : null,
+    location: concert.location ?? null,
+  };
+}

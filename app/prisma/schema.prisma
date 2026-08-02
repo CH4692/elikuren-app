@@ -24,6 +24,7 @@ enum AudioType {
   FULL_RECORDING
   SOPRANO
   ALTO
+  MEZZO
   TENOR
   BASS
   PIANO

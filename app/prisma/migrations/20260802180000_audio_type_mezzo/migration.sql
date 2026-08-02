@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "AudioType" ADD VALUE IF NOT EXISTS 'MEZZO';

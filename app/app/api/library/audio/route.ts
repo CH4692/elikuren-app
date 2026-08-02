@@ -8,6 +8,7 @@ const AUDIO_TYPES = new Set([
   "FULL_RECORDING",
   "SOPRANO",
   "ALTO",
+  "MEZZO",
   "TENOR",
   "BASS",
   "PIANO",

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { MemberShell } from "@/components/app/member-shell";
 import { MemberDashboard } from "@/components/dashboard/member-dashboard";
-import { getCurrentConcert, serializeConcert } from "@/lib/concerts";
+import { getCurrentConcertSummary } from "@/lib/concerts";
 import { prisma } from "@/lib/db";
 import { hasAdminAreaAccess } from "@/lib/permissions";
 
@@ -25,18 +25,7 @@ export default async function DashboardPage() {
   // Admin-Rollen starten im Verwaltungsbereich, nicht im Mitglieder-Dashboard.
   if (hasAdminAreaAccess(user.role)) redirect("/admin");
 
-  const current = await getCurrentConcert(user.role);
-  const activeConcert = current
-    ? (() => {
-        const serialized = serializeConcert(current);
-        return {
-          title: serialized.title,
-          date: serialized.date,
-          year: serialized.year,
-          location: serialized.location,
-        };
-      })()
-    : null;
+  const activeConcert = await getCurrentConcertSummary(user.role);
 
   return (
     <MemberShell>

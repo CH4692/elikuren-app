@@ -50,6 +50,7 @@ export const AUDIO_TYPE_OPTIONS = [
   { value: "FULL_RECORDING", label: "Gesamtaufnahme" },
   { value: "SOPRANO", label: "Sopran" },
   { value: "ALTO", label: "Alt" },
+  { value: "MEZZO", label: "Mezzo" },
   { value: "TENOR", label: "Tenor" },
   { value: "BASS", label: "Bass" },
   { value: "PIANO", label: "Klavier" },

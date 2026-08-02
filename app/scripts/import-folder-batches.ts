@@ -132,10 +132,10 @@ function parseVoiceFromName(fileName: string): {
 
   const voiceMatchers: { re: RegExp; voice: VoiceGroup; type: AudioType }[] = [
     { re: /sopran/i, voice: "SOPRANO", type: "SOPRANO" },
+    { re: /mezzo/i, voice: "OTHER", type: "MEZZO" },
     { re: /tenor/i, voice: "TENOR", type: "TENOR" },
     { re: /bass|baß/i, voice: "BASS", type: "BASS" },
     { re: /(^|[^a-zäöü])alt([^a-zäöü]|$)/i, voice: "ALTO", type: "ALTO" },
-    { re: /mezzo/i, voice: "OTHER", type: "OTHER" },
   ];
 
   for (const m of voiceMatchers) {
