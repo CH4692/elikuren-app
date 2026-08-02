@@ -10,9 +10,9 @@ export default function ClosMenu({
   setOpen: (open: boolean) => void;
 }) {
   return (
-    <div className="relative flex justify-around items-center p-2">
+    <div className="relative flex items-center justify-between px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
       <SheetTitle className="sr-only">Navigation</SheetTitle>
-      <Logo setOpen={setOpen} />
+      <Logo setOpen={setOpen} compact />
 
       <button
         type="button"
