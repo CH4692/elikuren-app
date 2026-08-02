@@ -27,7 +27,7 @@ function berlinHour(date: Date): number {
 
 /**
  * End of the calendar day of `date` in Europe/Berlin (23:59:59.999 local).
- * Used when a concert has startsAt but no endsAt.
+ * DST-aware (CET +01 / CEST +02).
  */
 export function endOfDayEuropeBerlin(date: Date): Date {
   const { y, m, d } = berlinYmd(date);
@@ -46,6 +46,16 @@ export function endOfDayEuropeBerlin(date: Date): Date {
     }
   }
   return new Date(`${day}T23:59:59.999+02:00`);
+}
+
+/**
+ * Public visibility window end: explicit endsAt, else end of Berlin calendar day of startsAt.
+ */
+export function concertVisibleUntil(
+  startsAt: Date,
+  endsAt: Date | null,
+): Date {
+  return endsAt ?? endOfDayEuropeBerlin(startsAt);
 }
 
 /** Calendar date (UTC midnight) for the Berlin day of an instant — legacy Concert.date. */

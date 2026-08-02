@@ -103,6 +103,11 @@ enum InvoiceStatus {
   CANCELLED
 }
 
+enum ConcertWebsiteStatus {
+  DRAFT
+  PUBLISHED
+}
+
 model User {
   id             String    @id @default(cuid())
   name           String?
@@ -267,27 +272,31 @@ model AudioFile {
 }
 
 model Concert {
-  id            String      @id @default(cuid())
+  id            String               @id @default(cuid())
   title         String
-  slug          String      @unique
+  slug          String               @unique
   /// Legacy calendar date for member library; synced from startsAt when set.
-  date          DateTime?   @db.Date
-  startsAt      DateTime?   @map("starts_at")
-  endsAt        DateTime?   @map("ends_at")
+  date          DateTime?            @db.Date
+  startsAt      DateTime?            @map("starts_at")
+  endsAt        DateTime?            @map("ends_at")
   subtitle      String?
-  description   String?     @db.Text
+  description   String?              @db.Text
   location      String?
   address       String?
-  extraInfo     String?     @map("extra_info") @db.Text
-  ticketUrl     String?     @map("ticket_url")
-  showOnWebsite Boolean     @default(false) @map("show_on_website")
-  heroImageId   String?     @map("hero_image_id")
-  heroImage     MediaAsset? @relation("ConcertHeroImage", fields: [heroImageId], references: [id], onDelete: Restrict)
-  isCurrent     Boolean     @default(false) @map("is_current")
-  notes         String?     @db.Text
-  isVisible     Boolean     @default(true) @map("is_visible")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
+  programInfo   String?              @map("program_info") @db.Text
+  leader        String?
+  admissionInfo String?              @map("admission_info") @db.Text
+  footer        String?              @db.Text
+  extraInfo     String?              @map("extra_info") @db.Text
+  ticketUrl     String?              @map("ticket_url")
+  websiteStatus ConcertWebsiteStatus @default(DRAFT) @map("website_status")
+  heroImageId   String?              @map("hero_image_id")
+  heroImage     MediaAsset?          @relation("ConcertHeroImage", fields: [heroImageId], references: [id], onDelete: Restrict)
+  isCurrent     Boolean              @default(false) @map("is_current")
+  notes         String?              @db.Text
+  isVisible     Boolean              @default(true) @map("is_visible")
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
   items         ConcertItem[]
   recordings    AudioFile[]
   sheetFiles    SheetFile[]
@@ -295,7 +304,7 @@ model Concert {
   @@index([isCurrent])
   @@index([date])
   @@index([startsAt])
-  @@index([showOnWebsite])
+  @@index([websiteStatus, startsAt])
   @@index([isVisible])
   @@map("concerts")
 }

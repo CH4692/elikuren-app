@@ -28,9 +28,11 @@ Internes Prisma-CMS mit festen typisierten Sektionen. Kein externes CMS, kein Pa
 
 ## Konzerte (öffentlich)
 
-- Felder: `startsAt`, optional `endsAt`, Marketing-Felder, `showOnWebsite`, Hero-`MediaAsset`
-- `showOnWebsite` nur mit gesetztem `startsAt` (keine 00:00-Platzhalter)
-- Public-Filter: `now() <= coalesce(endsAt, endOfDayEuropeBerlin(startsAt))`
+- Status: `websiteStatus` (`DRAFT` | `PUBLISHED`); Publish nur mit `startsAt`
+- Marketing: `subtitle`, `description`, `location`, `address`, `programInfo`, `leader`, `admissionInfo` (optional), `footer`, optional `ticketUrl` / Hero
+- Sichtbarkeit: einzige Quelle `isConcertVisible()`; Zeitfenster via `concertVisibleUntil` / `endOfDayEuropeBerlin`
+- Public-Query-Vorfilter: `PUBLISHED` + `startsAt != null`; Entscheidung nur über `isConcertVisible`
+- Nach Writes: `revalidateTag("concerts-public")` + `revalidatePath("/home")`
 
 ## Permissions
 

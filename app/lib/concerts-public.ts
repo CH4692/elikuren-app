@@ -1,14 +1,15 @@
 import { unstable_cache } from "next/cache";
 
-import { formatBerlinDateTimeLocal } from "@/lib/datetime-berlin";
+import { isConcertVisible } from "@/lib/concert-visibility";
+import {
+  concertVisibleUntil,
+  formatBerlinDateTimeLocal,
+} from "@/lib/datetime-berlin";
 import { prisma } from "@/lib/db";
-import { isConcertPubliclyVisible } from "@/lib/concert-visibility";
 import { publicObjectUrl, resolveMediaAlt } from "@/lib/public-media";
 
-export {
-  concertVisibleUntil,
-  isConcertPubliclyVisible,
-} from "@/lib/concert-visibility";
+export { isConcertVisible } from "@/lib/concert-visibility";
+export { concertVisibleUntil } from "@/lib/datetime-berlin";
 
 export const CONCERTS_PUBLIC_CACHE_TAG = "concerts-public";
 
@@ -21,6 +22,10 @@ export type PublicConcertCard = {
   endsAt: Date | null;
   location: string | null;
   address: string | null;
+  programInfo: string | null;
+  leader: string | null;
+  admissionInfo: string | null;
+  footer: string | null;
   extraInfo: string | null;
   ticketUrl: string | null;
   hero: {
@@ -29,11 +34,12 @@ export type PublicConcertCard = {
   } | null;
 };
 
+/** Obvious prefilter only — visibility decision is isConcertVisible(). */
 const loadPublicConcertCandidates = unstable_cache(
   async () => {
     return prisma.concert.findMany({
       where: {
-        showOnWebsite: true,
+        websiteStatus: "PUBLISHED",
         startsAt: { not: null },
       },
       orderBy: { startsAt: "asc" },
@@ -57,28 +63,23 @@ const loadPublicConcertCandidates = unstable_cache(
   { tags: [CONCERTS_PUBLIC_CACHE_TAG] },
 );
 
-/**
- * Public concerts:
- * showOnWebsite && startsAt != null && now <= coalesce(endsAt, endOfDayBerlin(startsAt))
- *
- * Candidates are cache-tagged; the time window is evaluated per request.
- */
 export async function listPublicConcerts(
   now = new Date(),
 ): Promise<PublicConcertCard[]> {
   const rows = await loadPublicConcertCandidates();
 
   return rows
-    .filter((row) =>
-      isConcertPubliclyVisible(
-        {
-          showOnWebsite: row.showOnWebsite,
-          startsAt: row.startsAt,
-          endsAt: row.endsAt,
-        },
+    .filter((row) => {
+      const startsAt = row.startsAt;
+      if (!startsAt) return false;
+      const visibleUntil = concertVisibleUntil(startsAt, row.endsAt);
+      return isConcertVisible({
+        websiteStatus: row.websiteStatus,
+        startsAt,
+        visibleUntil,
         now,
-      ),
-    )
+      });
+    })
     .map((row) => {
       const hero = row.heroImage;
       const file = hero?.storedFile;
@@ -100,6 +101,10 @@ export async function listPublicConcerts(
         endsAt: row.endsAt,
         location: row.location,
         address: row.address,
+        programInfo: row.programInfo,
+        leader: row.leader,
+        admissionInfo: row.admissionInfo,
+        footer: row.footer,
         extraInfo: row.extraInfo,
         ticketUrl: row.ticketUrl,
         hero: usable
