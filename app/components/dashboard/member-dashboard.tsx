@@ -23,19 +23,19 @@ const quickLinks = [
   {
     href: "/library/scores",
     title: "Noten",
-    description: "Partituren & Stimmen",
+    description: "Noten durchsuchen",
     icon: FileMusic,
   },
   {
     href: "/library/audio",
     title: "Audio",
-    description: "Übematerial",
+    description: "Übedateien und Mitschnitte",
     icon: Headphones,
   },
   {
     href: "/profile",
     title: "Profil",
-    description: "Meine Daten",
+    description: "Profil bearbeiten",
     icon: UserRound,
   },
 ] as const;
