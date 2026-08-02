@@ -1,0 +1,407 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  vorstand
+  mitglied
+  kassenwart
+  kassenpruefer
+}
+
+enum MembershipRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+enum AudioType {
+  FULL_RECORDING
+  SOPRANO
+  ALTO
+  MEZZO
+  TENOR
+  BASS
+  PIANO
+  REHEARSAL
+  CONCERT_RECORDING
+  OTHER
+}
+
+enum VoiceGroup {
+  SOPRANO
+  ALTO
+  TENOR
+  BASS
+  /// Full choir / default casting.
+  ELIKUREN
+  MUSICAL_TEAM
+  EIGHT_TO_THE_BAR
+  SOLO
+  OTHER
+}
+
+enum FileAccessScope {
+  ALL_MEMBERS
+  VOICE_GROUP_ONLY
+  ADMIN_ONLY
+}
+
+enum StoredFileCategory {
+  SHEET
+  AUDIO
+  INVOICE
+  IMAGE
+  OTHER
+}
+
+enum FileVisibility {
+  MEMBERS
+  ADMIN
+}
+
+enum UploadStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  DELETED
+}
+
+enum FavoriteTargetType {
+  PIECE
+  SHEET
+  AUDIO
+}
+
+enum ContentEventType {
+  VIEWED
+  PLAYED
+  DOWNLOADED
+}
+
+enum InvoiceDocumentType {
+  INCOME
+  EXPENSE
+  INVOICE
+  RECEIPT
+  CREDIT_NOTE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime? @map("email_verified")
+  image          String?
+  firstname      String?
+  lastname       String?
+  street         String?
+  houseNumber    String?   @map("house_number")
+  postalCode     String?   @map("postal_code")
+  location       String?
+  phone          String?
+  birthday       DateTime? @db.Date
+  voice          String?
+  isActive       Boolean   @default(true) @map("is_active")
+  sessionVersion Int       @default(0) @map("session_version")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  lastSignedIn   DateTime? @map("last_signed_in")
+  updatedAt      DateTime? @updatedAt @map("updated_at")
+  memberSince    DateTime? @map("member_since") @db.Date
+  role           Role      @default(mitglied)
+  passwordHash   String?   @map("password_hash")
+  accounts       Account[]
+  sessions       Session[]
+  approvedRequests MembershipRequest[] @relation("ApprovedBy")
+  rejectedRequests MembershipRequest[] @relation("RejectedBy")
+  uploadedFiles  StoredFile[]          @relation("UploadedBy")
+  favorites      UserFavorite[]
+  contentEvents  UserContentEvent[]
+  createdInvoices Invoice[]            @relation("InvoiceCreatedBy")
+  memberInvoices Invoice[]             @relation("InvoiceMember")
+
+  @@index([firstname])
+  @@index([lastname])
+  @@map("users")
+}
+
+model MembershipRequest {
+  id           String                  @id @default(cuid())
+  email        String
+  firstname    String?
+  lastname     String?
+  message      String?                 @db.Text
+  voice        String?
+  adminNote    String?                 @map("admin_note") @db.Text
+  status       MembershipRequestStatus @default(pending)
+  createdAt    DateTime                @default(now()) @map("created_at")
+  approvedAt   DateTime?               @map("approved_at")
+  approvedById String?                 @map("approved_by_id")
+  approvedBy   User?                   @relation("ApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  rejectedAt   DateTime?               @map("rejected_at")
+  rejectedById String?                 @map("rejected_by_id")
+  rejectedBy   User?                   @relation("RejectedBy", fields: [rejectedById], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([status])
+  @@map("membership_requests")
+}
+
+model StoredFile {
+  id           String            @id @default(cuid())
+  objectKey    String            @unique @map("object_key")
+  originalName String            @map("original_name")
+  mimeType     String            @map("mime_type")
+  sizeBytes    Int               @map("size_bytes")
+  checksum     String?
+  etag         String?
+  category     StoredFileCategory
+  visibility   FileVisibility    @default(MEMBERS)
+  uploadStatus UploadStatus      @default(PENDING) @map("upload_status")
+  uploadedById String?           @map("uploaded_by_id")
+  uploadedBy   User?             @relation("UploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  deletedAt    DateTime?         @map("deleted_at")
+  sheetFiles   SheetFile[]
+  audioFiles   AudioFile[]
+  galleryImages GalleryImage[]
+  invoices     Invoice[]
+
+  @@index([uploadStatus])
+  @@index([category])
+  @@map("stored_files")
+}
+
+/// Website / archive photos managed in admin.
+model GalleryImage {
+  id           String     @id @default(cuid())
+  title        String
+  caption      String?    @db.Text
+  takenAt      DateTime?  @map("taken_at") @db.Date
+  storedFileId String     @map("stored_file_id")
+  storedFile   StoredFile @relation(fields: [storedFileId], references: [id], onDelete: Restrict)
+  isVisible    Boolean    @default(true) @map("is_visible")
+  sortOrder    Int        @default(0) @map("sort_order")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@index([title])
+  @@index([takenAt])
+  @@index([isVisible])
+  @@index([sortOrder])
+  @@map("gallery_images")
+}
+
+model SheetFile {
+  id           String          @id @default(cuid())
+  title        String
+  composer     String          @default("")
+  storedFileId String          @map("stored_file_id")
+  storedFile   StoredFile      @relation(fields: [storedFileId], references: [id], onDelete: Restrict)
+  voiceGroup   VoiceGroup?     @map("voice_group")
+  accessScope  FileAccessScope @default(ALL_MEMBERS) @map("access_scope")
+  isVisible    Boolean         @default(true) @map("is_visible")
+  /// Concert / season this score belongs to.
+  concertId    String?         @map("concert_id")
+  concert      Concert?        @relation(fields: [concertId], references: [id], onDelete: SetNull)
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  concertItems ConcertItem[]
+
+  @@index([title])
+  @@index([composer])
+  @@index([voiceGroup])
+  @@index([isVisible])
+  @@index([concertId])
+  @@map("sheet_files")
+}
+
+model AudioFile {
+  id              String          @id @default(cuid())
+  title           String
+  composer        String          @default("")
+  storedFileId    String          @map("stored_file_id")
+  storedFile      StoredFile      @relation(fields: [storedFileId], references: [id], onDelete: Restrict)
+  audioType       AudioType       @default(OTHER) @map("audio_type")
+  voiceGroup      VoiceGroup?     @map("voice_group")
+  accessScope     FileAccessScope @default(ALL_MEMBERS) @map("access_scope")
+  durationSeconds Int?            @map("duration_seconds")
+  isVisible       Boolean         @default(true) @map("is_visible")
+  /// When set, this track is a concert recording (or practice linked to an event).
+  concertId       String?         @map("concert_id")
+  concert         Concert?        @relation(fields: [concertId], references: [id], onDelete: SetNull)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  concertItems    ConcertItem[]
+
+  @@index([title])
+  @@index([composer])
+  @@index([audioType])
+  @@index([voiceGroup])
+  @@index([isVisible])
+  @@index([concertId])
+  @@map("audio_files")
+}
+
+/// Performance / season program (setlist). Master catalog stays on SheetFile/AudioFile.
+model Concert {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  date        DateTime?     @db.Date
+  /// Optional venue / city for the performance.
+  location    String?
+  isCurrent   Boolean       @default(false) @map("is_current")
+  notes       String?       @db.Text
+  isVisible   Boolean       @default(true) @map("is_visible")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  items       ConcertItem[]
+  recordings  AudioFile[]
+  sheetFiles  SheetFile[]
+
+  @@index([isCurrent])
+  @@index([date])
+  @@index([isVisible])
+  @@map("concerts")
+}
+
+/// Ordered program entry; optionally links a score and/or practice/concert audio.
+model ConcertItem {
+  id           String      @id @default(cuid())
+  concertId    String      @map("concert_id")
+  concert      Concert     @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  sortOrder    Int         @default(0) @map("sort_order")
+  title        String
+  ensemble     VoiceGroup? // Besetzung: ELIKUREN | MUSICAL_TEAM | EIGHT_TO_THE_BAR | SOLO
+  sheetFileId  String?     @map("sheet_file_id")
+  sheetFile    SheetFile?  @relation(fields: [sheetFileId], references: [id], onDelete: SetNull)
+  audioFileId  String?     @map("audio_file_id")
+  audioFile    AudioFile?  @relation(fields: [audioFileId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@index([concertId, sortOrder])
+  @@index([sheetFileId])
+  @@index([audioFileId])
+  @@index([ensemble])
+  @@map("concert_items")
+}
+
+model UserFavorite {
+  id         String             @id @default(cuid())
+  userId     String             @map("user_id")
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetType FavoriteTargetType @map("target_type")
+  targetId   String             @map("target_id")
+  createdAt  DateTime           @default(now()) @map("created_at")
+
+  @@unique([userId, targetType, targetId])
+  @@index([userId])
+  @@map("user_favorites")
+}
+
+model UserContentEvent {
+  id             String           @id @default(cuid())
+  userId         String           @map("user_id")
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventType      ContentEventType @map("event_type")
+  targetType     FavoriteTargetType @map("target_type")
+  targetId       String           @map("target_id")
+  lastPositionMs Int?             @map("last_position_ms")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  @@index([userId, eventType])
+  @@index([targetType, targetId])
+  @@map("user_content_events")
+}
+
+model Invoice {
+  id               String              @id @default(cuid())
+  invoiceNumber    String              @unique @map("invoice_number")
+  documentType     InvoiceDocumentType @map("document_type")
+  recipientName    String              @map("recipient_name")
+  recipientEmail   String?             @map("recipient_email")
+  recipientAddress String?             @map("recipient_address") @db.Text
+  supplierName     String?             @map("supplier_name")
+  description      String?             @db.Text
+  category         String?
+  amountCents      Int                 @map("amount_cents")
+  taxAmountCents   Int                 @default(0) @map("tax_amount_cents")
+  currency         String              @default("EUR")
+  issueDate        DateTime            @map("issue_date") @db.Date
+  dueDate          DateTime?           @map("due_date") @db.Date
+  paidAt           DateTime?           @map("paid_at")
+  paymentMethod    String?             @map("payment_method")
+  status           InvoiceStatus       @default(DRAFT)
+  note             String?             @db.Text
+  storedFileId     String?             @map("stored_file_id")
+  storedFile       StoredFile?         @relation(fields: [storedFileId], references: [id], onDelete: SetNull)
+  memberId         String?             @map("member_id")
+  member           User?               @relation("InvoiceMember", fields: [memberId], references: [id], onDelete: SetNull)
+  createdById      String?             @map("created_by_id")
+  createdBy        User?               @relation("InvoiceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  archivedAt       DateTime?           @map("archived_at")
+
+  @@index([status])
+  @@index([issueDate])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}

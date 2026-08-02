@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+  CI: true
+  # Full suite on main (push or PR targeting main); smoke on dev.
+  CI_FULL: ${{ github.base_ref == 'main' || github.ref_name == 'main' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Typecheck + Lint
+        run: |
+          npm run typecheck
+          npm run lint
+
+      - name: Unit tests
+        if: env.CI_FULL == 'true'
+        run: npm run test:unit
+
+      - name: Require CI database for full suite
+        if: env.CI_FULL == 'true'
+        env:
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+        run: |
+          if [ -z "$CI_DATABASE_URL" ]; then
+            echo "::error::GitHub secret CI_DATABASE_URL is required for the full suite on main. Use the Preview/test Neon URLs (never Production)."
+            exit 1
+          fi
+
+      - name: Migrate CI database
+        if: env.CI_FULL == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.CI_DATABASE_URL_UNPOOLED || secrets.CI_DATABASE_URL }}
+        run: npx prisma migrate deploy
+
+      - name: Build (Next)
+        env:
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL || 'postgresql://build:build@127.0.0.1:5432/build?sslmode=disable' }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.CI_DATABASE_URL_UNPOOLED || secrets.CI_DATABASE_URL || 'postgresql://build:build@127.0.0.1:5432/build?sslmode=disable' }}
+        run: |
+          cp .env.test .env
+          npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        env:
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL || 'postgresql://build:build@127.0.0.1:5432/build?sslmode=disable' }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.CI_DATABASE_URL_UNPOOLED || secrets.CI_DATABASE_URL || 'postgresql://build:build@127.0.0.1:5432/build?sslmode=disable' }}
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: app/playwright-report/
+          retention-days: 14
