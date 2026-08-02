@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 
 import { isConcertVisible } from "@/lib/concert-visibility";
 import {
+  asDate,
   concertVisibleUntil,
   formatBerlinDateTimeLocal,
 } from "@/lib/datetime-berlin";
@@ -9,7 +10,7 @@ import { prisma } from "@/lib/db";
 import { publicObjectUrl, resolveMediaAlt } from "@/lib/public-media";
 
 export { isConcertVisible } from "@/lib/concert-visibility";
-export { concertVisibleUntil } from "@/lib/datetime-berlin";
+export { asDate, concertVisibleUntil } from "@/lib/datetime-berlin";
 
 export const CONCERTS_PUBLIC_CACHE_TAG = "concerts-public";
 
@@ -33,19 +34,6 @@ export type PublicConcertCard = {
     alt: string;
   } | null;
 };
-
-/** Revive dates after unstable_cache JSON round-trip (Dates become ISO strings). */
-export function asDate(value: unknown): Date | null {
-  if (value == null) return null;
-  if (value instanceof Date) {
-    return Number.isFinite(value.getTime()) ? value : null;
-  }
-  if (typeof value === "string" || typeof value === "number") {
-    const parsed = new Date(value);
-    return Number.isFinite(parsed.getTime()) ? parsed : null;
-  }
-  return null;
-}
 
 type CachedPublicConcert = Awaited<
   ReturnType<typeof loadPublicConcertCandidatesUncached>
