@@ -20,10 +20,9 @@ cp .env.example .env.local
 # Neon DATABASE_URL + DATABASE_URL_UNPOOLED, AUTH_SECRET, RESEND_API_KEY, …
 ```
 
-Local dev and full E2E use **Neon** via `.env.local`. GitHub CI matches charles-portfolio (typecheck, lint, build, Playwright smoke) — no Neon secrets in the workflow.
+Local dev and full E2E use **Neon** via `.env.local`. CI: smoke on `dev`; full suite on `main` (needs GitHub secrets `CI_DATABASE_URL` / Preview Neon — never Production). See [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ```bash
-npm run db:migrate
 npm run test          # unit + full Playwright locally
 ```
 
@@ -31,7 +30,7 @@ npm run test          # unit + full Playwright locally
 
 ```bash
 npm install
-npx prisma migrate deploy   # or: npm run db:migrate:dev
+npm run db:migrate:dev   # local/throwaway DB only — never migrate Production from your laptop
 npm run dev
 ```
 

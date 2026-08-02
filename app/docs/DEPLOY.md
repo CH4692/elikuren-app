@@ -3,31 +3,49 @@
 ## Locked decisions
 
 - Hosting: **Vercel only**
-- Database: **Neon Frankfurt**, fresh schema
+- Database: **Neon Frankfurt**
 - Auth: **Auth.js** (magic link via Resend)
 - Domains: `kammerchor-elikuren.de`
+- Production branch: **`main`**
+- Preview / staging branch: **`dev`** (and pull-request previews)
+
+## Environments
+
+| Scope | Neon | R2 bucket | Notes |
+|-------|------|-----------|--------|
+| **Production** (`main`) | Production Neon (real member data) | Production bucket | Live site |
+| **Preview** (`dev` / PRs) | Separate Preview Neon | Separate Preview bucket | Never point Preview DB/R2 at Production |
+| **GitHub CI** (full suite on `main`) | Same Preview/test Neon via secrets | not required for smoke | Secrets `CI_DATABASE_URL` (+ optional `CI_DATABASE_URL_UNPOOLED`) |
+
+### Env vars: split vs share
+
+| Variable | Production vs Preview |
+|----------|------------------------|
+| `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | **Split** — different Neon projects/branches |
+| `AUTH_URL` / `NEXT_PUBLIC_SITE_URL` | **Split** — live domain vs Preview URL |
+| `AUTH_SECRET` | **Split** — different secrets |
+| `R2_BUCKET_NAME` | **Split** — prod vs preview bucket |
+| `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | **Split** if tokens are bucket-scoped |
+| `R2_ACCOUNT_ID` / `R2_ENDPOINT` / `R2_REGION` | Share OK (same Cloudflare account) |
+| `RESEND_API_KEY` / `EMAIL_FROM` | Share OK |
+
+Do **not** set `AUTH_ENABLE_PASSWORD_LOGIN` on Vercel (local/E2E only).
 
 ## 1. Neon
 
-1. Create project in **Frankfurt**.
-2. Copy:
+1. Create projects (or branches) in **Frankfurt**.
+2. Keep the Neon with real member data as **Production**.
+3. Create a second Neon for **Preview** (and CI full suite).
+4. Copy for each environment:
    - **Pooled** → `DATABASE_URL`
    - **Direct** → `DATABASE_URL_UNPOOLED`
-3. Keep `sslmode=require`.
+5. Keep `sslmode=require`.
 
-## 2. Vercel
+## 2. Migrations (important)
 
-1. Import the monorepo.
-2. **Root Directory:** `app`
-3. Env vars for **Production and Preview** (see `.env.example`). Preview deployments do **not** inherit Production-only vars:
-   - `AUTH_SECRET`
-   - `AUTH_URL` — must match the public URL (e.g. `https://elikuren.charlesheller.dev` on Preview)
-   - `RESEND_API_KEY` (or `AUTH_RESEND_KEY`)
-   - `EMAIL_FROM` — domain must be verified in Resend
-   - `DATABASE_URL` / `DATABASE_URL_UNPOOLED`
-4. Custom domain (e.g. `elikuren.charlesheller.dev` / `kammerchor-elikuren.de`)
-5. Check `GET /api/health` → `auth.*` flags should all be `true`
-6. Build command:
+- **Forbidden:** `prisma migrate deploy` locally against Neon Production (or Preview if you are not intentionally updating that DB).
+- **Local OK:** `npm run db:migrate:dev` only against a local or dedicated throwaway DB.
+- **Vercel (Production and Preview):** migrations run only in the build:
 
 ```bash
 npx prisma migrate deploy && npm run build
@@ -35,14 +53,46 @@ npx prisma migrate deploy && npm run build
 
 (`npm run build` already runs `prisma generate`.)
 
-## 3. Auth.js / Resend
+Ship **schema + app code in the same deploy**. Never migrate Production ahead of the code that understands the new schema (runtime crashes).
+
+Migrations are **forward-only**. A Vercel rollback restores **code**, not the database. Prefer expand-then-contract for breaking schema changes.
+
+## 3. Vercel
+
+1. Import the monorepo; **Root Directory:** `app`.
+2. Set env vars per scope (Production vs Preview) — see table above.
+3. Build command:
+
+```bash
+npx prisma migrate deploy && npm run build
+```
+
+4. Production Branch: `main`.
+5. Prefer deploying only when the GitHub check **`test`** is green (Deployment Protection / required checks, if available on the plan).
+6. After a Production deploy: `GET /api/health` → `auth.*` and `DATABASE_URL` flags should be `true`.
+
+## 4. GitHub CI
+
+| Target | Suite |
+|--------|--------|
+| PR / push → `dev` | typecheck, lint, build, Playwright **smoke** |
+| PR / push → `main` | + **unit tests**, `prisma migrate deploy` on CI DB, Playwright **full** suite |
+
+Repo secrets (never Production Neon):
+
+- `CI_DATABASE_URL` — Preview/test Neon pooled URL
+- `CI_DATABASE_URL_UNPOOLED` — direct URL (falls back to pooled if unset)
+
+Branch protection on `main` and `dev`: require status check **`test`**, require PR, **0** approving reviews (solo).
+
+## 5. Auth.js / Resend
 
 1. Verify the Resend domain for `EMAIL_FROM`
 2. Sign-in / sign-up: `/auth/sign-in`, `/auth/sign-up`
 3. Magic-link callback goes through `/api/auth/*`
 
-## 4. Verify
+## 6. Verify after Production deploy
 
 - `https://kammerchor-elikuren.de/api/health`
 - Contact form
-- Sign-in → Magic Link → Dashboard → „Profil laden“
+- Sign-in → Magic Link → Dashboard
