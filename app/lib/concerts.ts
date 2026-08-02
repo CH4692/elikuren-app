@@ -17,7 +17,7 @@ function slugify(input: string) {
 }
 
 export async function uniqueConcertSlug(base: string, excludeId?: string) {
-  let slug = slugify(base) || "konzert";
+  const slug = slugify(base) || "konzert";
   let n = 0;
   while (true) {
     const candidate = n === 0 ? slug : `${slug}-${n}`;
