@@ -15,20 +15,28 @@ function requireEnv(name: string): string {
   return value;
 }
 
+/** Prefer R2_ENDPOINT; otherwise derive from R2_ACCOUNT_ID. */
+export function r2Endpoint(): string {
+  const explicit = process.env.R2_ENDPOINT?.trim();
+  if (explicit) return explicit;
+  const accountId = process.env.R2_ACCOUNT_ID?.trim();
+  if (accountId) return `https://${accountId}.r2.cloudflarestorage.com`;
+  throw new Error("R2_ENDPOINT is not configured");
+}
+
 export function r2Configured(): boolean {
   return Boolean(
-    process.env.R2_ACCOUNT_ID &&
-      process.env.R2_ACCESS_KEY_ID &&
+    process.env.R2_ACCESS_KEY_ID &&
       process.env.R2_SECRET_ACCESS_KEY &&
       process.env.R2_BUCKET_NAME &&
-      process.env.R2_ENDPOINT,
+      (process.env.R2_ENDPOINT || process.env.R2_ACCOUNT_ID),
   );
 }
 
 function getClient(): S3Client {
   return new S3Client({
     region: process.env.R2_REGION || "auto",
-    endpoint: requireEnv("R2_ENDPOINT"),
+    endpoint: r2Endpoint(),
     credentials: {
       accessKeyId: requireEnv("R2_ACCESS_KEY_ID"),
       secretAccessKey: requireEnv("R2_SECRET_ACCESS_KEY"),

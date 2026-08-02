@@ -4,7 +4,7 @@
  * Usage (from app/):
  *   npx tsx scripts/import-media.ts              # dry-run → scripts/import-manifest.json
  *   npx tsx scripts/import-media.ts --apply      # upload + DB writes
- *   npx tsx scripts/import-media.ts --apply --only=scores,practice,concerts
+ *   npx tsx scripts/import-media.ts --apply --only=scores,practice,concerts,pictures
  *   npx tsx scripts/import-media.ts --apply --current-slug=neujahrskonzert-2025
  */
 import { createHash, randomUUID } from "node:crypto";
@@ -22,7 +22,8 @@ import type {
 } from "../lib/generated/prisma/client";
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { pgSslForConnectionString } from "../lib/pg-connection";
-import { buildObjectKey, r2Configured } from "../lib/r2";
+import { objectKeyFor } from "../lib/object-keys";
+import { r2Configured, r2Endpoint } from "../lib/r2";
 
 loadEnv({ path: ".env.local", quiet: true });
 loadEnv({ path: ".env", quiet: true });
@@ -32,10 +33,10 @@ const APP_ROOT = process.cwd();
 const REPO_ROOT = path.resolve(APP_ROOT, "..");
 const MANIFEST_PATH = path.join(APP_ROOT, "scripts", "import-manifest.json");
 
-type Section = "scores" | "practice" | "concerts";
+type Section = "scores" | "practice" | "concerts" | "pictures";
 
 type ManifestEntry = {
-  kind: "sheet" | "practice_audio" | "concert_recording";
+  kind: "sheet" | "practice_audio" | "concert_recording" | "picture";
   localPath: string;
   title: string;
   composer?: string;
@@ -44,6 +45,7 @@ type ManifestEntry = {
   concertFolder?: string;
   concertTitle?: string;
   concertDate?: string | null;
+  takenAt?: string | null;
   sortOrder?: number;
   sizeBytes: number;
   checksum: string;
@@ -95,6 +97,48 @@ function voiceFromName(name: string): VoiceGroup | null {
 
 function titleFromBasename(fileName: string) {
   return fileName.replace(/\.[^.]+$/, "").replace(/_/g, " ").trim();
+}
+
+function takenAtFromName(fileName: string): string | null {
+  const m = fileName.match(/^(\d{4})(\d{2})(\d{2})[_-]/);
+  if (!m) return null;
+  return `${m[1]}-${m[2]}-${m[3]}`;
+}
+
+function mimeForImage(fileName: string): string | null {
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".webp")) return "image/webp";
+  return null;
+}
+
+async function scanPictures(root: string): Promise<ManifestEntry[]> {
+  const entries: ManifestEntry[] = [];
+  const files = await listFiles(root);
+  for (const file of files) {
+    const originalName = path.basename(file);
+    const mimeType = mimeForImage(originalName);
+    if (!mimeType) continue;
+    const { size } = await fs.stat(file);
+    const checksum = await sha256File(file);
+    const takenAt = takenAtFromName(originalName);
+    let title = titleFromBasename(originalName);
+    if (takenAt) {
+      title = title.replace(/^\d{4}[-\s]?\d{2}[-\s]?\d{2}\s*/, "").trim() || title;
+    }
+    entries.push({
+      kind: "picture",
+      localPath: file,
+      title,
+      takenAt,
+      sizeBytes: size,
+      checksum,
+      mimeType,
+      originalName,
+    });
+  }
+  return entries;
 }
 
 function parseConcertFolder(folderName: string): {
@@ -272,7 +316,7 @@ function requireEnv(name: string) {
 function getR2Client() {
   return new S3Client({
     region: process.env.R2_REGION || "auto",
-    endpoint: requireEnv("R2_ENDPOINT"),
+    endpoint: r2Endpoint(),
     credentials: {
       accessKeyId: requireEnv("R2_ACCESS_KEY_ID"),
       secretAccessKey: requireEnv("R2_SECRET_ACCESS_KEY"),
@@ -285,7 +329,8 @@ async function uploadAndCreateStoredFile(
   prisma: PrismaClient,
   client: S3Client,
   entry: ManifestEntry,
-  category: "SHEET" | "AUDIO",
+  category: "SHEET" | "AUDIO" | "IMAGE",
+  opts?: { concertId?: string | null },
 ) {
   const existing = await prisma.storedFile.findFirst({
     where: {
@@ -299,13 +344,23 @@ async function uploadAndCreateStoredFile(
 
   const fileId = randomUUID();
   const ext = path.extname(entry.originalName).replace(/^\./, "") || "bin";
-  const objectKey = buildObjectKey([
-    "import",
-    category === "SHEET" ? "sheets" : "audio",
-    entry.checksum.slice(0, 16),
-    `${fileId}.${ext}`,
-  ]);
+  const audioKind =
+    category === "AUDIO"
+      ? entry.kind === "concert_recording"
+        ? ("concerts" as const)
+        : entry.kind === "practice_audio"
+          ? ("practice" as const)
+          : ("other" as const)
+      : undefined;
+  const objectKey = objectKeyFor({
+    category,
+    fileId,
+    extension: ext,
+    concertId: opts?.concertId,
+    audioKind,
+  });
 
+  console.log(`  PUT ${objectKey} (${entry.sizeBytes} bytes)`);
   await client.send(
     new PutObjectCommand({
       Bucket: requireEnv("R2_BUCKET_NAME"),
@@ -363,6 +418,7 @@ async function applyImport(
   const client = getR2Client();
   let sheets = 0;
   let audios = 0;
+  let pictures = 0;
   let concerts = 0;
   let items = 0;
   let skipped = 0;
@@ -431,6 +487,35 @@ async function applyImport(
       continue;
     }
 
+    if (entry.kind === "picture") {
+      const stored = await uploadAndCreateStoredFile(
+        prisma,
+        client,
+        entry,
+        "IMAGE",
+      );
+      const existing = await prisma.galleryImage.findFirst({
+        where: { storedFileId: stored.id },
+      });
+      if (existing) {
+        skipped += 1;
+        continue;
+      }
+      await prisma.galleryImage.create({
+        data: {
+          title: entry.title,
+          takenAt: entry.takenAt
+            ? new Date(`${entry.takenAt}T00:00:00.000Z`)
+            : null,
+          storedFileId: stored.id,
+          isVisible: true,
+          sortOrder: 0,
+        },
+      });
+      pictures += 1;
+      continue;
+    }
+
     if (entry.kind === "practice_audio") {
       const stored = await uploadAndCreateStoredFile(
         prisma,
@@ -480,14 +565,16 @@ async function applyImport(
         client,
         entry,
         "AUDIO",
+        { concertId },
       );
-      const existing = await prisma.audioFile.findFirst({
-        where: { storedFileId: stored.id },
+      const title = `${String(entry.sortOrder ?? 0).padStart(2, "0")} - ${entry.title}`;
+      const existingForConcert = await prisma.audioFile.findFirst({
+        where: { storedFileId: stored.id, concertId },
       });
-      if (!existing) {
+      if (!existingForConcert) {
         await prisma.audioFile.create({
           data: {
-            title: `${String(entry.sortOrder ?? 0).padStart(2, "0")} - ${entry.title}`,
+            title,
             storedFileId: stored.id,
             audioType: "CONCERT_RECORDING",
             concertId,
@@ -497,31 +584,46 @@ async function applyImport(
         });
         audios += 1;
       } else {
-        if (!existing.concertId) {
-          await prisma.audioFile.update({
-            where: { id: existing.id },
-            data: { concertId },
-          });
-        }
         skipped += 1;
       }
     }
   }
 
-  if (currentSlug) {
-    await prisma.concert.updateMany({ data: { isCurrent: false } });
-    const updated = await prisma.concert.updateMany({
-      where: { slug: currentSlug },
-      data: { isCurrent: true },
-    });
-    if (updated.count === 0) {
-      console.warn(`current-slug not found: ${currentSlug}`);
-    } else {
-      console.log(`Marked current concert: ${currentSlug}`);
+  const touchedConcerts = entries.some(
+    (e) =>
+      e.kind === "concert_recording" ||
+      (e.kind === "sheet" && Boolean(e.concertFolder)),
+  );
+  if (touchedConcerts || currentSlug) {
+    const slugToMark =
+      currentSlug ||
+      (
+        await prisma.concert.findFirst({
+          where: { slug: { contains: "neujahrskonzert-2025" } },
+          orderBy: { date: "desc" },
+        })
+      )?.slug ||
+      (
+        await prisma.concert.findFirst({
+          orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+        })
+      )?.slug;
+
+    if (slugToMark) {
+      await prisma.concert.updateMany({ data: { isCurrent: false } });
+      const updated = await prisma.concert.updateMany({
+        where: { slug: slugToMark },
+        data: { isCurrent: true },
+      });
+      if (updated.count === 0) {
+        console.warn(`current-slug not found: ${slugToMark}`);
+      } else {
+        console.log(`Marked current concert: ${slugToMark}`);
+      }
     }
   }
 
-  return { sheets, audios, concerts, items, skipped };
+  return { sheets, audios, pictures, concerts, items, skipped };
 }
 
 async function main() {
@@ -529,6 +631,7 @@ async function main() {
   const notenRoot = path.join(REPO_ROOT, "noten");
   const practiceRoot = path.join(REPO_ROOT, "Übungsdateien");
   const concertsRoot = path.join(REPO_ROOT, "konzertaufnahmen");
+  const picturesRoot = path.join(REPO_ROOT, "pictures");
 
   console.log(`Repo root: ${REPO_ROOT}`);
   console.log(`Mode: ${apply ? "APPLY" : "DRY-RUN"}`);
@@ -538,11 +641,12 @@ async function main() {
   if (only.has("scores")) entries.push(...(await scanScores(notenRoot)));
   if (only.has("practice")) entries.push(...(await scanPractice(practiceRoot)));
   if (only.has("concerts")) entries.push(...(await scanConcerts(concertsRoot)));
+  if (only.has("pictures")) entries.push(...(await scanPictures(picturesRoot)));
 
   await fs.writeFile(MANIFEST_PATH, JSON.stringify(entries, null, 2), "utf8");
   console.log(`Wrote manifest: ${MANIFEST_PATH}`);
   console.log(
-    `Entries: ${entries.length} (sheets=${entries.filter((e) => e.kind === "sheet").length}, practice=${entries.filter((e) => e.kind === "practice_audio").length}, concerts=${entries.filter((e) => e.kind === "concert_recording").length})`,
+    `Entries: ${entries.length} (sheets=${entries.filter((e) => e.kind === "sheet").length}, practice=${entries.filter((e) => e.kind === "practice_audio").length}, concerts=${entries.filter((e) => e.kind === "concert_recording").length}, pictures=${entries.filter((e) => e.kind === "picture").length})`,
   );
 
   if (!apply) {

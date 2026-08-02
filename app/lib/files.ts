@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto";
-
 import type {
   FileAccessScope,
   Role,
@@ -7,11 +5,19 @@ import type {
   VoiceGroup,
 } from "@/lib/generated/prisma/client";
 import { hasPermission } from "@/lib/permissions";
-import { buildObjectKey } from "@/lib/r2";
+
+export {
+  audioKindFromType,
+  objectKeyFor,
+  trashObjectKey,
+  type AudioObjectKind,
+  type ObjectKeyInput,
+} from "@/lib/object-keys";
 
 export const MAX_SHEET_BYTES = 50 * 1024 * 1024;
 export const MAX_AUDIO_BYTES = 100 * 1024 * 1024;
 export const MAX_INVOICE_BYTES = 30 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
 
 const ALLOWED: Record<
   StoredFileCategory,
@@ -31,6 +37,11 @@ const ALLOWED: Record<
     mime: ["application/pdf", "image/jpeg", "image/png"],
     ext: [".pdf", ".jpg", ".jpeg", ".png"],
     maxBytes: MAX_INVOICE_BYTES,
+  },
+  IMAGE: {
+    mime: ["image/jpeg", "image/png", "image/webp"],
+    ext: [".jpg", ".jpeg", ".png", ".webp"],
+    maxBytes: MAX_IMAGE_BYTES,
   },
   OTHER: {
     mime: ["application/pdf"],
@@ -58,30 +69,6 @@ export function validateUploadInput(input: {
     return { ok: false, error: "Dateigröße ungültig oder zu groß" };
   }
   return { ok: true, extension };
-}
-
-export function objectKeyFor(input: {
-  category: StoredFileCategory;
-  invoiceId?: string;
-  fileId?: string;
-  extension: string;
-}): string {
-  const fileId = input.fileId ?? randomUUID();
-  const ext = input.extension.replace(/^\./, "");
-  if (input.category === "SHEET") {
-    return buildObjectKey(["sheets", `${fileId}.${ext}`]);
-  }
-  if (input.category === "AUDIO") {
-    return buildObjectKey(["audio", `${fileId}.${ext}`]);
-  }
-  if (input.category === "INVOICE" && input.invoiceId) {
-    return buildObjectKey([
-      "invoices",
-      input.invoiceId,
-      `${fileId}.${ext}`,
-    ]);
-  }
-  return buildObjectKey(["other", `${fileId}.${ext}`]);
 }
 
 export function normalizeVoiceLabel(

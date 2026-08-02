@@ -52,6 +52,7 @@ enum StoredFileCategory {
   SHEET
   AUDIO
   INVOICE
+  IMAGE
   OTHER
 }
 
@@ -174,11 +175,32 @@ model StoredFile {
   deletedAt    DateTime?         @map("deleted_at")
   sheetFiles   SheetFile[]
   audioFiles   AudioFile[]
+  galleryImages GalleryImage[]
   invoices     Invoice[]
 
   @@index([uploadStatus])
   @@index([category])
   @@map("stored_files")
+}
+
+/// Website / archive photos managed in admin.
+model GalleryImage {
+  id           String     @id @default(cuid())
+  title        String
+  caption      String?    @db.Text
+  takenAt      DateTime?  @map("taken_at") @db.Date
+  storedFileId String     @map("stored_file_id")
+  storedFile   StoredFile @relation(fields: [storedFileId], references: [id], onDelete: Restrict)
+  isVisible    Boolean    @default(true) @map("is_visible")
+  sortOrder    Int        @default(0) @map("sort_order")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@index([title])
+  @@index([takenAt])
+  @@index([isVisible])
+  @@index([sortOrder])
+  @@map("gallery_images")
 }
 
 model SheetFile {

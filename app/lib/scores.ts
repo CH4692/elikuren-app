@@ -70,7 +70,7 @@ export async function listScoresAdmin(q?: string) {
       },
     },
     orderBy: [{ updatedAt: "desc" }],
-    take: 200,
+    take: 2000,
   });
 }
 

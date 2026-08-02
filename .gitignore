@@ -6,10 +6,10 @@
 # ----------------------------
 # Local media archives (not for git / Vercel)
 # ----------------------------
-konzertaufnahmen/
-noten/
-Übungsdateien/
-pictures/
+/konzertaufnahmen/
+/noten/
+/Übungsdateien/
+/pictures/
 app/scripts/import-manifest.json
 
 # ----------------------------

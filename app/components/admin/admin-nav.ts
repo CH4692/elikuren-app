@@ -4,6 +4,7 @@ import {
   FileAudio,
   FileMusic,
   FileText,
+  ImageIcon,
   LayoutDashboard,
   Users,
   UserPlus,
@@ -54,6 +55,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: "/admin/audio",
     label: "Audiodateien",
     icon: FileAudio,
+    permission: "PIECE_MANAGE",
+  },
+  {
+    href: "/admin/pictures",
+    label: "Bilder",
+    icon: ImageIcon,
     permission: "PIECE_MANAGE",
   },
   {

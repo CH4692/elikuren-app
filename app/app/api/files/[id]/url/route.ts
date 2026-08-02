@@ -29,6 +29,7 @@ export async function GET(request: Request, { params }: Params) {
     include: {
       sheetFiles: true,
       audioFiles: true,
+      galleryImages: true,
       invoices: { select: { id: true } },
     },
   });
@@ -42,6 +43,13 @@ export async function GET(request: Request, { params }: Params) {
 
   if (file.category === "INVOICE") {
     if (!hasPermission(gate.user.role, "INVOICE_READ")) {
+      return NextResponse.json(
+        { detail: "Forbidden", code: "http_403" },
+        { status: 403 },
+      );
+    }
+  } else if (file.category === "IMAGE") {
+    if (!hasPermission(gate.user.role, "PIECE_MANAGE")) {
       return NextResponse.json(
         { detail: "Forbidden", code: "http_403" },
         { status: 403 },

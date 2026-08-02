@@ -1,6 +1,6 @@
 "use client";
 
-import { FileMusic, Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, FileMusic, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,7 @@ import { DataTableToolbar } from "@/components/app/data-table-toolbar";
 import { EmptyState } from "@/components/app/empty-state";
 import { FormDrawer } from "@/components/app/form-drawer";
 import { PageHeader } from "@/components/app/page-header";
+import { PdfPreview } from "@/components/library/pdf-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,6 +82,10 @@ export function ScoresPanel() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<ScoreItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ScoreItem | null>(null);
+  const [preview, setPreview] = useState<{
+    fileId: string;
+    title: string;
+  } | null>(null);
   const [form, setForm] = useState<ScoreForm>(emptyForm());
   const [file, setFile] = useState<File | null>(null);
 
@@ -293,6 +298,21 @@ export function ScoresPanel() {
                         size="sm"
                         variant="outline"
                         className="border-[#d9d2c4]"
+                        onClick={() =>
+                          setPreview({
+                            fileId: item.stored_file.id,
+                            title: item.title,
+                          })
+                        }
+                      >
+                        <Eye className="size-3.5" />
+                        Vorschau
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="border-[#d9d2c4]"
                         onClick={() => openEdit(item)}
                       >
                         <Pencil className="size-3.5" />
@@ -381,6 +401,13 @@ export function ScoresPanel() {
             await load(search || undefined);
           });
         }}
+      />
+
+      <PdfPreview
+        open={Boolean(preview)}
+        fileId={preview?.fileId ?? ""}
+        title={preview?.title ?? ""}
+        onClose={() => setPreview(null)}
       />
     </div>
   );

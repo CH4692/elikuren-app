@@ -142,6 +142,7 @@ export function AudioFilesPanel() {
         const uploaded = await uploadFileViaPresign({
           file,
           category: "AUDIO",
+          audioType: form.audioType,
         });
         const res = await fetch("/api/admin/audio", {
           method: "POST",

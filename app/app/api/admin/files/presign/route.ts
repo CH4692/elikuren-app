@@ -1,10 +1,14 @@
+import { randomUUID } from "node:crypto";
+
 import { NextResponse } from "next/server";
 
 import { requireAnyPermission } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import {
+  audioKindFromType,
   objectKeyFor,
   validateUploadInput,
+  type AudioObjectKind,
 } from "@/lib/files";
 import type { StoredFileCategory } from "@/lib/generated/prisma/client";
 import { createPresignedPutUrl, r2Configured } from "@/lib/r2";
@@ -15,6 +19,9 @@ type Body = {
   mimeType?: string;
   sizeBytes?: number;
   invoiceId?: string;
+  concertId?: string | null;
+  audioType?: string | null;
+  audioKind?: AudioObjectKind;
 };
 
 function permissionForCategory(category: StoredFileCategory) {
@@ -75,14 +82,22 @@ export async function POST(request: Request) {
     );
   }
 
+  const fileId = randomUUID();
+  const audioKind =
+    body.audioKind ??
+    (category === "AUDIO" ? audioKindFromType(body.audioType) : undefined);
   const objectKey = objectKeyFor({
     category,
+    fileId,
     invoiceId: body.invoiceId,
+    concertId: body.concertId,
+    audioKind,
     extension: validated.extension,
   });
 
   const stored = await prisma.storedFile.create({
     data: {
+      id: fileId,
       objectKey,
       originalName,
       mimeType,
