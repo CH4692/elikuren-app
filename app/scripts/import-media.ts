@@ -515,21 +515,24 @@ async function applyImport(
         entry,
         "IMAGE",
       );
-      const existing = await prisma.galleryImage.findFirst({
+      const existing = await prisma.mediaAsset.findFirst({
         where: { storedFileId: stored.id },
       });
       if (existing) {
         skipped += 1;
         continue;
       }
-      await prisma.galleryImage.create({
+      await prisma.mediaAsset.create({
         data: {
           title: entry.title,
+          altText: entry.title,
+          isDecorative: false,
           takenAt: entry.takenAt
             ? new Date(`${entry.takenAt}T00:00:00.000Z`)
             : null,
           storedFileId: stored.id,
-          isVisible: true,
+          isActive: true,
+          isArchived: false,
           sortOrder: 0,
         },
       });

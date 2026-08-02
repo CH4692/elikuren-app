@@ -41,16 +41,32 @@ function permissionForAdminPath(
   if (
     pathname.startsWith("/admin/scores") ||
     pathname.startsWith("/admin/audio") ||
-    pathname.startsWith("/admin/concerts") ||
-    pathname.startsWith("/admin/pictures") ||
-    pathname.startsWith("/api/admin/files") ||
     pathname.startsWith("/api/admin/sheets") ||
     pathname.startsWith("/api/admin/audio") ||
-    pathname.startsWith("/api/admin/scores") ||
-    pathname.startsWith("/api/admin/concerts") ||
-    pathname.startsWith("/api/admin/pictures")
+    pathname.startsWith("/api/admin/scores")
   ) {
     return "PIECE_MANAGE";
+  }
+  if (
+    pathname.startsWith("/admin/concerts") ||
+    pathname.startsWith("/api/admin/concerts")
+  ) {
+    return "CONCERT_MANAGE";
+  }
+  if (
+    pathname.startsWith("/admin/pictures") ||
+    pathname.startsWith("/api/admin/pictures")
+  ) {
+    return "MEDIA_MANAGE";
+  }
+  if (
+    pathname.startsWith("/admin/site") ||
+    pathname.startsWith("/api/admin/site")
+  ) {
+    return "SITE_MANAGE";
+  }
+  if (pathname.startsWith("/api/admin/files")) {
+    return ["PIECE_MANAGE", "MEDIA_MANAGE", "INVOICE_WRITE"];
   }
   if (
     pathname.startsWith("/admin/invoices") ||
@@ -64,6 +80,9 @@ function permissionForAdminPath(
       "ACCESS_REQUEST_MANAGE",
       "MEMBER_MANAGE",
       "PIECE_MANAGE",
+      "SITE_MANAGE",
+      "CONCERT_MANAGE",
+      "MEDIA_MANAGE",
       "INVOICE_READ",
     ];
   }

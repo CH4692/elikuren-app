@@ -4,6 +4,7 @@ import {
   FileAudio,
   FileMusic,
   FileText,
+  Globe,
   ImageIcon,
   LayoutDashboard,
   Users,
@@ -28,6 +29,12 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     permission: null,
   },
   {
+    href: "/admin/site",
+    label: "Website",
+    icon: Globe,
+    permission: "SITE_MANAGE",
+  },
+  {
     href: "/admin/members",
     label: "Mitglieder",
     icon: Users,
@@ -43,7 +50,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: "/admin/concerts",
     label: "Konzerte",
     icon: CalendarDays,
-    permission: "PIECE_MANAGE",
+    permission: "CONCERT_MANAGE",
   },
   {
     href: "/admin/scores",
@@ -59,9 +66,9 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   },
   {
     href: "/admin/pictures",
-    label: "Bilder",
+    label: "Medien",
     icon: ImageIcon,
-    permission: "PIECE_MANAGE",
+    permission: "MEDIA_MANAGE",
   },
   {
     href: "/admin/invoices",

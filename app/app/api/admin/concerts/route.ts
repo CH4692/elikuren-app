@@ -8,7 +8,7 @@ import {
 } from "@/lib/concerts";
 
 export async function GET(request: Request) {
-  const gate = await requirePermission("PIECE_MANAGE");
+  const gate = await requirePermission("CONCERT_MANAGE");
   if (!gate.ok) return gate.response;
 
   const q = new URL(request.url).searchParams.get("q")?.trim();
@@ -17,14 +17,23 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const gate = await requirePermission("PIECE_MANAGE");
+  const gate = await requirePermission("CONCERT_MANAGE");
   if (!gate.ok) return gate.response;
 
   const body = (await request.json()) as {
     title?: string;
     slug?: string | null;
     date?: string | null;
+    startsAt?: string | null;
+    endsAt?: string | null;
+    subtitle?: string | null;
+    description?: string | null;
     location?: string | null;
+    address?: string | null;
+    extraInfo?: string | null;
+    ticketUrl?: string | null;
+    showOnWebsite?: boolean;
+    heroImageId?: string | null;
     isCurrent?: boolean;
     notes?: string | null;
   };
@@ -34,7 +43,16 @@ export async function POST(request: Request) {
       title: String(body.title ?? ""),
       slug: body.slug,
       date: body.date,
+      startsAt: body.startsAt,
+      endsAt: body.endsAt,
+      subtitle: body.subtitle,
+      description: body.description,
       location: body.location,
+      address: body.address,
+      extraInfo: body.extraInfo,
+      ticketUrl: body.ticketUrl,
+      showOnWebsite: body.showOnWebsite,
+      heroImageId: body.heroImageId,
       isCurrent: body.isCurrent,
       notes: body.notes,
     });

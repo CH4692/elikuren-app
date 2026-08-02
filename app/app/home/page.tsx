@@ -5,6 +5,8 @@ import FooterPage from "@/components/home-sections/footer";
 import LandingPage from "@/components/home-sections/landing_section";
 import SupportPage from "@/components/home-sections/support_section";
 
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   return (
     <main className="w-full">

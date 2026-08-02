@@ -42,6 +42,13 @@ describe("Permission matrix V1", () => {
     assert.equal(hasPermission("vorstand", "MEMBER_MANAGE"), true);
     assert.equal(hasPermission("vorstand", "PIECE_MANAGE"), true);
   });
+
+  it("vorstand has site/concert/media CMS permissions", () => {
+    assert.equal(hasPermission("vorstand", "SITE_MANAGE"), true);
+    assert.equal(hasPermission("vorstand", "CONCERT_MANAGE"), true);
+    assert.equal(hasPermission("vorstand", "MEDIA_MANAGE"), true);
+    assert.equal(hasPermission("mitglied", "SITE_MANAGE"), false);
+  });
 });
 
 describe("File accessScope", () => {

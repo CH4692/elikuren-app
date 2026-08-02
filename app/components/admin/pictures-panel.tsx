@@ -26,28 +26,38 @@ import { uploadFileViaPresign } from "@/lib/upload-client";
 type PictureItem = {
   id: string;
   title: string;
+  alt_text: string;
+  is_decorative: boolean;
   caption: string | null;
   taken_at: string | null;
-  is_visible: boolean;
+  is_active: boolean;
+  is_archived: boolean;
   sort_order: number;
+  reference_count: number;
+  public_url: string | null;
   stored_file: {
     id: string;
     original_name: string;
     mime_type: string;
     size_bytes: number;
     upload_status: string;
+    visibility: string;
   };
   updated_at: string;
 };
 
 type PictureForm = {
   title: string;
+  altText: string;
+  isDecorative: boolean;
   caption: string;
   takenAt: string;
 };
 
 const emptyForm = (): PictureForm => ({
   title: "",
+  altText: "",
+  isDecorative: false,
   caption: "",
   takenAt: "",
 });
@@ -105,6 +115,8 @@ export function PicturesPanel() {
   function openEdit(item: PictureItem) {
     setForm({
       title: item.title,
+      altText: item.alt_text ?? "",
+      isDecorative: item.is_decorative,
       caption: item.caption ?? "",
       takenAt: item.taken_at ?? "",
     });
@@ -120,12 +132,17 @@ export function PicturesPanel() {
       toast.error("Titel ist Pflicht");
       return;
     }
+    if (!form.isDecorative && !form.altText.trim()) {
+      toast.error("altText ist Pflicht (oder als dekorativ markieren)");
+      return;
+    }
 
     startTransition(async () => {
       try {
         const uploaded = await uploadFileViaPresign({
           file,
           category: "IMAGE",
+          publicWebsite: true,
         });
         const res = await fetch("/api/admin/pictures", {
           method: "POST",
@@ -133,6 +150,8 @@ export function PicturesPanel() {
           body: JSON.stringify({
             storedFileId: uploaded.fileId,
             title: form.title.trim(),
+            altText: form.altText.trim(),
+            isDecorative: form.isDecorative,
             caption: form.caption.trim() || null,
             takenAt: form.takenAt || null,
           }),
@@ -161,18 +180,25 @@ export function PicturesPanel() {
       toast.error("Titel ist Pflicht");
       return;
     }
+    if (!form.isDecorative && !form.altText.trim()) {
+      toast.error("altText ist Pflicht (oder als dekorativ markieren)");
+      return;
+    }
     startTransition(async () => {
       const res = await fetch(`/api/admin/pictures/${editTarget.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: form.title.trim(),
+          altText: form.altText.trim(),
+          isDecorative: form.isDecorative,
           caption: form.caption.trim() || null,
           takenAt: form.takenAt || null,
         }),
       });
       if (!res.ok) {
-        toast.error("Speichern fehlgeschlagen");
+        const err = (await res.json().catch(() => ({}))) as { detail?: string };
+        toast.error(err.detail ?? "Speichern fehlgeschlagen");
         return;
       }
       toast.success("Gespeichert");
@@ -184,8 +210,8 @@ export function PicturesPanel() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Bilder"
-        description="Archiv- und Website-Fotos hochladen, beschriften und verwalten."
+        title="Medien"
+        description="Öffentliche Website-Medien (R2-Prefix public/). Referenziert → Archiv statt Löschen."
         actions={
           <Button type="button" onClick={openCreate}>
             <Plus className="size-4" />
@@ -308,13 +334,19 @@ export function PicturesPanel() {
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null);
         }}
-        title="Bild löschen?"
+        title="Bild entfernen?"
         description={
           deleteTarget
-            ? `„${deleteTarget.title}“ wird entfernt.`
+            ? deleteTarget.reference_count > 0
+              ? `„${deleteTarget.title}“ wird verwendet und nur archiviert.`
+              : `„${deleteTarget.title}“ wird gelöscht.`
             : undefined
         }
-        confirmLabel="Löschen"
+        confirmLabel={
+          deleteTarget && deleteTarget.reference_count > 0
+            ? "Archivieren"
+            : "Löschen"
+        }
         destructive
         loading={pending}
         onConfirm={() => {
@@ -324,10 +356,15 @@ export function PicturesPanel() {
               method: "DELETE",
             });
             if (!res.ok) {
-              toast.error("Löschen fehlgeschlagen");
+              toast.error("Aktion fehlgeschlagen");
               return;
             }
-            toast.success("Gelöscht");
+            const data = (await res.json().catch(() => ({}))) as {
+              archived?: boolean;
+            };
+            toast.success(
+              data.archived ? "Archiviert (noch referenziert)" : "Gelöscht",
+            );
             setDeleteTarget(null);
             await load(search || undefined);
           });
@@ -354,6 +391,33 @@ function PictureFields({
           onChange={(e) => onChange({ ...form, title: e.target.value })}
         />
       </div>
+      <div className="flex items-center gap-2">
+        <input
+          id="pic-decorative"
+          type="checkbox"
+          checked={form.isDecorative}
+          onChange={(e) =>
+            onChange({
+              ...form,
+              isDecorative: e.target.checked,
+              altText: e.target.checked ? "" : form.altText,
+            })
+          }
+          className="size-4 rounded border-[#d9d2c4]"
+        />
+        <Label htmlFor="pic-decorative">Dekorativ (alt leer)</Label>
+      </div>
+      {!form.isDecorative ? (
+        <div className="space-y-2">
+          <Label htmlFor="pic-alt">Alt-Text (Pflicht)</Label>
+          <Input
+            id="pic-alt"
+            value={form.altText}
+            onChange={(e) => onChange({ ...form, altText: e.target.value })}
+            placeholder="Kurzbeschreibung für Screenreader"
+          />
+        </div>
+      ) : null}
       <div className="space-y-2">
         <Label htmlFor="pic-date">Aufnahmedatum</Label>
         <Input
