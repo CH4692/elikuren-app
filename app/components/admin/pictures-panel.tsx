@@ -1,10 +1,11 @@
 "use client";
 
-import { ImageIcon, Pencil, Plus } from "lucide-react";
+import { ImageIcon, Plus } from "lucide-react";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { AdminDeleteButton } from "@/components/admin/admin-delete-button";
+import { AdminEditButton } from "@/components/admin/admin-edit-button";
 import {
   PictureLightbox,
   type LightboxPicture,
@@ -269,7 +270,7 @@ export function PicturesPanel() {
                     <Badge variant="warning">Verborgen</Badge>
                   ) : null}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <Button
                     size="sm"
                     variant="secondary"
@@ -278,14 +279,7 @@ export function PicturesPanel() {
                   >
                     {item.is_visible ? "Verbergen" : "Sichtbarmachen"}
                   </Button>
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    onClick={() => openEdit(item)}
-                    aria-label="Bearbeiten"
-                  >
-                    <Pencil />
-                  </Button>
+                  <AdminEditButton onClick={() => openEdit(item)} />
                   <AdminDeleteButton
                     iconOnly
                     onClick={() => setDeleteTarget(item)}

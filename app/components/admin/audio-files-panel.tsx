@@ -1,15 +1,16 @@
 "use client";
 
-import { FileAudio, Pencil, Plus } from "lucide-react";
+import { FileAudio, Plus } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { AdminDeleteButton } from "@/components/admin/admin-delete-button";
+import { AdminEditButton } from "@/components/admin/admin-edit-button";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { DataTableToolbar } from "@/components/app/data-table-toolbar";
 import { EmptyState } from "@/components/app/empty-state";
 import { FormDrawer } from "@/components/app/form-drawer";
 import { PageHeader } from "@/components/app/page-header";
-import { AdminDeleteButton } from "@/components/admin/admin-delete-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -301,18 +302,10 @@ export function AudioFilesPanel() {
                     </label>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="border-[#d9d2c4]"
-                        onClick={() => openEdit(item)}
-                      >
-                        <Pencil className="size-3.5" />
-                        Bearbeiten
-                      </Button>
+                    <div className="inline-flex items-center justify-end gap-1.5">
+                      <AdminEditButton onClick={() => openEdit(item)} />
                       <AdminDeleteButton
+                        iconOnly
                         onClick={() => setDeleteTarget(item)}
                       />
                     </div>

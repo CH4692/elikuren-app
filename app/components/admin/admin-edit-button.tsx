@@ -1,32 +1,35 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Pencil } from "lucide-react";
 import type { ComponentProps } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type AdminDeleteButtonProps = Omit<
+type AdminEditButtonProps = Omit<
   ComponentProps<typeof Button>,
   "variant" | "size" | "children"
 > & {
-  /** Compact icon-only control for dense rows (still labeled for a11y). */
+  /**
+   * Compact icon-only control for dense action columns (default).
+   * Set false only when a visible text label is required.
+   */
   iconOnly?: boolean;
   label?: string;
 };
 
 /**
- * Shared destructive action for admin tables/cards.
- * Always pair with ConfirmDialog before performing the delete.
+ * Shared edit action for admin tables/cards.
+ * Icon-only by default (admin table best practice); always provide an accessible name.
  */
-export function AdminDeleteButton({
-  iconOnly = false,
-  label = "Löschen",
+export function AdminEditButton({
+  iconOnly = true,
+  label = "Bearbeiten",
   className,
   type = "button",
   "aria-label": ariaLabel,
   ...props
-}: AdminDeleteButtonProps) {
+}: AdminEditButtonProps) {
   const accessibleName = ariaLabel ?? label;
 
   if (iconOnly) {
@@ -34,13 +37,13 @@ export function AdminDeleteButton({
       <Button
         type={type}
         size="icon-sm"
-        variant="destructive"
+        variant="ghost"
         aria-label={accessibleName}
         title={accessibleName}
         className={cn(className)}
         {...props}
       >
-        <Trash2 />
+        <Pencil />
       </Button>
     );
   }
@@ -49,12 +52,12 @@ export function AdminDeleteButton({
     <Button
       type={type}
       size="sm"
-      variant="destructive"
+      variant="outline"
       aria-label={accessibleName}
       className={cn("gap-1.5", className)}
       {...props}
     >
-      <Trash2 />
+      <Pencil />
       {label}
     </Button>
   );

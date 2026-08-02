@@ -1,15 +1,16 @@
 "use client";
 
-import { CalendarDays, Pencil, Plus } from "lucide-react";
+import { CalendarDays, Plus } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { AdminDeleteButton } from "@/components/admin/admin-delete-button";
+import { AdminEditButton } from "@/components/admin/admin-edit-button";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { DataTableToolbar } from "@/components/app/data-table-toolbar";
 import { EmptyState } from "@/components/app/empty-state";
 import { FormDrawer } from "@/components/app/form-drawer";
 import { PageHeader } from "@/components/app/page-header";
-import { AdminDeleteButton } from "@/components/admin/admin-delete-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -320,7 +321,9 @@ export function ConcertsPanel() {
                 <TableHead>Datum</TableHead>
                 <TableHead>Programm</TableHead>
                 <TableHead>Mitschnitte</TableHead>
-                <TableHead className="w-[220px]">Aktionen</TableHead>
+                <TableHead className="w-[1%] whitespace-nowrap text-right">
+                  Aktionen
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -343,8 +346,8 @@ export function ConcertsPanel() {
                   <TableCell>{row.date ?? "—"}</TableCell>
                   <TableCell>{row.item_count}</TableCell>
                   <TableCell>{row.recording_count}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1.5">
+                  <TableCell className="text-right">
+                    <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
                       <Button
                         size="sm"
                         variant="secondary"
@@ -352,15 +355,9 @@ export function ConcertsPanel() {
                       >
                         Programm
                       </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => openEdit(row)}
-                        aria-label="Bearbeiten"
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
+                      <AdminEditButton onClick={() => openEdit(row)} />
                       <AdminDeleteButton
+                        iconOnly
                         onClick={() => setDeleteId(row.id)}
                       />
                     </div>
@@ -418,14 +415,11 @@ export function ConcertsPanel() {
                       {item.audio_file_id ? " · Audio verknüpft" : ""}
                     </p>
                   </div>
-                  <div className="flex gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
+                  <div className="inline-flex items-center gap-1.5">
+                    <AdminEditButton
                       onClick={() => openItemEdit(item)}
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
+                      aria-label="Programmpunkt bearbeiten"
+                    />
                     <AdminDeleteButton
                       iconOnly
                       onClick={() => deleteItem(item.id)}
