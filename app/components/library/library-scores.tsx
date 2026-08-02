@@ -58,7 +58,6 @@ export function LibraryScores() {
   const [items, setItems] = useState<ScoreItem[]>([]);
   const [concert, setConcert] = useState<CurrentConcert | null>(null);
   const [q, setQ] = useState("");
-  const [myVoiceOnly, setMyVoiceOnly] = useState(false);
   const [ensemble, setEnsemble] = useState("");
   const [preview, setPreview] = useState<{
     fileId: string;
@@ -77,7 +76,7 @@ export function LibraryScores() {
         }
         const params = new URLSearchParams();
         if (q.trim()) params.set("q", q.trim());
-        if (myVoiceOnly) params.set("myVoice", "1");
+        if (ensemble) params.set("voiceGroup", ensemble);
         const qs = params.toString();
         const res = await fetch(`/api/library/scores${qs ? `?${qs}` : ""}`);
         if (!res.ok) throw new Error("load failed");
@@ -87,7 +86,7 @@ export function LibraryScores() {
         toast.error("Noten konnten nicht geladen werden");
       }
     })();
-  }, [tab, q, myVoiceOnly]);
+  }, [tab, q, ensemble]);
 
   const programItems = (concert?.items ?? []).filter((item) => {
     if (!ensemble) return true;
@@ -199,22 +198,26 @@ export function LibraryScores() {
               placeholder="Suche Titel oder Komponist"
               className="max-w-sm border-[#ebe4d8] bg-white/80"
             />
-            <label className="flex items-center gap-2 text-sm text-[#5c574e]">
-              <input
-                type="checkbox"
-                checked={myVoiceOnly}
-                onChange={(e) => setMyVoiceOnly(e.target.checked)}
-              />
-              Meine Stimme
-            </label>
+            <select
+              className={selectClass}
+              value={ensemble}
+              onChange={(e) => setEnsemble(e.target.value)}
+              aria-label="Besetzung"
+            >
+              {ENSEMBLE_OPTIONS.map((opt) => (
+                <option key={opt.value || "all"} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
           {items.length === 0 ? (
             <EmptyState
               icon={FileMusic}
               title="Keine Noten"
               description={
-                myVoiceOnly
-                  ? "Für deine Stimme sind noch keine Noten veröffentlicht."
+                ensemble
+                  ? "Für diese Besetzung sind noch keine Noten veröffentlicht."
                   : "Es sind noch keine Noten veröffentlicht."
               }
             />
@@ -236,22 +239,17 @@ export function LibraryScores() {
                         .join(" · ") || item.original_name}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {item.is_my_voice ? (
-                      <Badge variant="success">Meine Stimme</Badge>
-                    ) : null}
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        setPreview({
-                          fileId: item.stored_file_id,
-                          title: item.title,
-                        })
-                      }
-                    >
-                      Vorschau
-                    </Button>
-                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      setPreview({
+                        fileId: item.stored_file_id,
+                        title: item.title,
+                      })
+                    }
+                  >
+                    Vorschau
+                  </Button>
                 </li>
               ))}
             </ul>

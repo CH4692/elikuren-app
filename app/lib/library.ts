@@ -24,7 +24,8 @@ export async function listLibraryScores(input: {
   role: Role | string;
   voice: string | null;
   q?: string;
-  myVoiceOnly?: boolean;
+  /** Filter by Besetzung (VoiceGroup); empty/undefined = all */
+  voiceGroup?: VoiceGroup | string | null;
 }) {
   const myVoice = normalizeVoiceLabel(input.voice);
   const sheets = await prisma.sheetFile.findMany({
@@ -46,6 +47,8 @@ export async function listLibraryScores(input: {
     orderBy: [{ title: "asc" }, { createdAt: "desc" }],
   });
 
+  const voiceGroupFilter = input.voiceGroup?.trim() || null;
+
   return sheets
     .filter((sheet) =>
       canSeeLibraryEntry({
@@ -57,8 +60,9 @@ export async function listLibraryScores(input: {
       }),
     )
     .filter((sheet) => {
-      if (!input.myVoiceOnly || !myVoice) return true;
-      return sheet.voiceGroup === myVoice || sheet.voiceGroup == null;
+      if (!voiceGroupFilter) return true;
+      const casting = sheet.voiceGroup ?? "ELIKUREN";
+      return casting === voiceGroupFilter;
     })
     .map((sheet) => ({
       id: sheet.id,

@@ -9,13 +9,13 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q")?.trim() || undefined;
-  const myVoiceOnly = searchParams.get("myVoice") === "1";
+  const voiceGroup = searchParams.get("voiceGroup")?.trim() || undefined;
 
   const items = await listLibraryScores({
     role: gate.user.role,
     voice: gate.user.voice,
     q,
-    myVoiceOnly,
+    voiceGroup,
   });
 
   return NextResponse.json({
