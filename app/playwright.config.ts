@@ -5,6 +5,8 @@ loadEnv({ path: ".env.test", quiet: true });
 loadEnv({ path: ".env.local", override: true, quiet: true });
 
 const isCI = !!process.env.CI;
+const isFullCI =
+  process.env.CI_FULL === "1" || process.env.CI_FULL === "true";
 const port = process.env.PLAYWRIGHT_PORT ?? "3000";
 const baseURL =
   process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${port}`;
@@ -12,8 +14,8 @@ const baseURL =
 export default defineConfig({
   testDir: "./tests",
   testIgnore: ["**/unit/**"],
-  // CI: public smoke only (no Neon). Locally: full suite.
-  ...(isCI
+  // CI default: public smoke only. CI_FULL=1 (main): full e2e suite.
+  ...(isCI && !isFullCI
     ? {
         testMatch: [
           "**/smoke/routes.test.ts",

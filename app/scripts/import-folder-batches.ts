@@ -395,7 +395,7 @@ async function applyImport(prisma: PrismaClient, entries: BatchEntry[]) {
   let audios = 0;
   let items = 0;
   let skipped = 0;
-  let concertsCreated = leipzigCreated ? 1 : 0;
+  const concertsCreated = leipzigCreated ? 1 : 0;
 
   for (const entry of entries) {
     const concertId =
