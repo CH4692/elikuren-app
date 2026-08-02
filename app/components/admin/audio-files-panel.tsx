@@ -1,11 +1,15 @@
 "use client";
 
-import { FileAudio, Plus } from "lucide-react";
+import { FileAudio, Play, Plus } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { AdminDeleteButton } from "@/components/admin/admin-delete-button";
 import { AdminEditButton } from "@/components/admin/admin-edit-button";
+import {
+  AudioPreview,
+  type AudioPreviewItem,
+} from "@/components/admin/audio-preview";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { DataTableToolbar } from "@/components/app/data-table-toolbar";
 import { EmptyState } from "@/components/app/empty-state";
@@ -100,6 +104,7 @@ export function AudioFilesPanel() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<AudioItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AudioItem | null>(null);
+  const [preview, setPreview] = useState<AudioPreviewItem | null>(null);
   const [form, setForm] = useState<AudioForm>(emptyForm());
   const [file, setFile] = useState<File | null>(null);
 
@@ -313,7 +318,30 @@ export function AudioFilesPanel() {
                   <TableCell>{audioTypeLabel(item.audio_type)}</TableCell>
                   <TableCell>{besetzungLabel(item.voice_group)}</TableCell>
                   <TableCell className="text-right">
-                    <div className="inline-flex items-center justify-end gap-1.5">
+                    <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        aria-label={`„${item.title}“ anhören`}
+                        title="Anhören"
+                        onClick={() =>
+                          setPreview({
+                            fileId: item.stored_file.id,
+                            fileName: item.stored_file.original_name,
+                            title: item.title,
+                            concert: item.concert
+                              ? item.concert.label ??
+                                formatConcertLabel(item.concert)
+                              : null,
+                            voiceGroup: besetzungLabel(item.voice_group),
+                            durationSeconds: item.duration_seconds,
+                          })
+                        }
+                      >
+                        <Play />
+                        Anhören
+                      </Button>
                       <AdminEditButton onClick={() => openEdit(item)} />
                       <AdminDeleteButton
                         iconOnly
@@ -371,6 +399,14 @@ export function AudioFilesPanel() {
           concerts={concerts}
         />
       </FormDrawer>
+
+      <AudioPreview
+        open={preview != null}
+        item={preview}
+        onOpenChange={(open) => {
+          if (!open) setPreview(null);
+        }}
+      />
 
       <ConfirmDialog
         open={deleteTarget != null}
