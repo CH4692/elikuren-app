@@ -41,5 +41,7 @@ export async function GET(request: Request) {
     role: gate.user.role,
     q: q || undefined,
   });
-  return NextResponse.json({ items: items.map(serializeConcert) });
+  return NextResponse.json({
+    items: items.map((concert) => serializeConcert(concert)),
+  });
 }

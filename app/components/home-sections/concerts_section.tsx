@@ -42,13 +42,10 @@ export default async function ConcertPage() {
                 concert_location={concert.location ?? ""}
                 concert_street={concert.address ?? ""}
                 concert_details_title={concert.subtitle ?? concert.title}
-                concert_details_info={concert.extraInfo ?? ""}
-                concert_details_leader=""
-                concert_details_footer={
-                  concert.ticketUrl
-                    ? `Tickets: ${concert.ticketUrl}`
-                    : ""
-                }
+                concert_details_info={concert.programInfo ?? ""}
+                concert_details_leader={concert.leader ?? ""}
+                concert_details_footer={concert.footer ?? ""}
+                concert_admission={concert.admissionInfo}
               />
             ))}
           </div>

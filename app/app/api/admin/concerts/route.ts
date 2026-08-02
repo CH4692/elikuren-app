@@ -6,6 +6,7 @@ import {
   listConcertsAdmin,
   serializeConcert,
 } from "@/lib/concerts";
+import type { ConcertWebsiteStatus } from "@/lib/generated/prisma/client";
 
 export async function GET(request: Request) {
   const gate = await requirePermission("CONCERT_MANAGE");
@@ -13,7 +14,9 @@ export async function GET(request: Request) {
 
   const q = new URL(request.url).searchParams.get("q")?.trim();
   const items = await listConcertsAdmin(q || undefined);
-  return NextResponse.json({ items: items.map(serializeConcert) });
+  return NextResponse.json({
+    items: items.map((concert) => serializeConcert(concert)),
+  });
 }
 
 export async function POST(request: Request) {
@@ -30,9 +33,13 @@ export async function POST(request: Request) {
     description?: string | null;
     location?: string | null;
     address?: string | null;
+    programInfo?: string | null;
+    leader?: string | null;
+    admissionInfo?: string | null;
+    footer?: string | null;
     extraInfo?: string | null;
     ticketUrl?: string | null;
-    showOnWebsite?: boolean;
+    websiteStatus?: ConcertWebsiteStatus;
     heroImageId?: string | null;
     isCurrent?: boolean;
     notes?: string | null;
@@ -49,9 +56,13 @@ export async function POST(request: Request) {
       description: body.description,
       location: body.location,
       address: body.address,
+      programInfo: body.programInfo,
+      leader: body.leader,
+      admissionInfo: body.admissionInfo,
+      footer: body.footer,
       extraInfo: body.extraInfo,
       ticketUrl: body.ticketUrl,
-      showOnWebsite: body.showOnWebsite,
+      websiteStatus: body.websiteStatus,
       heroImageId: body.heroImageId,
       isCurrent: body.isCurrent,
       notes: body.notes,

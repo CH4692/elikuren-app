@@ -1,14 +1,24 @@
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { formatConcertLabel } from "@/lib/concert-label";
 import {
+  getConcertWebsiteBadge,
+  isConcertVisible,
+} from "@/lib/concert-visibility";
+import {
   berlinCalendarDateUtc,
+  concertVisibleUntil,
   formatBerlinDateTimeLocal,
   parseBerlinDateTimeLocal,
 } from "@/lib/datetime-berlin";
 import { prisma } from "@/lib/db";
-import type { Role, VoiceGroup } from "@/lib/generated/prisma/client";
+import type {
+  ConcertWebsiteStatus,
+  Role,
+  VoiceGroup,
+} from "@/lib/generated/prisma/client";
 import { hasPermission } from "@/lib/permissions";
+
 const CONCERTS_PUBLIC_CACHE_TAG = "concerts-public";
 
 export { formatConcertLabel } from "@/lib/concert-label";
@@ -24,9 +34,13 @@ export type ConcertWriteInput = {
   description?: string | null;
   location?: string | null;
   address?: string | null;
+  programInfo?: string | null;
+  leader?: string | null;
+  admissionInfo?: string | null;
+  footer?: string | null;
   extraInfo?: string | null;
   ticketUrl?: string | null;
-  showOnWebsite?: boolean;
+  websiteStatus?: ConcertWebsiteStatus | "DRAFT" | "PUBLISHED";
   heroImageId?: string | null;
   isCurrent?: boolean;
   notes?: string | null;
@@ -45,15 +59,32 @@ function parseOptionalBerlinDateTime(
   }
 }
 
-function assertShowOnWebsiteAllowed(input: {
-  showOnWebsite: boolean;
+function parseWebsiteStatus(
+  value: ConcertWriteInput["websiteStatus"],
+): ConcertWebsiteStatus | undefined {
+  if (value === undefined) return undefined;
+  if (value === "DRAFT" || value === "PUBLISHED") return value;
+  throw new Error("websiteStatus muss DRAFT oder PUBLISHED sein");
+}
+
+function assertWebsitePublishRules(input: {
+  websiteStatus: ConcertWebsiteStatus;
   startsAt: Date | null;
+  endsAt: Date | null;
 }) {
-  if (input.showOnWebsite && !input.startsAt) {
+  if (input.websiteStatus === "PUBLISHED" && !input.startsAt) {
     throw new Error(
-      "showOnWebsite erfordert eine echte Startzeit (startsAt). Keine Platzhalter-Uhrzeit.",
+      "Zum Veröffentlichen muss eine Startzeit gesetzt sein.",
     );
   }
+  if (input.startsAt && input.endsAt && !(input.endsAt > input.startsAt)) {
+    throw new Error("endsAt muss nach startsAt liegen.");
+  }
+}
+
+function revalidatePublicConcerts() {
+  revalidateTag(CONCERTS_PUBLIC_CACHE_TAG, "max");
+  revalidatePath("/home");
 }
 
 function slugify(input: string) {
@@ -180,31 +211,49 @@ export function serializeConcertItem(item: {
   };
 }
 
-export function serializeConcert(concert: {
-  id: string;
-  title: string;
-  slug: string;
-  date: Date | null;
-  startsAt?: Date | null;
-  endsAt?: Date | null;
-  subtitle?: string | null;
-  description?: string | null;
-  location?: string | null;
-  address?: string | null;
-  extraInfo?: string | null;
-  ticketUrl?: string | null;
-  showOnWebsite?: boolean;
-  heroImageId?: string | null;
-  isCurrent: boolean;
-  notes: string | null;
-  isVisible: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  items?: Parameters<typeof serializeConcertItem>[0][];
-  _count?: { items: number; recordings: number };
-}) {
+export function serializeConcert(
+  concert: {
+    id: string;
+    title: string;
+    slug: string;
+    date: Date | null;
+    startsAt?: Date | null;
+    endsAt?: Date | null;
+    subtitle?: string | null;
+    description?: string | null;
+    location?: string | null;
+    address?: string | null;
+    programInfo?: string | null;
+    leader?: string | null;
+    admissionInfo?: string | null;
+    footer?: string | null;
+    extraInfo?: string | null;
+    ticketUrl?: string | null;
+    websiteStatus?: ConcertWebsiteStatus;
+    heroImageId?: string | null;
+    isCurrent: boolean;
+    notes: string | null;
+    isVisible: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    items?: Parameters<typeof serializeConcertItem>[0][];
+    _count?: { items: number; recordings: number };
+  },
+  now = new Date(),
+) {
   const date = concert.date ? concert.date.toISOString().slice(0, 10) : null;
   const year = date ? Number(date.slice(0, 4)) : null;
+  const websiteStatus = concert.websiteStatus ?? "DRAFT";
+  const startsAt = concert.startsAt ?? null;
+  const endsAt = concert.endsAt ?? null;
+  const visibleUntil =
+    startsAt != null ? concertVisibleUntil(startsAt, endsAt) : null;
+  const badge = getConcertWebsiteBadge({
+    websiteStatus,
+    startsAt,
+    visibleUntil,
+    now,
+  });
   return {
     id: concert.id,
     title: concert.title,
@@ -212,21 +261,29 @@ export function serializeConcert(concert: {
     slug: concert.slug,
     date,
     year,
-    starts_at: concert.startsAt
-      ? formatBerlinDateTimeLocal(concert.startsAt)
-      : null,
-    ends_at: concert.endsAt
-      ? formatBerlinDateTimeLocal(concert.endsAt)
-      : null,
+    starts_at: startsAt ? formatBerlinDateTimeLocal(startsAt) : null,
+    ends_at: endsAt ? formatBerlinDateTimeLocal(endsAt) : null,
     subtitle: concert.subtitle ?? null,
     description: concert.description ?? null,
     location: concert.location ?? null,
     address: concert.address ?? null,
+    program_info: concert.programInfo ?? null,
+    leader: concert.leader ?? null,
+    admission_info: concert.admissionInfo ?? null,
+    footer: concert.footer ?? null,
     extra_info: concert.extraInfo ?? null,
     ticket_url: concert.ticketUrl ?? null,
-    show_on_website: Boolean(concert.showOnWebsite),
+    website_status: websiteStatus,
+    website_badge: badge.kind,
+    website_badge_label: badge.label,
+    is_publicly_visible: isConcertVisible({
+      websiteStatus,
+      startsAt,
+      visibleUntil,
+      now,
+    }),
     hero_image_id: concert.heroImageId ?? null,
-    needs_starts_at: concert.startsAt == null,
+    needs_starts_at: startsAt == null,
     is_current: concert.isCurrent,
     notes: concert.notes,
     is_visible: concert.isVisible,
@@ -325,11 +382,13 @@ export async function createConcert(
 
   const startsAt = parseOptionalBerlinDateTime(input.startsAt, "startsAt");
   const endsAt = parseOptionalBerlinDateTime(input.endsAt, "endsAt");
-  const showOnWebsite = Boolean(input.showOnWebsite);
+  const websiteStatus = parseWebsiteStatus(input.websiteStatus) ?? "DRAFT";
   const resolvedStartsAt = startsAt === undefined ? null : startsAt;
-  assertShowOnWebsiteAllowed({
-    showOnWebsite,
+  const resolvedEndsAt = endsAt === undefined ? null : endsAt;
+  assertWebsitePublishRules({
+    websiteStatus,
     startsAt: resolvedStartsAt,
+    endsAt: resolvedEndsAt,
   });
 
   const date =
@@ -339,42 +398,47 @@ export async function createConcert(
         ? new Date(`${input.date}T00:00:00.000Z`)
         : null;
 
-  return prisma.$transaction(async (tx) => {
-    if (input.isCurrent) {
-      await tx.concert.updateMany({
-        where: { isCurrent: true },
-        data: { isCurrent: false },
-      });
-    }
+  return prisma
+    .$transaction(async (tx) => {
+      if (input.isCurrent) {
+        await tx.concert.updateMany({
+          where: { isCurrent: true },
+          data: { isCurrent: false },
+        });
+      }
 
-    const created = await tx.concert.create({
-      data: {
-        title,
-        slug,
-        date,
-        startsAt: resolvedStartsAt,
-        endsAt: endsAt === undefined ? null : endsAt,
-        subtitle: input.subtitle?.trim() || null,
-        description: input.description?.trim() || null,
-        location: input.location?.trim() || null,
-        address: input.address?.trim() || null,
-        extraInfo: input.extraInfo?.trim() || null,
-        ticketUrl: input.ticketUrl?.trim() || null,
-        showOnWebsite,
-        heroImageId: input.heroImageId?.trim() || null,
-        isCurrent: Boolean(input.isCurrent),
-        notes: input.notes?.trim() || null,
-        isVisible: true,
-      },
-      include: {
-        _count: { select: { items: true, recordings: true } },
-      },
+      return tx.concert.create({
+        data: {
+          title,
+          slug,
+          date,
+          startsAt: resolvedStartsAt,
+          endsAt: resolvedEndsAt,
+          subtitle: input.subtitle?.trim() || null,
+          description: input.description?.trim() || null,
+          location: input.location?.trim() || null,
+          address: input.address?.trim() || null,
+          programInfo: input.programInfo?.trim() || null,
+          leader: input.leader?.trim() || null,
+          admissionInfo: input.admissionInfo?.trim() || null,
+          footer: input.footer?.trim() || null,
+          extraInfo: input.extraInfo?.trim() || null,
+          ticketUrl: input.ticketUrl?.trim() || null,
+          websiteStatus,
+          heroImageId: input.heroImageId?.trim() || null,
+          isCurrent: Boolean(input.isCurrent),
+          notes: input.notes?.trim() || null,
+          isVisible: true,
+        },
+        include: {
+          _count: { select: { items: true, recordings: true } },
+        },
+      });
+    })
+    .then((created) => {
+      revalidatePublicConcerts();
+      return created;
     });
-    return created;
-  }).then((created) => {
-    revalidateTag(CONCERTS_PUBLIC_CACHE_TAG, "max");
-    return created;
-  });
 }
 
 export async function updateConcert(id: string, input: ConcertWriteInput) {
@@ -394,13 +458,13 @@ export async function updateConcert(id: string, input: ConcertWriteInput) {
   const endsAt = parseOptionalBerlinDateTime(input.endsAt, "endsAt");
   const nextStartsAt =
     startsAt !== undefined ? startsAt : existing.startsAt;
-  const nextShowOnWebsite =
-    input.showOnWebsite !== undefined
-      ? Boolean(input.showOnWebsite)
-      : existing.showOnWebsite;
-  assertShowOnWebsiteAllowed({
-    showOnWebsite: nextShowOnWebsite,
+  const nextEndsAt = endsAt !== undefined ? endsAt : existing.endsAt;
+  const nextWebsiteStatus =
+    parseWebsiteStatus(input.websiteStatus) ?? existing.websiteStatus;
+  assertWebsitePublishRules({
+    websiteStatus: nextWebsiteStatus,
     startsAt: nextStartsAt,
+    endsAt: nextEndsAt,
   });
 
   let nextDate = existing.date;
@@ -410,69 +474,84 @@ export async function updateConcert(id: string, input: ConcertWriteInput) {
     nextDate = input.date ? new Date(`${input.date}T00:00:00.000Z`) : null;
   }
 
-  return prisma.$transaction(async (tx) => {
-    if (input.isCurrent) {
-      await tx.concert.updateMany({
-        where: { isCurrent: true, id: { not: id } },
-        data: { isCurrent: false },
-      });
-    }
+  return prisma
+    .$transaction(async (tx) => {
+      if (input.isCurrent) {
+        await tx.concert.updateMany({
+          where: { isCurrent: true, id: { not: id } },
+          data: { isCurrent: false },
+        });
+      }
 
-    return tx.concert.update({
-      where: { id },
-      data: {
-        title,
-        slug,
-        date: nextDate,
-        ...(startsAt !== undefined ? { startsAt } : {}),
-        ...(endsAt !== undefined ? { endsAt } : {}),
-        ...(input.subtitle !== undefined
-          ? { subtitle: input.subtitle?.trim() || null }
-          : {}),
-        ...(input.description !== undefined
-          ? { description: input.description?.trim() || null }
-          : {}),
-        ...(input.location !== undefined
-          ? { location: input.location?.trim() || null }
-          : {}),
-        ...(input.address !== undefined
-          ? { address: input.address?.trim() || null }
-          : {}),
-        ...(input.extraInfo !== undefined
-          ? { extraInfo: input.extraInfo?.trim() || null }
-          : {}),
-        ...(input.ticketUrl !== undefined
-          ? { ticketUrl: input.ticketUrl?.trim() || null }
-          : {}),
-        ...(input.showOnWebsite !== undefined
-          ? { showOnWebsite: nextShowOnWebsite }
-          : {}),
-        ...(input.heroImageId !== undefined
-          ? { heroImageId: input.heroImageId?.trim() || null }
-          : {}),
-        ...(input.isCurrent !== undefined
-          ? { isCurrent: input.isCurrent }
-          : {}),
-        ...(input.notes !== undefined
-          ? { notes: input.notes?.trim() || null }
-          : {}),
-      },
-      include: {
-        items: {
-          orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
-          include: itemInclude,
+      return tx.concert.update({
+        where: { id },
+        data: {
+          title,
+          slug,
+          date: nextDate,
+          ...(startsAt !== undefined ? { startsAt } : {}),
+          ...(endsAt !== undefined ? { endsAt } : {}),
+          ...(input.subtitle !== undefined
+            ? { subtitle: input.subtitle?.trim() || null }
+            : {}),
+          ...(input.description !== undefined
+            ? { description: input.description?.trim() || null }
+            : {}),
+          ...(input.location !== undefined
+            ? { location: input.location?.trim() || null }
+            : {}),
+          ...(input.address !== undefined
+            ? { address: input.address?.trim() || null }
+            : {}),
+          ...(input.programInfo !== undefined
+            ? { programInfo: input.programInfo?.trim() || null }
+            : {}),
+          ...(input.leader !== undefined
+            ? { leader: input.leader?.trim() || null }
+            : {}),
+          ...(input.admissionInfo !== undefined
+            ? { admissionInfo: input.admissionInfo?.trim() || null }
+            : {}),
+          ...(input.footer !== undefined
+            ? { footer: input.footer?.trim() || null }
+            : {}),
+          ...(input.extraInfo !== undefined
+            ? { extraInfo: input.extraInfo?.trim() || null }
+            : {}),
+          ...(input.ticketUrl !== undefined
+            ? { ticketUrl: input.ticketUrl?.trim() || null }
+            : {}),
+          ...(input.websiteStatus !== undefined
+            ? { websiteStatus: nextWebsiteStatus }
+            : {}),
+          ...(input.heroImageId !== undefined
+            ? { heroImageId: input.heroImageId?.trim() || null }
+            : {}),
+          ...(input.isCurrent !== undefined
+            ? { isCurrent: input.isCurrent }
+            : {}),
+          ...(input.notes !== undefined
+            ? { notes: input.notes?.trim() || null }
+            : {}),
         },
-        _count: { select: { items: true, recordings: true } },
-      },
+        include: {
+          items: {
+            orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+            include: itemInclude,
+          },
+          _count: { select: { items: true, recordings: true } },
+        },
+      });
+    })
+    .then((updated) => {
+      revalidatePublicConcerts();
+      return updated;
     });
-  }).then((updated) => {
-    revalidateTag(CONCERTS_PUBLIC_CACHE_TAG, "max");
-    return updated;
-  });
 }
 
 export async function deleteConcert(id: string) {
   await prisma.concert.delete({ where: { id } });
+  revalidatePublicConcerts();
 }
 
 export async function upsertConcertItem(

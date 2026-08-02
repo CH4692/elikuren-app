@@ -7,6 +7,7 @@ import {
   serializeConcert,
   updateConcert,
 } from "@/lib/concerts";
+import type { ConcertWebsiteStatus } from "@/lib/generated/prisma/client";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -40,9 +41,13 @@ export async function PATCH(request: Request, { params }: Params) {
     description?: string | null;
     location?: string | null;
     address?: string | null;
+    programInfo?: string | null;
+    leader?: string | null;
+    admissionInfo?: string | null;
+    footer?: string | null;
     extraInfo?: string | null;
     ticketUrl?: string | null;
-    showOnWebsite?: boolean;
+    websiteStatus?: ConcertWebsiteStatus;
     heroImageId?: string | null;
     isCurrent?: boolean;
     notes?: string | null;

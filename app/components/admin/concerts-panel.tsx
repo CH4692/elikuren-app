@@ -74,9 +74,15 @@ type ConcertRow = {
   description: string | null;
   location: string | null;
   address: string | null;
+  program_info: string | null;
+  leader: string | null;
+  admission_info: string | null;
+  footer: string | null;
   extra_info: string | null;
   ticket_url: string | null;
-  show_on_website: boolean;
+  website_status: "DRAFT" | "PUBLISHED";
+  website_badge: string;
+  website_badge_label: string;
   needs_starts_at: boolean;
   is_current: boolean;
   notes: string | null;
@@ -95,9 +101,13 @@ type ConcertForm = {
   description: string;
   location: string;
   address: string;
+  programInfo: string;
+  leader: string;
+  admissionInfo: string;
+  footer: string;
   extraInfo: string;
   ticketUrl: string;
-  showOnWebsite: boolean;
+  websiteStatus: "DRAFT" | "PUBLISHED";
   notes: string;
 };
 
@@ -121,9 +131,13 @@ const emptyConcert = (): ConcertForm => ({
   description: "",
   location: "",
   address: "",
+  programInfo: "",
+  leader: "",
+  admissionInfo: "",
+  footer: "",
   extraInfo: "",
   ticketUrl: "",
-  showOnWebsite: false,
+  websiteStatus: "DRAFT",
   notes: "",
 });
 
@@ -260,9 +274,13 @@ export function ConcertsPanel() {
       description: row.description ?? "",
       location: row.location ?? "",
       address: row.address ?? "",
+      programInfo: row.program_info ?? "",
+      leader: row.leader ?? "",
+      admissionInfo: row.admission_info ?? "",
+      footer: row.footer ?? "",
       extraInfo: row.extra_info ?? "",
       ticketUrl: row.ticket_url ?? "",
-      showOnWebsite: row.show_on_website,
+      websiteStatus: row.website_status,
       notes: row.notes ?? "",
     });
     setEditTarget(row);
@@ -304,8 +322,8 @@ export function ConcertsPanel() {
       toast.error("Titel ist Pflicht");
       return;
     }
-    if (form.showOnWebsite && !form.startsAt) {
-      toast.error("Website-Anzeige braucht eine echte Startzeit (startsAt)");
+    if (form.websiteStatus === "PUBLISHED" && !form.startsAt) {
+      toast.error("Zum Veröffentlichen muss eine Startzeit gesetzt sein.");
       return;
     }
     startTransition(async () => {
@@ -318,9 +336,13 @@ export function ConcertsPanel() {
         description: form.description.trim() || null,
         location: form.location.trim() || null,
         address: form.address.trim() || null,
+        programInfo: form.programInfo.trim() || null,
+        leader: form.leader.trim() || null,
+        admissionInfo: form.admissionInfo.trim() || null,
+        footer: form.footer.trim() || null,
         extraInfo: form.extraInfo.trim() || null,
         ticketUrl: form.ticketUrl.trim() || null,
-        showOnWebsite: form.showOnWebsite,
+        websiteStatus: form.websiteStatus,
         notes: form.notes.trim() || null,
       };
       const res = await fetch(
@@ -727,6 +749,17 @@ export function ConcertsPanel() {
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium text-[#1f1f23]">{row.title}</p>
+                        <Badge
+                          variant={
+                            row.website_badge === "published"
+                              ? "success"
+                              : row.website_badge === "draft"
+                                ? "secondary"
+                                : "warning"
+                          }
+                        >
+                          {row.website_badge_label}
+                        </Badge>
                         {row.is_current ? (
                           <Badge variant="success">Aktiv</Badge>
                         ) : null}
@@ -960,6 +993,26 @@ function ConcertFields({
         />
       </div>
       <div className="space-y-2">
+        <Label htmlFor="c-status">Website-Status</Label>
+        <select
+          id="c-status"
+          className={selectClass}
+          value={form.websiteStatus}
+          onChange={(e) =>
+            onChange({
+              ...form,
+              websiteStatus: e.target.value as "DRAFT" | "PUBLISHED",
+            })
+          }
+        >
+          <option value="DRAFT">Entwurf</option>
+          <option value="PUBLISHED">Veröffentlicht</option>
+        </select>
+        <p className="text-xs text-[#8a8478]">
+          Veröffentlichen erfordert eine echte Startzeit (keine Platzhalter).
+        </p>
+      </div>
+      <div className="space-y-2">
         <Label htmlFor="c-starts">Start (Europe/Berlin)</Label>
         <Input
           id="c-starts"
@@ -967,9 +1020,6 @@ function ConcertFields({
           value={form.startsAt}
           onChange={(e) => onChange({ ...form, startsAt: e.target.value })}
         />
-        <p className="text-xs text-[#8a8478]">
-          Pflicht für Website-Anzeige — keine Platzhalter-Uhrzeit.
-        </p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="c-ends">Ende (optional)</Label>
@@ -1015,6 +1065,40 @@ function ConcertFields({
         />
       </div>
       <div className="space-y-2">
+        <Label htmlFor="c-program">Programm (Website)</Label>
+        <Textarea
+          id="c-program"
+          value={form.programInfo}
+          onChange={(e) => onChange({ ...form, programInfo: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-leader">Leitung</Label>
+        <Input
+          id="c-leader"
+          value={form.leader}
+          onChange={(e) => onChange({ ...form, leader: e.target.value })}
+          placeholder="z. B. Christiane Kampe"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-admission">Eintritt (optional)</Label>
+        <Input
+          id="c-admission"
+          value={form.admissionInfo}
+          onChange={(e) => onChange({ ...form, admissionInfo: e.target.value })}
+          placeholder="z. B. Frei. Spenden erwünscht."
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-footer">Footer-Text (Website)</Label>
+        <Textarea
+          id="c-footer"
+          value={form.footer}
+          onChange={(e) => onChange({ ...form, footer: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
         <Label htmlFor="c-extra">Zusatzinfo</Label>
         <Textarea
           id="c-extra"
@@ -1029,18 +1113,6 @@ function ConcertFields({
           value={form.ticketUrl}
           onChange={(e) => onChange({ ...form, ticketUrl: e.target.value })}
         />
-      </div>
-      <div className="flex items-center gap-2">
-        <input
-          id="c-web"
-          type="checkbox"
-          checked={form.showOnWebsite}
-          onChange={(e) =>
-            onChange({ ...form, showOnWebsite: e.target.checked })
-          }
-          className="size-4 rounded border-[#d9d2c4]"
-        />
-        <Label htmlFor="c-web">Auf Website anzeigen</Label>
       </div>
       <div className="space-y-2">
         <Label htmlFor="c-notes">Interne Notizen</Label>

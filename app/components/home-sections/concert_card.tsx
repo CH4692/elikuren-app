@@ -11,6 +11,7 @@ export default function ConcertCard({
   concert_details_info,
   concert_details_leader,
   concert_details_footer,
+  concert_admission,
 }: {
   concert_name: string;
   concert_info: string;
@@ -22,6 +23,7 @@ export default function ConcertCard({
   concert_details_info: string;
   concert_details_leader: string;
   concert_details_footer: string;
+  concert_admission: string | null;
 }) {
   return (
     <>
@@ -71,39 +73,47 @@ export default function ConcertCard({
           <h2 className="mt-3 text-3xl font-light">{concert_details_title}</h2>
 
           <div className="mt-8 space-y-5">
-            <div className="flex items-start gap-3">
-              <Music4 className="mt-1 min-h-5 min-w-5 text-[#b68a2b]" />
-              <div>
-                <p className="font-semibold">Programm</p>
-                <p className="text-sm leading-6 text-[#173c34]/80">
-                  {concert_details_info}
+            {concert_details_info ? (
+              <div className="flex items-start gap-3">
+                <Music4 className="mt-1 min-h-5 min-w-5 text-[#b68a2b]" />
+                <div>
+                  <p className="font-semibold">Programm</p>
+                  <p className="text-sm leading-6 text-[#173c34]/80">
+                    {concert_details_info}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            {concert_details_leader ? (
+              <div className="flex items-start gap-3">
+                <Users className="mt-1 min-h-5 min-w-5 text-[#b68a2b]" />
+                <div>
+                  <p className="font-semibold">Leitung</p>
+                  <p className="text-sm leading-6 text-[#173c34]/80">
+                    Musikalische Leitung: <b>{concert_details_leader}</b>
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            {concert_admission ? (
+              <div className="rounded-2xl bg-[#d4aa43]/15 p-4">
+                <p className="text-sm font-semibold">Eintritt</p>
+                <p className="mt-1 text-sm text-[#173c34]/80">
+                  {concert_admission}
                 </p>
               </div>
-            </div>
+            ) : null}
+          </div>
 
-            <div className="flex items-start gap-3">
-              <Users className="mt-1 min-h-5 min-w-5 text-[#b68a2b]" />
-              <div>
-                <p className="font-semibold">Leitung</p>
-                <p className="text-sm leading-6 text-[#173c34]/80">
-                  Musikalische Leitung: <b>{concert_details_leader}</b>
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-2xl bg-[#d4aa43]/15 p-4">
-              <p className="text-sm font-semibold">Eintritt</p>
-              <p className="mt-1 text-sm text-[#173c34]/80">
-                Frei. Spenden erwünscht.
+          {concert_details_footer ? (
+            <div className="mt-8 border-t border-[#173c34]/10 pt-5">
+              <p className="text-sm leading-6 text-[#173c34]/75">
+                {concert_details_footer}
               </p>
             </div>
-          </div>
-
-          <div className="mt-8 border-t border-[#173c34]/10 pt-5">
-            <p className="text-sm leading-6 text-[#173c34]/75">
-              {concert_details_footer}
-            </p>
-          </div>
+          ) : null}
         </div>
       </div>
     </>
