@@ -1,15 +1,20 @@
 "use client";
 
 import { ImageIcon, Pencil, Plus } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { AdminDeleteButton } from "@/components/admin/admin-delete-button";
+import {
+  PictureLightbox,
+  type LightboxPicture,
+} from "@/components/admin/picture-lightbox";
+import { PictureThumb } from "@/components/admin/picture-thumb";
 import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { DataTableToolbar } from "@/components/app/data-table-toolbar";
 import { EmptyState } from "@/components/app/empty-state";
 import { FormDrawer } from "@/components/app/form-drawer";
 import { PageHeader } from "@/components/app/page-header";
-import { AdminDeleteButton } from "@/components/admin/admin-delete-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,13 +54,13 @@ const emptyForm = (): PictureForm => ({
 
 export function PicturesPanel() {
   const [items, setItems] = useState<PictureItem[]>([]);
-  const [previews, setPreviews] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [pending, startTransition] = useTransition();
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<PictureItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PictureItem | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [form, setForm] = useState<PictureForm>(emptyForm());
   const [file, setFile] = useState<File | null>(null);
 
@@ -67,7 +72,6 @@ export function PicturesPanel() {
       if (!res.ok) throw new Error("load failed");
       const data = (await res.json()) as { items: PictureItem[] };
       setItems(data.items);
-      void loadPreviews(data.items.slice(0, 40));
     } catch {
       toast.error("Bilder konnten nicht geladen werden");
     } finally {
@@ -75,28 +79,22 @@ export function PicturesPanel() {
     }
   }
 
-  async function loadPreviews(rows: PictureItem[]) {
-    const next: Record<string, string> = {};
-    await Promise.all(
-      rows.map(async (row) => {
-        try {
-          const res = await fetch(
-            `/api/files/${row.stored_file.id}/url?disposition=inline`,
-          );
-          if (!res.ok) return;
-          const data = (await res.json()) as { url: string };
-          next[row.id] = data.url;
-        } catch {
-          /* ignore */
-        }
-      }),
-    );
-    setPreviews((prev) => ({ ...prev, ...next }));
-  }
-
   useEffect(() => {
     void load();
   }, []);
+
+  const lightboxItems: LightboxPicture[] = useMemo(
+    () =>
+      items.map((item) => ({
+        id: item.id,
+        title: item.title,
+        caption: item.caption,
+        taken_at: item.taken_at,
+        stored_file_id: item.stored_file.id,
+        original_name: item.stored_file.original_name,
+      })),
+    [items],
+  );
 
   function openCreate() {
     setForm(emptyForm());
@@ -232,10 +230,10 @@ export function PicturesPanel() {
       />
 
       {loading ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="aspect-square w-full rounded-2xl" />
+          ))}
         </div>
       ) : items.length === 0 ? (
         <EmptyState
@@ -244,26 +242,17 @@ export function PicturesPanel() {
           description="Lade Fotos hoch oder importiere den pictures-Ordner."
         />
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => (
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {items.map((item, index) => (
             <li
               key={item.id}
-              className="overflow-hidden rounded-2xl border border-[#d9d2c4] bg-white"
+              className="overflow-hidden rounded-2xl border border-[#d9d2c4] bg-white shadow-sm"
             >
-              <div className="aspect-[4/3] bg-[#f0ebe3]">
-                {previews[item.id] ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={previews[item.id]}
-                    alt={item.title}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-[#8a8478]">
-                    Vorschau…
-                  </div>
-                )}
-              </div>
+              <PictureThumb
+                fileId={item.stored_file.id}
+                title={item.title}
+                onOpen={() => setLightboxIndex(index)}
+              />
               <div className="space-y-2 p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -290,20 +279,33 @@ export function PicturesPanel() {
                     {item.is_visible ? "Verbergen" : "Sichtbarmachen"}
                   </Button>
                   <Button
-                    size="icon"
+                    size="icon-sm"
                     variant="ghost"
                     onClick={() => openEdit(item)}
                     aria-label="Bearbeiten"
                   >
-                    <Pencil className="size-4" />
+                    <Pencil />
                   </Button>
-                  <AdminDeleteButton onClick={() => setDeleteTarget(item)} />
+                  <AdminDeleteButton
+                    iconOnly
+                    onClick={() => setDeleteTarget(item)}
+                  />
                 </div>
               </div>
             </li>
           ))}
         </ul>
       )}
+
+      <PictureLightbox
+        open={lightboxIndex != null}
+        items={lightboxItems}
+        index={lightboxIndex ?? 0}
+        onIndexChange={setLightboxIndex}
+        onOpenChange={(open) => {
+          if (!open) setLightboxIndex(null);
+        }}
+      />
 
       <FormDrawer
         open={createOpen}
