@@ -12,8 +12,9 @@ export function upsertCredentialUser(input: {
   lastname?: string;
   voice?: string;
 }): { id: string; email: string } {
+  // helpers/ → app/ (not tests/), so ./tests/seed-temp-user.ts resolves correctly
   const out = execSync("npx tsx ./tests/seed-temp-user.ts", {
-    cwd: path.join(__dirname, ".."),
+    cwd: path.join(__dirname, "../.."),
     env: {
       ...process.env,
       E2E_TEMP_EMAIL: input.email,

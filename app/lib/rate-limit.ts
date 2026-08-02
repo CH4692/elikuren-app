@@ -49,11 +49,20 @@ export function clientIpFromHeaders(headers: Headers): string {
   return headers.get("x-real-ip")?.trim() || "unknown";
 }
 
+/** Relax IP buckets in CI / local E2E (many tests share 127.0.0.1). */
+function e2eRelaxedIpLimits(): boolean {
+  return (
+    process.env.CI === "true" ||
+    process.env.AUTH_ENABLE_PASSWORD_LOGIN === "1"
+  );
+}
+
 /** Magic-link: 5 / 15 min per email, 20 / 15 min per IP */
 export function allowMagicLinkRequest(email: string, ip: string): boolean {
   const windowMs = 15 * 60 * 1000;
   const emailOk = checkRateLimit(`magic:email:${email}`, 5, windowMs).allowed;
-  const ipOk = checkRateLimit(`magic:ip:${ip}`, 20, windowMs).allowed;
+  const ipLimit = e2eRelaxedIpLimits() ? 1000 : 20;
+  const ipOk = checkRateLimit(`magic:ip:${ip}`, ipLimit, windowMs).allowed;
   return emailOk && ipOk;
 }
 
@@ -61,6 +70,7 @@ export function allowMagicLinkRequest(email: string, ip: string): boolean {
 export function allowMembershipRequest(email: string, ip: string): boolean {
   const windowMs = 60 * 60 * 1000;
   const emailOk = checkRateLimit(`membership:email:${email}`, 3, windowMs).allowed;
-  const ipOk = checkRateLimit(`membership:ip:${ip}`, 10, windowMs).allowed;
+  const ipLimit = e2eRelaxedIpLimits() ? 1000 : 10;
+  const ipOk = checkRateLimit(`membership:ip:${ip}`, ipLimit, windowMs).allowed;
   return emailOk && ipOk;
 }

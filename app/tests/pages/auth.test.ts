@@ -19,7 +19,7 @@ test("sign-up is membership request form", async ({ page }) => {
     page.getByRole("heading", { name: "Mitglied werden" }),
   ).toBeVisible();
   await expect(
-    page.getByText(/vom Vorstand freigeschaltet/i),
+    page.getByText(/Vorstand schaltet dich frei/i),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Anfrage absenden" })).toBeVisible();
 });

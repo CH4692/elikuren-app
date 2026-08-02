@@ -6,7 +6,7 @@ test.describe("Home feature components", () => {
   test("landing, chorleitung, ensembles, support images load", async ({
     page,
   }) => {
-    await page.goto("/home", { waitUntil: "networkidle" });
+    await page.goto("/home", { waitUntil: "domcontentloaded" });
     await expect(page.locator("#landing")).toBeVisible();
     await expect(page.locator("#chorleitung")).toBeVisible();
     await expect(page.locator("#joinus")).toBeVisible();
@@ -52,7 +52,7 @@ test.describe("Home feature components", () => {
 
 test.describe("Content pages with media", () => {
   test("history page images load", async ({ page }) => {
-    await page.goto("/history", { waitUntil: "networkidle" });
+    await page.goto("/history", { waitUntil: "domcontentloaded" });
     await expect(
       page.getByRole("heading", {
         name: /Geschichte des Kammerchors Elikuren/i,
@@ -63,7 +63,7 @@ test.describe("Content pages with media", () => {
   });
 
   test("chorleitung page image loads", async ({ page }) => {
-    await page.goto("/chorleitung", { waitUntil: "networkidle" });
+    await page.goto("/chorleitung", { waitUntil: "domcontentloaded" });
     await expect(
       page.getByRole("heading", { name: "Christiane Kampe" }),
     ).toBeVisible();
@@ -76,7 +76,7 @@ test.describe("Content pages with media", () => {
     "/ensembles/musical-team",
   ] as const) {
     test(`${ensemble} hero and gallery images load`, async ({ page }) => {
-      await page.goto(ensemble, { waitUntil: "networkidle" });
+      await page.goto(ensemble, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await expectPageImagesLoad(page);
       await page.getByRole("link", { name: /Kontakt aufnehmen/i }).first().click();
