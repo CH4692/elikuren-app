@@ -43,6 +43,36 @@ export async function getMemberById(id: string) {
   return prisma.user.findUnique({ where: { id } });
 }
 
+export async function deleteMember(userId: string): Promise<
+  | { ok: true }
+  | { ok: false; code: "not_found" | "last_vorstand"; detail: string }
+> {
+  const member = await getMemberById(userId);
+  if (!member) {
+    return { ok: false, code: "not_found", detail: "Mitglied nicht gefunden" };
+  }
+
+  if (member.role === "vorstand") {
+    const otherVorstand = await prisma.user.count({
+      where: {
+        id: { not: userId },
+        role: "vorstand",
+        isActive: true,
+      },
+    });
+    if (otherVorstand === 0) {
+      return {
+        ok: false,
+        code: "last_vorstand",
+        detail: "Der letzte aktive Vorstand kann nicht gelöscht werden",
+      };
+    }
+  }
+
+  await prisma.user.delete({ where: { id: userId } });
+  return { ok: true };
+}
+
 export async function updateMemberVoice(userId: string, voice: string | null) {
   return prisma.user.update({
     where: { id: userId },

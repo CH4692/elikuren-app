@@ -1,9 +1,10 @@
 "use client";
 
-import { Pencil, Users } from "lucide-react";
+import { Pencil, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/app/confirm-dialog";
 import { DataTableToolbar } from "@/components/app/data-table-toolbar";
 import { EmptyState } from "@/components/app/empty-state";
 import { FormDrawer } from "@/components/app/form-drawer";
@@ -101,6 +102,7 @@ export function MembersPanel() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<MemberItem | null>(null);
   const [draft, setDraft] = useState<MemberDraft | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MemberItem | null>(null);
 
   async function load(q?: string) {
     setLoading(true);
@@ -183,7 +185,7 @@ export function MembersPanel() {
     <div>
       <PageHeader
         title="Mitglieder"
-        description="Rollen, Stimmen, Profildaten und Aktivstatus verwalten."
+        description="Rollen, Stimmen, Profildaten und Aktivstatus verwalten — inkl. Löschen."
       />
 
       <DataTableToolbar
@@ -235,17 +237,30 @@ export function MembersPanel() {
                   <TableCell>{item.role}</TableCell>
                   <TableCell>{statusBadge(item.is_active)}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="gap-1.5 font-medium text-[#1f1f23]"
-                      onClick={() => openEdit(item)}
-                      aria-label={`${memberName(item)} bearbeiten`}
-                    >
-                      <Pencil className="size-3.5 text-[#C8A24D]" />
-                      Bearbeiten
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 font-medium text-[#1f1f23]"
+                        onClick={() => openEdit(item)}
+                        aria-label={`${memberName(item)} bearbeiten`}
+                      >
+                        <Pencil className="size-3.5 text-[#C8A24D]" />
+                        Bearbeiten
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="border-[#d9d2c4] text-red-700"
+                        onClick={() => setDeleteTarget(item)}
+                        aria-label={`${memberName(item)} löschen`}
+                      >
+                        <Trash2 className="size-3.5" />
+                        Löschen
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -409,6 +424,45 @@ export function MembersPanel() {
           </div>
         ) : null}
       </FormDrawer>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title="Mitglied löschen?"
+        description={
+          deleteTarget
+            ? `„${memberName(deleteTarget)}“ (${deleteTarget.email ?? "ohne E-Mail"}) wird dauerhaft entfernt. Sessions und Favoriten entfallen mit.`
+            : undefined
+        }
+        confirmLabel="Löschen"
+        destructive
+        loading={pending}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          startTransition(async () => {
+            const res = await fetch(`/api/admin/members/${deleteTarget.id}`, {
+              method: "DELETE",
+            });
+            if (!res.ok) {
+              const err = (await res.json().catch(() => ({}))) as {
+                detail?: string;
+              };
+              toast.error(err.detail ?? "Löschen fehlgeschlagen");
+              return;
+            }
+            toast.success("Mitglied gelöscht");
+            setDeleteTarget(null);
+            if (editing?.id === deleteTarget.id) {
+              setDrawerOpen(false);
+              setEditing(null);
+              setDraft(null);
+            }
+            await load(search || undefined);
+          });
+        }}
+      />
     </div>
   );
 }

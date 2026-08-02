@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireActiveSession, requirePermission } from "@/lib/authz";
 import type { Role } from "@/lib/generated/prisma/client";
 import {
+  deleteMember,
   getMemberById,
   ROLES,
   serializeMember,
@@ -12,6 +13,32 @@ import {
 import { changeUserRole, setUserActiveState } from "@/lib/session-security";
 
 type Params = { params: Promise<{ id: string }> };
+
+export async function DELETE(_request: Request, { params }: Params) {
+  const gate = await requirePermission("MEMBER_MANAGE");
+  if (!gate.ok) return gate.response;
+
+  const { id } = await params;
+  if (id === gate.user.id) {
+    return NextResponse.json(
+      {
+        detail: "Du kannst dich nicht selbst löschen",
+        code: "validation_error",
+      },
+      { status: 400 },
+    );
+  }
+
+  const result = await deleteMember(id);
+  if (!result.ok) {
+    return NextResponse.json(
+      { detail: result.detail, code: result.code },
+      { status: result.code === "not_found" ? 404 : 400 },
+    );
+  }
+
+  return NextResponse.json({ deleted: true });
+}
 
 export async function PATCH(request: Request, { params }: Params) {
   const session = await requireActiveSession();
