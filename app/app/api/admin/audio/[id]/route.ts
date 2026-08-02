@@ -43,7 +43,6 @@ export async function PATCH(request: Request, { params }: Params) {
     voiceGroup?: VoiceGroup | null;
     audioType?: AudioType;
     accessScope?: FileAccessScope;
-    isVisible?: boolean;
   };
 
   const title =
@@ -66,7 +65,6 @@ export async function PATCH(request: Request, { params }: Params) {
       voiceGroup: body.voiceGroup === undefined ? undefined : body.voiceGroup,
       audioType: body.audioType,
       accessScope: body.accessScope,
-      isVisible: body.isVisible,
     },
     include: {
       storedFile: {

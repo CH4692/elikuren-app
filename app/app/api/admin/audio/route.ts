@@ -32,7 +32,6 @@ export async function POST(request: Request) {
     voiceGroup?: VoiceGroup | null;
     audioType?: AudioType;
     accessScope?: FileAccessScope;
-    isVisible?: boolean;
   };
 
   if (!body.storedFileId) {
@@ -50,7 +49,6 @@ export async function POST(request: Request) {
       voiceGroup: body.voiceGroup,
       audioType: body.audioType,
       accessScope: body.accessScope,
-      isVisible: body.isVisible,
     });
     return NextResponse.json(serializeAudio(audio), { status: 201 });
   } catch (error) {

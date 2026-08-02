@@ -202,7 +202,6 @@ export async function createConcert(input: {
   date?: string | null;
   isCurrent?: boolean;
   notes?: string | null;
-  isVisible?: boolean;
 }) {
   const title = input.title.trim();
   if (!title) throw new Error("Titel ist Pflicht");
@@ -216,7 +215,7 @@ export async function createConcert(input: {
       date: input.date ? new Date(`${input.date}T00:00:00.000Z`) : null,
       isCurrent: Boolean(input.isCurrent),
       notes: input.notes?.trim() || null,
-      isVisible: input.isVisible !== false,
+      isVisible: true,
     },
     include: {
       _count: { select: { items: true, recordings: true } },
@@ -232,7 +231,6 @@ export async function updateConcert(
     date?: string | null;
     isCurrent?: boolean;
     notes?: string | null;
-    isVisible?: boolean;
   },
 ) {
   const existing = await prisma.concert.findUnique({ where: { id } });
@@ -261,7 +259,6 @@ export async function updateConcert(
       ...(input.notes !== undefined
         ? { notes: input.notes?.trim() || null }
         : {}),
-      ...(input.isVisible !== undefined ? { isVisible: input.isVisible } : {}),
     },
     include: {
       items: {
@@ -291,9 +288,26 @@ export async function upsertConcertItem(
   const title = input.title.trim();
   if (!title) throw new Error("Titel ist Pflicht");
 
+  let sortOrder = input.sortOrder;
+  if (sortOrder === undefined) {
+    if (input.id) {
+      const existing = await prisma.concertItem.findUnique({
+        where: { id: input.id },
+        select: { sortOrder: true },
+      });
+      sortOrder = existing?.sortOrder ?? 0;
+    } else {
+      const agg = await prisma.concertItem.aggregate({
+        where: { concertId },
+        _max: { sortOrder: true },
+      });
+      sortOrder = (agg._max.sortOrder ?? -1) + 1;
+    }
+  }
+
   const data = {
     title,
-    sortOrder: input.sortOrder ?? 0,
+    sortOrder,
     ensemble: input.ensemble ?? null,
     sheetFileId: input.sheetFileId || null,
     audioFileId: input.audioFileId || null,
@@ -315,6 +329,33 @@ export async function upsertConcertItem(
 
 export async function deleteConcertItem(id: string) {
   await prisma.concertItem.delete({ where: { id } });
+}
+
+/** Persist a full ordered id list as 0..n-1 sortOrder. */
+export async function reorderConcertItems(
+  concertId: string,
+  orderedIds: string[],
+) {
+  const existing = await prisma.concertItem.findMany({
+    where: { concertId },
+    select: { id: true },
+  });
+  const existingIds = new Set(existing.map((row) => row.id));
+  if (
+    orderedIds.length !== existingIds.size ||
+    orderedIds.some((id) => !existingIds.has(id))
+  ) {
+    throw new Error("Ungültige Reihenfolge");
+  }
+
+  await prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.concertItem.update({
+        where: { id },
+        data: { sortOrder: index },
+      }),
+    ),
+  );
 }
 
 export async function listLibraryConcerts(input: {

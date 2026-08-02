@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/authz";
 import type { VoiceGroup } from "@/lib/generated/prisma/client";
 import {
   deleteConcertItem,
+  reorderConcertItems,
   serializeConcertItem,
   upsertConcertItem,
 } from "@/lib/concerts";
@@ -23,7 +24,22 @@ export async function POST(request: Request, { params }: Params) {
     sheetFileId?: string | null;
     audioFileId?: string | null;
     delete?: boolean;
+    orderedIds?: string[];
   };
+
+  if (body.orderedIds) {
+    try {
+      await reorderConcertItems(concertId, body.orderedIds);
+      return NextResponse.json({ ok: true });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Reihenfolge fehlgeschlagen";
+      return NextResponse.json(
+        { detail: message, code: "validation_error" },
+        { status: 400 },
+      );
+    }
+  }
 
   if (body.delete && body.id) {
     try {

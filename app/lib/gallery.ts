@@ -78,7 +78,6 @@ export async function createGalleryImage(input: {
   title: string;
   caption?: string | null;
   takenAt?: string | null;
-  isVisible?: boolean;
   sortOrder?: number;
 }) {
   const stored = await prisma.storedFile.findUnique({
@@ -104,7 +103,7 @@ export async function createGalleryImage(input: {
         ? new Date(`${input.takenAt}T00:00:00.000Z`)
         : null,
       storedFileId: stored.id,
-      isVisible: input.isVisible !== false,
+      isVisible: true,
       sortOrder: input.sortOrder ?? 0,
     },
     include: includeStored,

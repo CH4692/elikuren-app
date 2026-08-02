@@ -25,7 +25,6 @@ export async function POST(request: Request) {
     title?: string;
     caption?: string | null;
     takenAt?: string | null;
-    isVisible?: boolean;
     sortOrder?: number;
   };
 
@@ -42,7 +41,6 @@ export async function POST(request: Request) {
       title: String(body.title ?? ""),
       caption: body.caption,
       takenAt: body.takenAt,
-      isVisible: body.isVisible,
       sortOrder: body.sortOrder,
     });
     return NextResponse.json(serializeGalleryImage(image), { status: 201 });

@@ -16,7 +16,6 @@ import { DataTableToolbar } from "@/components/app/data-table-toolbar";
 import { EmptyState } from "@/components/app/empty-state";
 import { FormDrawer } from "@/components/app/form-drawer";
 import { PageHeader } from "@/components/app/page-header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -182,25 +181,6 @@ export function PicturesPanel() {
     });
   }
 
-  function toggleVisible(item: PictureItem) {
-    startTransition(async () => {
-      const res = await fetch(`/api/admin/pictures/${item.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isVisible: !item.is_visible }),
-      });
-      if (!res.ok) {
-        toast.error("Sichtbarkeit konnte nicht geändert werden");
-        return;
-      }
-      setItems((prev) =>
-        prev.map((row) =>
-          row.id === item.id ? { ...row, is_visible: !item.is_visible } : row,
-        ),
-      );
-    });
-  }
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -255,30 +235,17 @@ export function PicturesPanel() {
                 onOpen={() => setLightboxIndex(index)}
               />
               <div className="space-y-2 p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-[#1f1f23]">
-                      {item.title}
-                    </p>
-                    <p className="truncate text-xs text-[#8a8478]">
-                      {[item.taken_at, item.stored_file.original_name]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  </div>
-                  {!item.is_visible ? (
-                    <Badge variant="warning">Verborgen</Badge>
-                  ) : null}
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-[#1f1f23]">
+                    {item.title}
+                  </p>
+                  <p className="truncate text-xs text-[#8a8478]">
+                    {[item.taken_at, item.stored_file.original_name]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => toggleVisible(item)}
-                    disabled={pending}
-                  >
-                    {item.is_visible ? "Verbergen" : "Sichtbarmachen"}
-                  </Button>
+                <div className="inline-flex items-center gap-1.5">
                   <AdminEditButton onClick={() => openEdit(item)} />
                   <AdminDeleteButton
                     iconOnly

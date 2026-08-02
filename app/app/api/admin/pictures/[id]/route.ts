@@ -36,7 +36,6 @@ export async function PATCH(request: Request, { params }: Params) {
     title?: string;
     caption?: string | null;
     takenAt?: string | null;
-    isVisible?: boolean;
     sortOrder?: number;
   };
 
@@ -63,7 +62,6 @@ export async function PATCH(request: Request, { params }: Params) {
               : null,
           }
         : {}),
-      ...(body.isVisible !== undefined ? { isVisible: body.isVisible } : {}),
       ...(body.sortOrder !== undefined ? { sortOrder: body.sortOrder } : {}),
     },
     include: {

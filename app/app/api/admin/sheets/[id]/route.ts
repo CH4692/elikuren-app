@@ -38,7 +38,6 @@ export async function PATCH(request: Request, { params }: Params) {
     composer?: string | null;
     voiceGroup?: VoiceGroup | null;
     accessScope?: FileAccessScope;
-    isVisible?: boolean;
   };
 
   const title =
@@ -60,7 +59,6 @@ export async function PATCH(request: Request, { params }: Params) {
           : undefined,
       voiceGroup: body.voiceGroup === undefined ? undefined : body.voiceGroup,
       accessScope: body.accessScope,
-      isVisible: body.isVisible,
     },
     include: {
       storedFile: {

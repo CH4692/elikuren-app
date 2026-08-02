@@ -26,7 +26,6 @@ export async function POST(request: Request) {
     date?: string | null;
     isCurrent?: boolean;
     notes?: string | null;
-    isVisible?: boolean;
   };
 
   try {
@@ -36,7 +35,6 @@ export async function POST(request: Request) {
       date: body.date,
       isCurrent: body.isCurrent,
       notes: body.notes,
-      isVisible: body.isVisible,
     });
     return NextResponse.json(serializeConcert(concert), { status: 201 });
   } catch (error) {

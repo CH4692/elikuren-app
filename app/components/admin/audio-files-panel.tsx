@@ -205,30 +205,11 @@ export function AudioFilesPanel() {
     });
   }
 
-  function toggleVisible(item: AudioItem) {
-    startTransition(async () => {
-      const res = await fetch(`/api/admin/audio/${item.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isVisible: !item.is_visible }),
-      });
-      if (!res.ok) {
-        toast.error("Sichtbarkeit konnte nicht geändert werden");
-        return;
-      }
-      setItems((prev) =>
-        prev.map((row) =>
-          row.id === item.id ? { ...row, is_visible: !item.is_visible } : row,
-        ),
-      );
-    });
-  }
-
   return (
     <div>
       <PageHeader
         title="Audiodateien"
-        description="Übematerial hochladen, Sichtbarkeit steuern und Metadaten bearbeiten."
+        description="Übematerial hochladen und Metadaten bearbeiten."
         actions={
           <Button type="button" onClick={openCreate}>
             <Plus className="size-4" />
@@ -274,7 +255,6 @@ export function AudioFilesPanel() {
                 <TableHead>Komponist</TableHead>
                 <TableHead>Typ</TableHead>
                 <TableHead>Stimme</TableHead>
-                <TableHead>Sichtbar</TableHead>
                 <TableHead className="text-right">Aktionen</TableHead>
               </TableRow>
             </TableHeader>
@@ -290,17 +270,6 @@ export function AudioFilesPanel() {
                   <TableCell>{item.composer || "—"}</TableCell>
                   <TableCell>{audioTypeLabel(item.audio_type)}</TableCell>
                   <TableCell>{voiceLabel(item.voice_group)}</TableCell>
-                  <TableCell>
-                    <label className="inline-flex items-center gap-2 text-sm text-[#5c574e]">
-                      <input
-                        type="checkbox"
-                        checked={item.is_visible}
-                        disabled={pending}
-                        onChange={() => toggleVisible(item)}
-                      />
-                      {item.is_visible ? "Ja" : "Nein"}
-                    </label>
-                  </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex items-center justify-end gap-1.5">
                       <AdminEditButton onClick={() => openEdit(item)} />

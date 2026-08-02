@@ -36,7 +36,6 @@ export async function PATCH(request: Request, { params }: Params) {
     date?: string | null;
     isCurrent?: boolean;
     notes?: string | null;
-    isVisible?: boolean;
   };
 
   try {

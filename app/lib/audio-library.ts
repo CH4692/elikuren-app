@@ -90,7 +90,6 @@ export async function createAudio(input: {
   voiceGroup?: VoiceGroup | null;
   audioType?: AudioType;
   accessScope?: FileAccessScope;
-  isVisible?: boolean;
   concertId?: string | null;
 }) {
   const stored = await prisma.storedFile.findUnique({
@@ -116,7 +115,7 @@ export async function createAudio(input: {
       voiceGroup: input.voiceGroup ?? null,
       audioType: input.audioType ?? "OTHER",
       accessScope: input.accessScope ?? "ALL_MEMBERS",
-      isVisible: input.isVisible !== false,
+      isVisible: true,
       concertId: input.concertId || null,
     },
     include: {

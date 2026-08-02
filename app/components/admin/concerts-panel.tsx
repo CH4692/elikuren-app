@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarDays, Plus } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -30,6 +30,13 @@ import {
   ENSEMBLE_OPTIONS,
 } from "@/lib/voice-options";
 
+type ScoreOption = {
+  id: string;
+  title: string;
+  composer: string;
+  voice_group: string | null;
+};
+
 type ConcertItem = {
   id: string;
   sort_order: number;
@@ -58,16 +65,14 @@ type ConcertForm = {
   date: string;
   isCurrent: boolean;
   notes: string;
-  isVisible: boolean;
 };
 
 type ItemForm = {
   id?: string;
+  scoreId: string;
   title: string;
-  sortOrder: string;
   ensemble: string;
   sheetFileId: string;
-  audioFileId: string;
 };
 
 const selectClass =
@@ -79,19 +84,18 @@ const emptyConcert = (): ConcertForm => ({
   date: "",
   isCurrent: false,
   notes: "",
-  isVisible: true,
 });
 
 const emptyItem = (): ItemForm => ({
+  scoreId: "",
   title: "",
-  sortOrder: "0",
   ensemble: "",
   sheetFileId: "",
-  audioFileId: "",
 });
 
 export function ConcertsPanel() {
   const [items, setItems] = useState<ConcertRow[]>([]);
+  const [scores, setScores] = useState<ScoreOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
@@ -100,6 +104,7 @@ export function ConcertsPanel() {
   const [detail, setDetail] = useState<ConcertRow | null>(null);
   const [itemForm, setItemForm] = useState<ItemForm>(emptyItem);
   const [itemDrawerOpen, setItemDrawerOpen] = useState(false);
+  const [reorderMode, setReorderMode] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -118,6 +123,17 @@ export function ConcertsPanel() {
     }
   }
 
+  async function loadScores() {
+    try {
+      const res = await fetch("/api/admin/scores");
+      if (!res.ok) return;
+      const data = (await res.json()) as { items: ScoreOption[] };
+      setScores(data.items);
+    } catch {
+      /* ignore — picker stays empty */
+    }
+  }
+
   async function loadDetail(id: string) {
     const res = await fetch(`/api/admin/concerts/${id}`);
     if (!res.ok) {
@@ -130,6 +146,7 @@ export function ConcertsPanel() {
 
   useEffect(() => {
     void load();
+    void loadScores();
   }, []);
 
   function openCreate() {
@@ -144,7 +161,6 @@ export function ConcertsPanel() {
       date: row.date ?? "",
       isCurrent: row.is_current,
       notes: row.notes ?? "",
-      isVisible: row.is_visible,
     });
     setEditTarget(row);
   }
@@ -161,7 +177,6 @@ export function ConcertsPanel() {
         date: form.date || null,
         isCurrent: form.isCurrent,
         notes: form.notes.trim() || null,
-        isVisible: form.isVisible,
       };
       const res = await fetch(
         isCreate ? "/api/admin/concerts" : `/api/admin/concerts/${editTarget!.id}`,
@@ -187,23 +202,49 @@ export function ConcertsPanel() {
   }
 
   function openProgram(row: ConcertRow) {
+    setReorderMode(false);
     void loadDetail(row.id);
+  }
+
+  function closeProgram() {
+    setDetail(null);
+    setReorderMode(false);
   }
 
   function openItemEdit(item?: ConcertItem) {
     if (item) {
       setItemForm({
         id: item.id,
+        scoreId: item.sheet_file_id ?? "",
         title: item.title,
-        sortOrder: String(item.sort_order),
         ensemble: item.ensemble ?? "",
         sheetFileId: item.sheet_file_id ?? "",
-        audioFileId: item.audio_file_id ?? "",
       });
     } else {
       setItemForm(emptyItem());
     }
+    void loadScores();
     setItemDrawerOpen(true);
+  }
+
+  function applyScoreSelection(scoreId: string) {
+    if (!scoreId) {
+      setItemForm((prev) => ({
+        ...prev,
+        scoreId: "",
+        sheetFileId: "",
+      }));
+      return;
+    }
+    const score = scores.find((row) => row.id === scoreId);
+    if (!score) return;
+    setItemForm((prev) => ({
+      ...prev,
+      scoreId: score.id,
+      sheetFileId: score.id,
+      title: score.title,
+      ensemble: score.voice_group ?? prev.ensemble,
+    }));
   }
 
   function saveItem() {
@@ -219,10 +260,9 @@ export function ConcertsPanel() {
         body: JSON.stringify({
           id: itemForm.id,
           title: itemForm.title.trim(),
-          sortOrder: Number(itemForm.sortOrder) || 0,
           ensemble: itemForm.ensemble || null,
           sheetFileId: itemForm.sheetFileId.trim() || null,
-          audioFileId: itemForm.audioFileId.trim() || null,
+          audioFileId: null,
         }),
       });
       if (!res.ok) {
@@ -255,6 +295,40 @@ export function ConcertsPanel() {
     });
   }
 
+  function moveItem(itemId: string, direction: -1 | 1) {
+    if (!detail?.items) return;
+    const ordered = [...detail.items].sort(
+      (a, b) => a.sort_order - b.sort_order,
+    );
+    const index = ordered.findIndex((row) => row.id === itemId);
+    const next = index + direction;
+    if (index < 0 || next < 0 || next >= ordered.length) return;
+
+    const swapped = [...ordered];
+    const tmp = swapped[index]!;
+    swapped[index] = swapped[next]!;
+    swapped[next] = tmp;
+    const orderedIds = swapped.map((row) => row.id);
+
+    setDetail({
+      ...detail,
+      items: swapped.map((row, i) => ({ ...row, sort_order: i })),
+    });
+
+    startTransition(async () => {
+      const res = await fetch(`/api/admin/concerts/${detail.id}/items`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+      if (!res.ok) {
+        toast.error("Reihenfolge konnte nicht gespeichert werden");
+        await loadDetail(detail.id);
+        return;
+      }
+    });
+  }
+
   function confirmDelete() {
     if (!deleteId) return;
     startTransition(async () => {
@@ -266,11 +340,15 @@ export function ConcertsPanel() {
         return;
       }
       toast.success("Konzert gelöscht");
-      if (detail?.id === deleteId) setDetail(null);
+      if (detail?.id === deleteId) closeProgram();
       setDeleteId(null);
       await load(search || undefined);
     });
   }
+
+  const programItems = [...(detail?.items ?? [])].sort(
+    (a, b) => a.sort_order - b.sort_order,
+  );
 
   return (
     <div className="space-y-6">
@@ -301,6 +379,105 @@ export function ConcertsPanel() {
         }
       />
 
+      {detail ? (
+        <section className="space-y-3 rounded-2xl border border-[#d9d2c4] bg-white p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-heading text-xl font-semibold text-[#1f1f23]">
+                Programm: {detail.title}
+              </h2>
+              <p className="text-sm text-[#5c574e]">
+                Punkte aus dem Notenkatalog hinzufügen und die Reihenfolge
+                anpassen.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={() => openItemEdit()}>
+                <Plus className="size-4" />
+                Programmpunkt
+              </Button>
+              <Button
+                size="sm"
+                variant={reorderMode ? "secondary" : "outline"}
+                disabled={programItems.length < 2}
+                onClick={() => setReorderMode((v) => !v)}
+              >
+                {reorderMode ? "Reihenfolge fertig" : "Reihenfolge bearbeiten"}
+              </Button>
+              <Button size="sm" variant="secondary" onClick={closeProgram}>
+                Schließen
+              </Button>
+            </div>
+          </div>
+          {programItems.length === 0 ? (
+            <p className="text-sm text-[#5c574e]">Noch keine Programmpunkte.</p>
+          ) : (
+            <ul className="space-y-2">
+              {programItems.map((item, index) => (
+                <li
+                  key={item.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#ebe4d8] px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-[#1f1f23]">
+                      {index + 1}. {item.title}
+                    </p>
+                    <p className="text-xs text-[#8a8478]">
+                      {item.ensemble
+                        ? (ENSEMBLE_LABELS[item.ensemble] ?? item.ensemble)
+                        : "Elikuren / alle"}
+                      {item.sheet_file_id ? " · Note verknüpft" : ""}
+                    </p>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5">
+                    {reorderMode ? (
+                      <>
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="ghost"
+                          disabled={pending || index === 0}
+                          onClick={() => moveItem(item.id, -1)}
+                          aria-label="Nach oben"
+                          title="Nach oben"
+                        >
+                          <ArrowUp />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="ghost"
+                          disabled={
+                            pending || index === programItems.length - 1
+                          }
+                          onClick={() => moveItem(item.id, 1)}
+                          aria-label="Nach unten"
+                          title="Nach unten"
+                        >
+                          <ArrowDown />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <AdminEditButton
+                          onClick={() => openItemEdit(item)}
+                          aria-label="Programmpunkt bearbeiten"
+                        />
+                        <AdminDeleteButton
+                          iconOnly
+                          onClick={() => deleteItem(item.id)}
+                          label="Programmpunkt löschen"
+                        />
+                      </>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : null}
+
       {loading ? (
         <div className="space-y-2">
           <Skeleton className="h-12 w-full" />
@@ -328,16 +505,16 @@ export function ConcertsPanel() {
             </TableHeader>
             <TableBody>
               {items.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  data-state={detail?.id === row.id ? "selected" : undefined}
+                >
                   <TableCell>
                     <div className="space-y-1">
                       <p className="font-medium text-[#1f1f23]">{row.title}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {row.is_current ? (
                           <Badge variant="success">Aktuell</Badge>
-                        ) : null}
-                        {!row.is_visible ? (
-                          <Badge variant="warning">Verborgen</Badge>
                         ) : null}
                         <span className="text-xs text-[#8a8478]">{row.slug}</span>
                       </div>
@@ -350,7 +527,9 @@ export function ConcertsPanel() {
                     <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
                       <Button
                         size="sm"
-                        variant="secondary"
+                        variant={
+                          detail?.id === row.id ? "default" : "secondary"
+                        }
                         onClick={() => openProgram(row)}
                       >
                         Programm
@@ -368,70 +547,6 @@ export function ConcertsPanel() {
           </Table>
         </div>
       )}
-
-      {detail ? (
-        <section className="space-y-3 rounded-2xl border border-[#d9d2c4] bg-white p-4 sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="font-heading text-xl font-semibold text-[#1f1f23]">
-                Programm: {detail.title}
-              </h2>
-              <p className="text-sm text-[#5c574e]">
-                Reihenfolge, Ensemble und optionale Datei-IDs (Noten/Audio).
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => openItemEdit()}>
-                <Plus className="size-4" />
-                Programmpunkt
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setDetail(null)}
-              >
-                Schließen
-              </Button>
-            </div>
-          </div>
-          {(detail.items ?? []).length === 0 ? (
-            <p className="text-sm text-[#5c574e]">Noch keine Programmpunkte.</p>
-          ) : (
-            <ul className="space-y-2">
-              {(detail.items ?? []).map((item) => (
-                <li
-                  key={item.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#ebe4d8] px-3 py-2.5"
-                >
-                  <div>
-                    <p className="font-medium text-[#1f1f23]">
-                      {item.sort_order}. {item.title}
-                    </p>
-                    <p className="text-xs text-[#8a8478]">
-                      {item.ensemble
-                        ? (ENSEMBLE_LABELS[item.ensemble] ?? item.ensemble)
-                        : "Elikuren / alle"}
-                      {item.sheet_file_id ? " · Note verknüpft" : ""}
-                      {item.audio_file_id ? " · Audio verknüpft" : ""}
-                    </p>
-                  </div>
-                  <div className="inline-flex items-center gap-1.5">
-                    <AdminEditButton
-                      onClick={() => openItemEdit(item)}
-                      aria-label="Programmpunkt bearbeiten"
-                    />
-                    <AdminDeleteButton
-                      iconOnly
-                      onClick={() => deleteItem(item.id)}
-                      label="Programmpunkt löschen"
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ) : null}
 
       <FormDrawer
         open={createOpen || Boolean(editTarget)}
@@ -457,23 +572,32 @@ export function ConcertsPanel() {
       >
         <div className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="ci-score">Note & PDF</Label>
+            <select
+              id="ci-score"
+              className={selectClass}
+              value={itemForm.scoreId}
+              onChange={(e) => applyScoreSelection(e.target.value)}
+            >
+              <option value="">Note aus Katalog wählen…</option>
+              {scores.map((score) => (
+                <option key={score.id} value={score.id}>
+                  {score.title}
+                  {score.composer ? ` — ${score.composer}` : ""}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-[#8a8478]">
+              Auswahl übernimmt Titel, Verknüpfung und Ensemble aus dem Katalog.
+            </p>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="ci-title">Titel</Label>
             <Input
               id="ci-title"
               value={itemForm.title}
               onChange={(e) =>
                 setItemForm({ ...itemForm, title: e.target.value })
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="ci-order">Reihenfolge</Label>
-            <Input
-              id="ci-order"
-              type="number"
-              value={itemForm.sortOrder}
-              onChange={(e) =>
-                setItemForm({ ...itemForm, sortOrder: e.target.value })
               }
             />
           </div>
@@ -493,28 +617,6 @@ export function ConcertsPanel() {
                 </option>
               ))}
             </select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="ci-sheet">Sheet-File-ID (optional)</Label>
-            <Input
-              id="ci-sheet"
-              value={itemForm.sheetFileId}
-              onChange={(e) =>
-                setItemForm({ ...itemForm, sheetFileId: e.target.value })
-              }
-              placeholder="cuid der Note"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="ci-audio">Audio-File-ID (optional)</Label>
-            <Input
-              id="ci-audio"
-              value={itemForm.audioFileId}
-              onChange={(e) =>
-                setItemForm({ ...itemForm, audioFileId: e.target.value })
-              }
-              placeholder="cuid der Audiodatei"
-            />
           </div>
         </div>
       </FormDrawer>
@@ -585,14 +687,6 @@ function ConcertFields({
           onChange={(e) => onChange({ ...form, isCurrent: e.target.checked })}
         />
         Als aktuelles Konzert markieren
-      </label>
-      <label className="flex items-center gap-2 text-sm text-[#5c574e]">
-        <input
-          type="checkbox"
-          checked={form.isVisible}
-          onChange={(e) => onChange({ ...form, isVisible: e.target.checked })}
-        />
-        Für Mitglieder sichtbar
       </label>
     </div>
   );

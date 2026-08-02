@@ -80,7 +80,6 @@ export async function createScore(input: {
   composer?: string | null;
   voiceGroup?: VoiceGroup | null;
   accessScope?: FileAccessScope;
-  isVisible?: boolean;
 }) {
   const stored = await prisma.storedFile.findUnique({
     where: { id: input.storedFileId },
@@ -104,7 +103,7 @@ export async function createScore(input: {
       storedFileId: stored.id,
       voiceGroup: input.voiceGroup ?? null,
       accessScope: input.accessScope ?? "ALL_MEMBERS",
-      isVisible: input.isVisible !== false,
+      isVisible: true,
     },
     include: {
       storedFile: {

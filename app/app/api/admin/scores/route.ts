@@ -23,7 +23,6 @@ export async function POST(request: Request) {
     composer?: string | null;
     voiceGroup?: VoiceGroup | null;
     accessScope?: FileAccessScope;
-    isVisible?: boolean;
   };
 
   if (!body.storedFileId) {
@@ -40,7 +39,6 @@ export async function POST(request: Request) {
       composer: body.composer,
       voiceGroup: body.voiceGroup,
       accessScope: body.accessScope,
-      isVisible: body.isVisible,
     });
     return NextResponse.json(serializeScore(sheet), { status: 201 });
   } catch (error) {
