@@ -19,7 +19,8 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "npx tsx prisma/seed.ts",
     "import:media": "npx tsx scripts/import-media.ts",
-    "import:media:apply": "npx tsx scripts/import-media.ts --apply"
+    "import:media:apply": "npx tsx scripts/import-media.ts --apply",
+    "import:members": "npx tsx scripts/import-members-xlsx.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -64,6 +65,7 @@
     "prisma": "^7.9.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "xlsx": "^0.18.5"
   }
 }
