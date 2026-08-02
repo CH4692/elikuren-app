@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -214,15 +213,6 @@ export function ProfileForm({ initialUser }: ProfileFormProps) {
       <div className="flex flex-wrap gap-3 pt-2">
         <Button type="submit" size="lg" disabled={saving || !dirty}>
           {saving ? "Speichert…" : "Profil speichern"}
-        </Button>
-        <Button
-          type="button"
-          size="lg"
-          variant="outline"
-          className="border-[#cfc8bb] bg-transparent text-[#1f1f23] hover:bg-[#efe9df]"
-          onClick={() => signOut({ callbackUrl: "/home" })}
-        >
-          Abmelden
         </Button>
       </div>
     </form>

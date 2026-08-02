@@ -26,11 +26,7 @@ export default async function ProfilePage() {
         description="Verwalte deine Mitgliedsdaten für den Kammerchor Elikuren."
         actions={
           hasAdminAreaAccess(user.role) ? (
-            <Button
-              asChild
-              size="xl"
-              className="bg-[#C8A24D] text-[#1f1f23] hover:bg-[#d4b35e]"
-            >
+            <Button asChild variant="outline" className="border-[#d9d2c4]">
               <Link href="/admin">Zur Verwaltung</Link>
             </Button>
           ) : null

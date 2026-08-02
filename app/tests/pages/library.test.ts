@@ -21,6 +21,7 @@ test.describe("Mitglieder-Bibliothek", () => {
     await expect(
       page.getByRole("heading", { name: "Audio & Üben", exact: true }),
     ).toBeVisible();
+    await expect(page.getByText("Mitgliederbereich")).toBeVisible();
   });
 
   test("library scores and audio APIs work for members", async ({ page }) => {

@@ -8,6 +8,10 @@ test.describe("Profil UI", () => {
     await loginAsMember(page);
     await page.goto("/profile", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Mein Profil" })).toBeVisible();
+    await expect(page.getByText("Mitgliederbereich")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Abmelden" }),
+    ).toHaveCount(0);
 
     const phone = `+49 ${Date.now().toString().slice(-8)}`;
     await page.locator("#phone").fill(phone);
