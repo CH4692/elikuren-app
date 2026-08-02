@@ -21,7 +21,7 @@ export function MemberShell({
     <div className="min-h-dvh bg-[var(--admin-canvas,#f7f4ee)] text-[#1f1f23]">
       <main
         className={cn(
-          "mx-auto px-4 pb-16 pt-28 sm:px-6",
+          "mx-auto px-4 pb-16 pt-20 sm:px-6 lg:pt-28",
           narrow ? "max-w-3xl" : "max-w-5xl",
           className,
         )}

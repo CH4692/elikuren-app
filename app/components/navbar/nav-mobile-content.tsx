@@ -22,24 +22,25 @@ export default function NavbarMobileContent({}) {
 
   return (
     <>
-      <Logo setOpen={setOpen} />
-      <div className="flex items-center gap-3">
+      <Logo setOpen={setOpen} compact />
+      <div className="flex items-center gap-2">
         <Sheet open={open} onOpenChange={setOpen}>
           <button
             type="button"
             aria-label="Menü öffnen"
             onClick={() => setOpen(true)}
+            className="-mr-1"
           >
             <MenuToggle open={open} />
           </button>
 
           <SheetContent
             side="top"
-            className="bg-background border-background h-full text-foreground"
+            className="inset-x-0 top-0 h-dvh max-h-dvh gap-0 border-background bg-background p-0 text-foreground data-[side=top]:h-dvh"
           >
             <ClosMenu open={open} setOpen={setOpen} />
 
-            <nav className="lg:mt-8 flex flex-col gap-4 px-2 py-4">
+            <nav className="flex flex-col gap-2 overflow-y-auto px-3 pb-8 pt-1">
               <Link href="/about" onNavigate={handleClose} className={linksClass}>
                 Über den Verein
               </Link>
