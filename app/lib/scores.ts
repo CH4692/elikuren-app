@@ -1,3 +1,4 @@
+import { formatConcertLabel } from "@/lib/concerts";
 import { prisma } from "@/lib/db";
 import type { FileAccessScope, VoiceGroup } from "@/lib/generated/prisma/client";
 
@@ -12,6 +13,7 @@ const storedFileSelect = {
 const concertSelect = {
   id: true,
   title: true,
+  date: true,
 } as const;
 
 export function serializeScore(
@@ -33,9 +35,13 @@ export function serializeScore(
       sizeBytes: number;
       uploadStatus: string;
     };
-    concert?: { id: string; title: string } | null;
+    concert?: { id: string; title: string; date: Date | null } | null;
   },
 ) {
+  const concertDate = sheet.concert?.date
+    ? sheet.concert.date.toISOString().slice(0, 10)
+    : null;
+  const concertYear = concertDate ? Number(concertDate.slice(0, 4)) : null;
   return {
     id: sheet.id,
     title: sheet.title,
@@ -45,7 +51,17 @@ export function serializeScore(
     is_visible: sheet.isVisible,
     concert_id: sheet.concertId ?? sheet.concert?.id ?? null,
     concert: sheet.concert
-      ? { id: sheet.concert.id, title: sheet.concert.title }
+      ? {
+          id: sheet.concert.id,
+          title: sheet.concert.title,
+          year: concertYear,
+          date: concertDate,
+          label: formatConcertLabel({
+            title: sheet.concert.title,
+            year: concertYear,
+            date: concertDate,
+          }),
+        }
       : null,
     stored_file: {
       id: sheet.storedFile.id,

@@ -1,3 +1,4 @@
+import { formatConcertLabel } from "@/lib/concerts";
 import { prisma } from "@/lib/db";
 import type {
   AudioType,
@@ -16,6 +17,7 @@ const storedFileSelect = {
 const concertSelect = {
   id: true,
   title: true,
+  date: true,
 } as const;
 
 export function serializeAudio(
@@ -38,9 +40,13 @@ export function serializeAudio(
       sizeBytes: number;
       uploadStatus: string;
     };
-    concert?: { id: string; title: string } | null;
+    concert?: { id: string; title: string; date: Date | null } | null;
   },
 ) {
+  const concertDate = audio.concert?.date
+    ? audio.concert.date.toISOString().slice(0, 10)
+    : null;
+  const concertYear = concertDate ? Number(concertDate.slice(0, 4)) : null;
   return {
     id: audio.id,
     title: audio.title,
@@ -52,7 +58,17 @@ export function serializeAudio(
     is_visible: audio.isVisible,
     concert_id: audio.concertId ?? audio.concert?.id ?? null,
     concert: audio.concert
-      ? { id: audio.concert.id, title: audio.concert.title }
+      ? {
+          id: audio.concert.id,
+          title: audio.concert.title,
+          year: concertYear,
+          date: concertDate,
+          label: formatConcertLabel({
+            title: audio.concert.title,
+            year: concertYear,
+            date: concertDate,
+          }),
+        }
       : null,
     stored_file: {
       id: audio.storedFile.id,

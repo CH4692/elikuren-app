@@ -1,6 +1,14 @@
 "use client";
 
-import { ArrowDown, ArrowUp, CalendarDays, Plus } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Calendar,
+  CalendarDays,
+  MapPin,
+  Music2,
+  Plus,
+} from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -95,7 +103,7 @@ const emptyConcert = (): ConcertForm => ({
 });
 
 function formatConcertDate(date: string | null) {
-  if (!date) return "—";
+  if (!date) return null;
   try {
     return new Date(`${date}T00:00:00`).toLocaleDateString("de-DE", {
       day: "2-digit",
@@ -105,6 +113,46 @@ function formatConcertDate(date: string | null) {
   } catch {
     return date;
   }
+}
+
+function ConcertDateLocation({
+  date,
+  location,
+  className,
+}: {
+  date: string | null;
+  location: string | null;
+  className?: string;
+}) {
+  const formatted = formatConcertDate(date);
+  if (!formatted && !location) return null;
+
+  return (
+    <p
+      className={
+        className ??
+        "flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[#5c574e]"
+      }
+    >
+      {formatted ? (
+        <span className="inline-flex items-center gap-1">
+          <Calendar className="size-3.5 shrink-0 text-[#C8A24D]" aria-hidden />
+          <span>{formatted}</span>
+        </span>
+      ) : null}
+      {formatted && location ? (
+        <span className="text-[#c4bbaa]" aria-hidden>
+          •
+        </span>
+      ) : null}
+      {location ? (
+        <span className="inline-flex items-center gap-1">
+          <MapPin className="size-3.5 shrink-0 text-[#C8A24D]" aria-hidden />
+          <span>{location}</span>
+        </span>
+      ) : null}
+    </p>
+  );
 }
 
 const emptyItem = (): ItemForm => ({
@@ -417,40 +465,44 @@ export function ConcertsPanel() {
       />
 
       <section className="rounded-2xl border border-[#d9d2c4] bg-white p-4 sm:p-5">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-3 flex items-center gap-2">
+          <Music2 className="size-5 text-[#C8A24D]" aria-hidden />
           <h2 className="font-heading text-lg font-semibold text-[#1f1f23]">
             Aktives Konzert
           </h2>
         </div>
         {activeConcert ? (
-          <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-[#C8A24D]/40 bg-[#C8A24D]/10 px-4 py-4">
-            <div className="min-w-0 space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="font-heading text-xl font-semibold text-[#1f1f23]">
+          <div className="space-y-4 rounded-xl border border-[#C8A24D]/40 bg-[#C8A24D]/10 px-4 py-4 sm:px-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0 space-y-2">
+                <p className="font-heading text-2xl font-semibold text-[#1f1f23]">
                   {activeConcert.title}
                 </p>
-                <Badge variant="success">Aktiv</Badge>
-                {activeConcert.year ? (
-                  <Badge
-                    variant="default"
-                    className="rounded-md px-2.5 py-1 text-sm font-semibold"
-                  >
-                    {activeConcert.year}
-                  </Badge>
-                ) : null}
+                <ConcertDateLocation
+                  date={activeConcert.date}
+                  location={activeConcert.location}
+                  className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-[#3f3a34]"
+                />
+                <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                  <Badge variant="success">Aktiv</Badge>
+                  {activeConcert.year ? (
+                    <Badge
+                      variant="default"
+                      className="rounded-md px-2.5 py-1 text-sm font-semibold tabular-nums"
+                    >
+                      {activeConcert.year}
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="max-w-xl text-sm text-[#5c574e]">
+                  Dieses Konzert wird aktuell für Programme, Noten, Audio und
+                  Mitschnitte verwendet.
+                </p>
               </div>
-              <p className="text-sm text-[#5c574e]">
-                {[
-                  formatConcertDate(activeConcert.date),
-                  activeConcert.location,
-                ]
-                  .filter((v) => v && v !== "—")
-                  .join(" · ") || "Kein Datum hinterlegt"}
-              </p>
+              <Button type="button" onClick={openActiveDialog}>
+                Aktives Konzert festlegen
+              </Button>
             </div>
-            <Button type="button" onClick={openActiveDialog}>
-              Aktives Konzert festlegen
-            </Button>
           </div>
         ) : (
           <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-dashed border-[#d9d2c4] bg-[#f7f4ee] px-4 py-4">
@@ -459,8 +511,8 @@ export function ConcertsPanel() {
                 Kein aktives Konzert festgelegt
               </p>
               <p className="max-w-xl text-sm text-[#5c574e]">
-                Das aktive Konzert steuert Zuordnungen für Noten, Audio und
-                weitere Bereiche im Mitgliederbereich.
+                Das aktive Konzert wird für Programme, Noten, Audio und
+                Mitschnitte verwendet.
               </p>
             </div>
             <Button type="button" onClick={openActiveDialog}>
@@ -600,8 +652,7 @@ export function ConcertsPanel() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[88px]">Jahr</TableHead>
-                <TableHead>Titel</TableHead>
-                <TableHead>Datum</TableHead>
+                <TableHead>Konzert</TableHead>
                 <TableHead>Programm</TableHead>
                 <TableHead>Mitschnitte</TableHead>
                 <TableHead className="w-[1%] whitespace-nowrap text-right">
@@ -629,22 +680,19 @@ export function ConcertsPanel() {
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      <p className="font-medium text-[#1f1f23]">{row.title}</p>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium text-[#1f1f23]">{row.title}</p>
                         {row.is_current ? (
                           <Badge variant="success">Aktiv</Badge>
                         ) : null}
-                        {row.location ? (
-                          <span className="text-xs text-[#8a8478]">
-                            {row.location}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-[#8a8478]">{row.slug}</span>
-                        )}
                       </div>
+                      <ConcertDateLocation
+                        date={row.date}
+                        location={row.location}
+                        className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[#5c574e]"
+                      />
                     </div>
                   </TableCell>
-                  <TableCell>{formatConcertDate(row.date)}</TableCell>
                   <TableCell>{row.item_count}</TableCell>
                   <TableCell>{row.recording_count}</TableCell>
                   <TableCell className="text-right">
@@ -796,11 +844,11 @@ export function ConcertsPanel() {
                       </Badge>
                     ) : null}
                   </span>
-                  <span className="block text-xs text-[#8a8478]">
-                    {[formatConcertDate(row.date), row.location]
-                      .filter((v) => v && v !== "—")
-                      .join(" · ") || "Kein Datum"}
-                  </span>
+                  <ConcertDateLocation
+                    date={row.date}
+                    location={row.location}
+                    className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[#8a8478]"
+                  />
                 </span>
               </label>
             ))}

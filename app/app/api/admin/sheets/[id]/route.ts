@@ -24,7 +24,7 @@ export async function PATCH(request: Request, { params }: Params) {
           uploadStatus: true,
         },
       },
-      concert: { select: { id: true, title: true } },
+      concert: { select: { id: true, title: true, date: true } },
     },
   });
   if (!existing) {
@@ -79,7 +79,7 @@ export async function PATCH(request: Request, { params }: Params) {
           uploadStatus: true,
         },
       },
-      concert: { select: { id: true, title: true } },
+      concert: { select: { id: true, title: true, date: true } },
     },
   });
 

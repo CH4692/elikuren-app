@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatConcertLabel } from "@/lib/concerts";
 import { uploadFileViaPresign } from "@/lib/upload-client";
 import {
   AUDIO_TYPE_OPTIONS,
@@ -33,6 +34,9 @@ import {
 type ConcertOption = {
   id: string;
   title: string;
+  year?: number | null;
+  date?: string | null;
+  label?: string;
 };
 
 type AudioItem = {
@@ -45,7 +49,7 @@ type AudioItem = {
   duration_seconds: number | null;
   is_visible: boolean;
   concert_id: string | null;
-  concert: ConcertOption | null;
+  concert: (ConcertOption & { label?: string }) | null;
   stored_file: {
     id: string;
     original_name: string;
@@ -300,7 +304,12 @@ export function AudioFilesPanel() {
                     </div>
                   </TableCell>
                   <TableCell>{item.composer || "—"}</TableCell>
-                  <TableCell>{item.concert?.title ?? "—"}</TableCell>
+                  <TableCell>
+                    {item.concert
+                      ? item.concert.label ??
+                        formatConcertLabel(item.concert)
+                      : "—"}
+                  </TableCell>
                   <TableCell>{audioTypeLabel(item.audio_type)}</TableCell>
                   <TableCell>{besetzungLabel(item.voice_group)}</TableCell>
                   <TableCell className="text-right">
@@ -418,7 +427,7 @@ function AudioFormFields({
           <option value="">Konzert wählen…</option>
           {concerts.map((concert) => (
             <option key={concert.id} value={concert.id}>
-              {concert.title}
+              {concert.label ?? formatConcertLabel(concert)}
             </option>
           ))}
         </select>

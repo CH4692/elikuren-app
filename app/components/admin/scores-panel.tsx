@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatConcertLabel } from "@/lib/concerts";
 import { uploadFileViaPresign } from "@/lib/upload-client";
 import {
   BESETZUNG_OPTIONS,
@@ -33,6 +34,9 @@ import {
 type ConcertOption = {
   id: string;
   title: string;
+  year?: number | null;
+  date?: string | null;
+  label?: string;
 };
 
 type ScoreItem = {
@@ -43,7 +47,7 @@ type ScoreItem = {
   access_scope: string;
   is_visible: boolean;
   concert_id: string | null;
-  concert: ConcertOption | null;
+  concert: (ConcertOption & { label?: string }) | null;
   stored_file: {
     id: string;
     original_name: string;
@@ -295,7 +299,12 @@ export function ScoresPanel() {
                     </div>
                   </TableCell>
                   <TableCell>{item.composer || "—"}</TableCell>
-                  <TableCell>{item.concert?.title ?? "—"}</TableCell>
+                  <TableCell>
+                    {item.concert
+                      ? item.concert.label ??
+                        formatConcertLabel(item.concert)
+                      : "—"}
+                  </TableCell>
                   <TableCell>{besetzungLabel(item.voice_group)}</TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
@@ -435,7 +444,7 @@ function ScoreFormFields({
           <option value="">Konzert wählen…</option>
           {concerts.map((concert) => (
             <option key={concert.id} value={concert.id}>
-              {concert.title}
+              {concert.label ?? formatConcertLabel(concert)}
             </option>
           ))}
         </select>

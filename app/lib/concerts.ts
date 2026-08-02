@@ -13,6 +13,28 @@ function slugify(input: string) {
     .slice(0, 80);
 }
 
+/** Display label for concert assignments, e.g. "Sommerkonzert 2025". */
+export function formatConcertLabel(input: {
+  title: string;
+  year?: number | null;
+  date?: string | Date | null;
+}): string {
+  const title = input.title.trim();
+  let year = input.year ?? null;
+  if (year == null && input.date) {
+    if (typeof input.date === "string") {
+      const parsed = Number(input.date.slice(0, 4));
+      year = Number.isFinite(parsed) ? parsed : null;
+    } else {
+      year = input.date.getUTCFullYear();
+    }
+  }
+  if (year != null && !/\b\d{4}\s*$/.test(title)) {
+    return `${title} ${year}`;
+  }
+  return title;
+}
+
 export async function uniqueConcertSlug(base: string, excludeId?: string) {
   let slug = slugify(base) || "konzert";
   let n = 0;
@@ -141,12 +163,14 @@ export function serializeConcert(concert: {
   _count?: { items: number; recordings: number };
 }) {
   const date = concert.date ? concert.date.toISOString().slice(0, 10) : null;
+  const year = date ? Number(date.slice(0, 4)) : null;
   return {
     id: concert.id,
     title: concert.title,
+    label: formatConcertLabel({ title: concert.title, year, date }),
     slug: concert.slug,
     date,
-    year: date ? Number(date.slice(0, 4)) : null,
+    year,
     location: concert.location ?? null,
     is_current: concert.isCurrent,
     notes: concert.notes,
