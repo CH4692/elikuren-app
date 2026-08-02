@@ -9,7 +9,7 @@ export const inter = Inter({
 export default function NavbarMobile() {
   return (
     <header
-      className={`${inter.variable} flex fixed top-0 left-0 w-full z-50 lg:hidden justify-around items-center p-2 backdrop-blur-md border-b-second-background`}
+      className={`${inter.variable} fixed top-0 left-0 z-50 flex w-full items-center justify-between px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur-md border-b border-second-background/40 lg:hidden`}
     >
       <NavbarMobileContent />
     </header>
