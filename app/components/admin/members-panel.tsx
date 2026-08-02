@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2, Users } from "lucide-react";
+import { Pencil, Users } from "lucide-react";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,7 @@ import { DataTableToolbar } from "@/components/app/data-table-toolbar";
 import { EmptyState } from "@/components/app/empty-state";
 import { FormDrawer } from "@/components/app/form-drawer";
 import { PageHeader } from "@/components/app/page-header";
+import { AdminDeleteButton } from "@/components/admin/admin-delete-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -249,17 +250,10 @@ export function MembersPanel() {
                         <Pencil className="size-3.5 text-[#C8A24D]" />
                         Bearbeiten
                       </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="border-[#d9d2c4] text-red-700"
+                      <AdminDeleteButton
                         onClick={() => setDeleteTarget(item)}
                         aria-label={`${memberName(item)} löschen`}
-                      >
-                        <Trash2 className="size-3.5" />
-                        Löschen
-                      </Button>
+                      />
                     </div>
                   </TableCell>
                 </TableRow>

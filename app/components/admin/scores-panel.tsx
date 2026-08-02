@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, FileMusic, Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, FileMusic, Pencil, Plus } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,7 @@ import { DataTableToolbar } from "@/components/app/data-table-toolbar";
 import { EmptyState } from "@/components/app/empty-state";
 import { FormDrawer } from "@/components/app/form-drawer";
 import { PageHeader } from "@/components/app/page-header";
+import { AdminDeleteButton } from "@/components/admin/admin-delete-button";
 import { PdfPreview } from "@/components/library/pdf-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -318,15 +319,9 @@ export function ScoresPanel() {
                         <Pencil className="size-3.5" />
                         Bearbeiten
                       </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="border-[#d9d2c4] text-red-700"
+                      <AdminDeleteButton
                         onClick={() => setDeleteTarget(item)}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
+                      />
                     </div>
                   </TableCell>
                 </TableRow>

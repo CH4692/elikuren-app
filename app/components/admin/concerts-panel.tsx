@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Pencil, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, Pencil, Plus } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,7 @@ import { DataTableToolbar } from "@/components/app/data-table-toolbar";
 import { EmptyState } from "@/components/app/empty-state";
 import { FormDrawer } from "@/components/app/form-drawer";
 import { PageHeader } from "@/components/app/page-header";
+import { AdminDeleteButton } from "@/components/admin/admin-delete-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -359,14 +360,9 @@ export function ConcertsPanel() {
                       >
                         <Pencil className="size-4" />
                       </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
+                      <AdminDeleteButton
                         onClick={() => setDeleteId(row.id)}
-                        aria-label="Löschen"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
+                      />
                     </div>
                   </TableCell>
                 </TableRow>
@@ -430,13 +426,11 @@ export function ConcertsPanel() {
                     >
                       <Pencil className="size-4" />
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
+                    <AdminDeleteButton
+                      iconOnly
                       onClick={() => deleteItem(item.id)}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
+                      label="Programmpunkt löschen"
+                    />
                   </div>
                 </li>
               ))}
