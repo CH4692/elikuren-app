@@ -68,7 +68,16 @@ type ConcertRow = {
   slug: string;
   date: string | null;
   year: number | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  subtitle: string | null;
+  description: string | null;
   location: string | null;
+  address: string | null;
+  extra_info: string | null;
+  ticket_url: string | null;
+  show_on_website: boolean;
+  needs_starts_at: boolean;
   is_current: boolean;
   notes: string | null;
   is_visible: boolean;
@@ -80,7 +89,15 @@ type ConcertRow = {
 type ConcertForm = {
   title: string;
   date: string;
+  startsAt: string;
+  endsAt: string;
+  subtitle: string;
+  description: string;
   location: string;
+  address: string;
+  extraInfo: string;
+  ticketUrl: string;
+  showOnWebsite: boolean;
   notes: string;
 };
 
@@ -98,7 +115,15 @@ const selectClass =
 const emptyConcert = (): ConcertForm => ({
   title: "",
   date: "",
+  startsAt: "",
+  endsAt: "",
+  subtitle: "",
+  description: "",
   location: "",
+  address: "",
+  extraInfo: "",
+  ticketUrl: "",
+  showOnWebsite: false,
   notes: "",
 });
 
@@ -229,7 +254,15 @@ export function ConcertsPanel() {
     setForm({
       title: row.title,
       date: row.date ?? "",
+      startsAt: row.starts_at ?? "",
+      endsAt: row.ends_at ?? "",
+      subtitle: row.subtitle ?? "",
+      description: row.description ?? "",
       location: row.location ?? "",
+      address: row.address ?? "",
+      extraInfo: row.extra_info ?? "",
+      ticketUrl: row.ticket_url ?? "",
+      showOnWebsite: row.show_on_website,
       notes: row.notes ?? "",
     });
     setEditTarget(row);
@@ -271,11 +304,23 @@ export function ConcertsPanel() {
       toast.error("Titel ist Pflicht");
       return;
     }
+    if (form.showOnWebsite && !form.startsAt) {
+      toast.error("Website-Anzeige braucht eine echte Startzeit (startsAt)");
+      return;
+    }
     startTransition(async () => {
       const payload = {
         title: form.title.trim(),
         date: form.date || null,
+        startsAt: form.startsAt || null,
+        endsAt: form.endsAt || null,
+        subtitle: form.subtitle.trim() || null,
+        description: form.description.trim() || null,
         location: form.location.trim() || null,
+        address: form.address.trim() || null,
+        extraInfo: form.extraInfo.trim() || null,
+        ticketUrl: form.ticketUrl.trim() || null,
+        showOnWebsite: form.showOnWebsite,
         notes: form.notes.trim() || null,
       };
       const res = await fetch(
@@ -907,7 +952,36 @@ function ConcertFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="c-date">Datum</Label>
+        <Label htmlFor="c-subtitle">Untertitel (Website)</Label>
+        <Input
+          id="c-subtitle"
+          value={form.subtitle}
+          onChange={(e) => onChange({ ...form, subtitle: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-starts">Start (Europe/Berlin)</Label>
+        <Input
+          id="c-starts"
+          type="datetime-local"
+          value={form.startsAt}
+          onChange={(e) => onChange({ ...form, startsAt: e.target.value })}
+        />
+        <p className="text-xs text-[#8a8478]">
+          Pflicht für Website-Anzeige — keine Platzhalter-Uhrzeit.
+        </p>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-ends">Ende (optional)</Label>
+        <Input
+          id="c-ends"
+          type="datetime-local"
+          value={form.endsAt}
+          onChange={(e) => onChange({ ...form, endsAt: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-date">Bibliotheks-Datum (optional)</Label>
         <Input
           id="c-date"
           type="date"
@@ -916,16 +990,60 @@ function ConcertFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="c-location">Ort (optional)</Label>
+        <Label htmlFor="c-location">Ort</Label>
         <Input
           id="c-location"
           value={form.location}
           onChange={(e) => onChange({ ...form, location: e.target.value })}
-          placeholder="z. B. Wien"
+          placeholder="z. B. Kath. Pfarrkirche St. Bonifatius"
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="c-notes">Notizen</Label>
+        <Label htmlFor="c-address">Adresse</Label>
+        <Input
+          id="c-address"
+          value={form.address}
+          onChange={(e) => onChange({ ...form, address: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-description">Beschreibung (Website)</Label>
+        <Textarea
+          id="c-description"
+          value={form.description}
+          onChange={(e) => onChange({ ...form, description: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-extra">Zusatzinfo</Label>
+        <Textarea
+          id="c-extra"
+          value={form.extraInfo}
+          onChange={(e) => onChange({ ...form, extraInfo: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-ticket">Ticket-URL</Label>
+        <Input
+          id="c-ticket"
+          value={form.ticketUrl}
+          onChange={(e) => onChange({ ...form, ticketUrl: e.target.value })}
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          id="c-web"
+          type="checkbox"
+          checked={form.showOnWebsite}
+          onChange={(e) =>
+            onChange({ ...form, showOnWebsite: e.target.checked })
+          }
+          className="size-4 rounded border-[#d9d2c4]"
+        />
+        <Label htmlFor="c-web">Auf Website anzeigen</Label>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-notes">Interne Notizen</Label>
         <Textarea
           id="c-notes"
           value={form.notes}

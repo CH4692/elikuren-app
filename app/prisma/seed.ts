@@ -6,6 +6,7 @@ import { Pool } from "pg";
 
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { pgSslForConnectionString } from "../lib/pg-connection";
+import { seedSiteContent } from "../lib/site-content/seed";
 
 loadEnv({ path: ".env.local" });
 loadEnv({ path: ".env" });
@@ -56,11 +57,28 @@ async function main() {
       },
     });
 
+    await seedSiteContent(prisma);
+
+    // Marketing fields only when still empty — never invent fake times.
+    // Known Herbstkonzert time is set by SQL migration when matching rows exist.
+    await prisma.concert.updateMany({
+      where: {
+        startsAt: { not: null },
+        showOnWebsite: false,
+        OR: [
+          { title: { contains: "Herbst", mode: "insensitive" } },
+          { title: { contains: "Winterreise", mode: "insensitive" } },
+        ],
+      },
+      data: { showOnWebsite: true },
+    });
+
     console.log("Admin seeded successfully");
     console.log(`id: ${user.id}`);
     console.log(`email: ${email}`);
     console.log(`password: ${password}`);
     console.log("Login: /auth/sign-in (E-Mail + Passwort)");
+    console.log("Site content pages/sections ensured (idempotent)");
   } finally {
     await prisma.$disconnect();
     await pool.end();

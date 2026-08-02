@@ -4,6 +4,7 @@ import { requireActiveSession } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { canAccessScopedFile } from "@/lib/files";
 import { hasPermission } from "@/lib/permissions";
+import { publicObjectUrl } from "@/lib/public-media";
 import { createPresignedGetUrl, r2Configured } from "@/lib/r2";
 
 type Params = { params: Promise<{ id: string }> };
@@ -29,7 +30,7 @@ export async function GET(request: Request, { params }: Params) {
     include: {
       sheetFiles: true,
       audioFiles: true,
-      galleryImages: true,
+      mediaAssets: true,
       invoices: { select: { id: true } },
     },
   });
@@ -41,6 +42,31 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
+  if (file.visibility === "PUBLIC") {
+    if (!hasPermission(gate.user.role, "MEDIA_MANAGE")) {
+      return NextResponse.json(
+        { detail: "Forbidden", code: "http_403" },
+        { status: 403 },
+      );
+    }
+    const url = publicObjectUrl(file.objectKey);
+    if (!url) {
+      return NextResponse.json(
+        {
+          detail: "R2_PUBLIC_BASE_URL ist nicht konfiguriert",
+          code: "public_url_unconfigured",
+        },
+        { status: 503 },
+      );
+    }
+    return NextResponse.json({
+      url,
+      expiresIn: null,
+      mimeType: file.mimeType,
+      public: true,
+    });
+  }
+
   if (file.category === "INVOICE") {
     if (!hasPermission(gate.user.role, "INVOICE_READ")) {
       return NextResponse.json(
@@ -49,7 +75,7 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
   } else if (file.category === "IMAGE") {
-    if (!hasPermission(gate.user.role, "PIECE_MANAGE")) {
+    if (!hasPermission(gate.user.role, "MEDIA_MANAGE")) {
       return NextResponse.json(
         { detail: "Forbidden", code: "http_403" },
         { status: 403 },

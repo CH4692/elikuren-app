@@ -7,6 +7,8 @@ export async function uploadFileViaPresign(input: {
   invoiceId?: string;
   concertId?: string | null;
   audioType?: string | null;
+  /** Website CDN: R2 prefix public/ + FileVisibility.PUBLIC */
+  publicWebsite?: boolean;
 }): Promise<{ fileId: string }> {
   const intentRes = await fetch("/api/admin/files/presign", {
     method: "POST",
@@ -19,6 +21,7 @@ export async function uploadFileViaPresign(input: {
       invoiceId: input.invoiceId,
       concertId: input.concertId,
       audioType: input.audioType,
+      publicWebsite: input.publicWebsite,
     }),
   });
 

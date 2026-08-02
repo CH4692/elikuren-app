@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
-import { ConcertsPanel } from "@/components/admin/concerts-panel";
+import { SiteContentPanel } from "@/components/admin/site-content-panel";
 import { hasPermission } from "@/lib/permissions";
 
-export default async function AdminConcertsPage() {
+export default async function AdminSitePage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/sign-in");
-  if (!hasPermission(session.user.role, "CONCERT_MANAGE")) {
+  if (!hasPermission(session.user.role, "SITE_MANAGE")) {
     redirect("/dashboard");
   }
 
-  return <ConcertsPanel />;
+  return <SiteContentPanel />;
 }

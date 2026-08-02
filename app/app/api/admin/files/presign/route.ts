@@ -10,7 +10,10 @@ import {
   validateUploadInput,
   type AudioObjectKind,
 } from "@/lib/files";
-import type { StoredFileCategory } from "@/lib/generated/prisma/client";
+import type {
+  FileVisibility,
+  StoredFileCategory,
+} from "@/lib/generated/prisma/client";
 import { createPresignedPutUrl, r2Configured } from "@/lib/r2";
 
 type Body = {
@@ -22,11 +25,21 @@ type Body = {
   concertId?: string | null;
   audioType?: string | null;
   audioKind?: AudioObjectKind;
+  /** Website CDN assets → prefix public/ + visibility PUBLIC */
+  publicWebsite?: boolean;
 };
 
-function permissionForCategory(category: StoredFileCategory) {
+function permissionForCategory(
+  category: StoredFileCategory,
+  publicWebsite: boolean,
+) {
   if (category === "INVOICE") {
     return ["INVOICE_WRITE"] as const;
+  }
+  if (category === "IMAGE") {
+    return publicWebsite
+      ? (["MEDIA_MANAGE"] as const)
+      : (["MEDIA_MANAGE", "PIECE_MANAGE"] as const);
   }
   return ["PIECE_MANAGE"] as const;
 }
@@ -48,14 +61,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const needed = permissionForCategory(category);
-  if (!needed) {
-    return NextResponse.json(
-      { detail: "Kategorie nicht unterstützt", code: "validation_error" },
-      { status: 400 },
-    );
-  }
+  const publicWebsite =
+    Boolean(body.publicWebsite) || category === "IMAGE";
 
+  const needed = permissionForCategory(category, publicWebsite);
   const gate = await requireAnyPermission(needed);
   if (!gate.ok) return gate.response;
 
@@ -86,6 +95,7 @@ export async function POST(request: Request) {
   const audioKind =
     body.audioKind ??
     (category === "AUDIO" ? audioKindFromType(body.audioType) : undefined);
+  const usePublicPrefix = category === "IMAGE" && publicWebsite;
   const objectKey = objectKeyFor({
     category,
     fileId,
@@ -93,7 +103,10 @@ export async function POST(request: Request) {
     concertId: body.concertId,
     audioKind,
     extension: validated.extension,
+    publicWebsite: usePublicPrefix,
   });
+
+  const visibility: FileVisibility = usePublicPrefix ? "PUBLIC" : "MEMBERS";
 
   const stored = await prisma.storedFile.create({
     data: {
@@ -103,6 +116,7 @@ export async function POST(request: Request) {
       mimeType,
       sizeBytes,
       category,
+      visibility,
       uploadStatus: "PENDING",
       uploadedById: gate.user.id,
     },

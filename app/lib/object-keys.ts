@@ -13,6 +13,11 @@ export type ObjectKeyInput = {
   invoiceId?: string;
   concertId?: string | null;
   audioKind?: AudioObjectKind;
+  /**
+   * Website / CDN assets: object key under `public/…`
+   * (StoredFile.visibility must be PUBLIC).
+   */
+  publicWebsite?: boolean;
   /** Defaults to now (UTC). */
   at?: Date;
 };
@@ -30,7 +35,8 @@ function ym(at: Date) {
  * library/audio/practice|other/{yyyy}/{mm}/{id}.ext
  * library/audio/concerts/{concertId}/{id}.ext
  * finance/invoices/{yyyy}/{invoiceId}/{id}.ext
- * site/images/{yyyy}/{mm}/{id}.ext   (category IMAGE)
+ * public/site/images/{yyyy}/{mm}/{id}.ext   (PUBLIC website images)
+ * site/images/{yyyy}/{mm}/{id}.ext          (private IMAGE; signed URL only)
  * trash/{yyyy-mm-dd}/{id}.ext
  */
 export function objectKeyFor(input: ObjectKeyInput): string {
@@ -68,6 +74,9 @@ export function objectKeyFor(input: ObjectKeyInput): string {
   }
 
   if (input.category === "IMAGE") {
+    if (input.publicWebsite) {
+      return buildObjectKey(["public", "site", "images", y, m, fileName]);
+    }
     return buildObjectKey(["site", "images", y, m, fileName]);
   }
 

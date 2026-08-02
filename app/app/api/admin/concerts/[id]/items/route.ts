@@ -12,7 +12,7 @@ import {
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: Params) {
-  const gate = await requirePermission("PIECE_MANAGE");
+  const gate = await requirePermission("CONCERT_MANAGE");
   if (!gate.ok) return gate.response;
 
   const { id: concertId } = await params;
