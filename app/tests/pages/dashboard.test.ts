@@ -10,9 +10,7 @@ test.describe("Dashboard", () => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: /Hallo/i })).toBeVisible();
     await expect(
-      page.getByText(
-        /Schön, dass du da bist\. Noten und Übematerial findest du in der Bibliothek\./,
-      ),
+      page.getByText(/Schön, dass du da bist\./),
     ).toBeVisible();
     const hub = page.locator("main");
     await expect(hub.getByRole("link", { name: /Noten/i }).first()).toBeVisible();
@@ -23,7 +21,10 @@ test.describe("Dashboard", () => {
     await expect(hub.getByRole("link", { name: /Termine/i })).toHaveCount(0);
     await expect(hub.getByRole("heading", { name: "Schnellzugriff" })).toBeVisible();
     await expect(
-      hub.getByRole("heading", { name: "Aktuelles Projekt" }),
+      hub.getByRole("heading", { name: "Aktuelles Konzert" }),
+    ).toBeVisible();
+    await expect(
+      hub.getByRole("heading", { name: "Neu in der Bibliothek" }),
     ).toHaveCount(0);
   });
 

@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
-import { MemberDashboard } from "@/components/dashboard/member-dashboard";
 import { MemberShell } from "@/components/app/member-shell";
+import { MemberDashboard } from "@/components/dashboard/member-dashboard";
+import { getCurrentConcert, serializeConcert } from "@/lib/concerts";
 import { prisma } from "@/lib/db";
-import { listLibraryAudio, listLibraryScores } from "@/lib/library";
 import { hasAdminAreaAccess } from "@/lib/permissions";
 
 export default async function DashboardPage() {
@@ -25,35 +25,25 @@ export default async function DashboardPage() {
   // Admin-Rollen starten im Verwaltungsbereich, nicht im Mitglieder-Dashboard.
   if (hasAdminAreaAccess(user.role)) redirect("/admin");
 
-  const [scores, audios] = await Promise.all([
-    listLibraryScores({ role: user.role, voice: user.voice }),
-    listLibraryAudio({ role: user.role, voice: user.voice }),
-  ]);
-
-  const recentLibrary = [
-    ...scores.map((s) => ({
-      title: s.title,
-      name: s.original_name,
-      kind: "score" as const,
-      at: s.created_at,
-    })),
-    ...audios.map((a) => ({
-      title: a.title,
-      name: a.original_name,
-      kind: "audio" as const,
-      at: a.created_at,
-    })),
-  ]
-    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-    .slice(0, 5)
-    .map(({ title, name, kind }) => ({ title, name, kind }));
+  const current = await getCurrentConcert(user.role);
+  const activeConcert = current
+    ? (() => {
+        const serialized = serializeConcert(current);
+        return {
+          title: serialized.title,
+          date: serialized.date,
+          year: serialized.year,
+          location: serialized.location,
+        };
+      })()
+    : null;
 
   return (
     <MemberShell>
       <MemberDashboard
         firstname={user.firstname}
         voice={user.voice}
-        recentLibrary={recentLibrary}
+        activeConcert={activeConcert}
       />
     </MemberShell>
   );

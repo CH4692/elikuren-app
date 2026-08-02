@@ -6,19 +6,17 @@ import {
   UserRound,
 } from "lucide-react";
 
+import {
+  ActiveConcertCard,
+  type ActiveConcertSummary,
+} from "@/components/app/active-concert-card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-export type DashboardLibraryItem = {
-  title: string;
-  name: string;
-  kind: "score" | "audio";
-};
 
 type MemberDashboardProps = {
   firstname: string | null;
   voice: string | null;
-  recentLibrary: DashboardLibraryItem[];
+  activeConcert: ActiveConcertSummary | null;
 };
 
 const quickLinks = [
@@ -45,7 +43,7 @@ const quickLinks = [
 export function MemberDashboard({
   firstname,
   voice,
-  recentLibrary,
+  activeConcert,
 }: MemberDashboardProps) {
   const greetingName = firstname?.trim() || "dort";
 
@@ -82,6 +80,8 @@ export function MemberDashboard({
           </Button>
         </div>
       </section>
+
+      <ActiveConcertCard concert={activeConcert} />
 
       {!voice ? (
         <section className="rounded-2xl border border-amber-600/25 bg-amber-50 px-5 py-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
@@ -127,36 +127,6 @@ export function MemberDashboard({
           })}
         </div>
       </section>
-
-      {recentLibrary.length > 0 ? (
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold tracking-tight">
-            Neu in der Bibliothek
-          </h2>
-          <ul className="divide-y divide-[#ebe4d8] overflow-hidden rounded-2xl border border-[#d9d2c4] bg-white/70">
-            {recentLibrary.map((item) => (
-              <li key={`${item.kind}-${item.title}-${item.name}`}>
-                <Link
-                  href={
-                    item.kind === "score" ? "/library/scores" : "/library/audio"
-                  }
-                  className="flex items-center justify-between gap-3 px-4 py-3 text-sm transition hover:bg-[#C8A24D]/08"
-                >
-                  <span className="min-w-0">
-                    <span className="font-medium text-[#1f1f23]">
-                      {item.title}
-                    </span>
-                    <span className="mt-0.5 block truncate text-[#5c574e]">
-                      {item.kind === "score" ? "Note" : "Audio"} · {item.name}
-                    </span>
-                  </span>
-                  <ArrowRight className="size-4 shrink-0 text-[#C8A24D]" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
     </div>
   );
 }
