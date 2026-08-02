@@ -122,6 +122,15 @@ type ItemForm = {
 const selectClass =
   "flex h-10 w-full rounded-xl border border-[#d9d2c4] bg-white px-3 py-2 text-sm text-[#1f1f23]";
 
+/** Soft status chips: live=success, draft=muted, past/incomplete=warning */
+function websiteBadgeVariant(
+  kind: string,
+): "success" | "muted" | "warning" {
+  if (kind === "published") return "success";
+  if (kind === "draft") return "muted";
+  return "warning";
+}
+
 const emptyConcert = (): ConcertForm => ({
   title: "",
   date: "",
@@ -749,15 +758,7 @@ export function ConcertsPanel() {
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium text-[#1f1f23]">{row.title}</p>
-                        <Badge
-                          variant={
-                            row.website_badge === "published"
-                              ? "success"
-                              : row.website_badge === "draft"
-                                ? "secondary"
-                                : "warning"
-                          }
-                        >
+                        <Badge variant={websiteBadgeVariant(row.website_badge)}>
                           {row.website_badge_label}
                         </Badge>
                         {row.is_current ? (

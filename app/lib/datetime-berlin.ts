@@ -58,6 +58,19 @@ export function concertVisibleUntil(
   return endsAt ?? endOfDayEuropeBerlin(startsAt);
 }
 
+/** Revive dates after JSON/cache round-trips (ISO strings → Date). */
+export function asDate(value: unknown): Date | null {
+  if (value == null) return null;
+  if (value instanceof Date) {
+    return Number.isFinite(value.getTime()) ? value : null;
+  }
+  if (typeof value === "string" || typeof value === "number") {
+    const parsed = new Date(value);
+    return Number.isFinite(parsed.getTime()) ? parsed : null;
+  }
+  return null;
+}
+
 /** Calendar date (UTC midnight) for the Berlin day of an instant — legacy Concert.date. */
 export function berlinCalendarDateUtc(date: Date): Date {
   const { y, m, d } = berlinYmd(date);

@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 
 import { isConcertVisible } from "@/lib/concert-visibility";
 import {
+  asDate,
   concertVisibleUntil,
   formatBerlinDateTimeLocal,
 } from "@/lib/datetime-berlin";
@@ -9,7 +10,7 @@ import { prisma } from "@/lib/db";
 import { publicObjectUrl, resolveMediaAlt } from "@/lib/public-media";
 
 export { isConcertVisible } from "@/lib/concert-visibility";
-export { concertVisibleUntil } from "@/lib/datetime-berlin";
+export { asDate, concertVisibleUntil } from "@/lib/datetime-berlin";
 
 export const CONCERTS_PUBLIC_CACHE_TAG = "concerts-public";
 
@@ -34,31 +35,37 @@ export type PublicConcertCard = {
   } | null;
 };
 
-/** Obvious prefilter only — visibility decision is isConcertVisible(). */
-const loadPublicConcertCandidates = unstable_cache(
-  async () => {
-    return prisma.concert.findMany({
-      where: {
-        websiteStatus: "PUBLISHED",
-        startsAt: { not: null },
-      },
-      orderBy: { startsAt: "asc" },
-      include: {
-        heroImage: {
-          include: {
-            storedFile: {
-              select: {
-                objectKey: true,
-                visibility: true,
-                deletedAt: true,
-                uploadStatus: true,
-              },
+type CachedPublicConcert = Awaited<
+  ReturnType<typeof loadPublicConcertCandidatesUncached>
+>[number];
+
+async function loadPublicConcertCandidatesUncached() {
+  return prisma.concert.findMany({
+    where: {
+      websiteStatus: "PUBLISHED",
+      startsAt: { not: null },
+    },
+    orderBy: { startsAt: "asc" },
+    include: {
+      heroImage: {
+        include: {
+          storedFile: {
+            select: {
+              objectKey: true,
+              visibility: true,
+              deletedAt: true,
+              uploadStatus: true,
             },
           },
         },
       },
-    });
-  },
+    },
+  });
+}
+
+/** Obvious prefilter only — visibility decision is isConcertVisible(). */
+const loadPublicConcertCandidates = unstable_cache(
+  loadPublicConcertCandidatesUncached,
   ["concerts-public-candidates"],
   { tags: [CONCERTS_PUBLIC_CACHE_TAG] },
 );
@@ -66,13 +73,17 @@ const loadPublicConcertCandidates = unstable_cache(
 export async function listPublicConcerts(
   now = new Date(),
 ): Promise<PublicConcertCard[]> {
-  const rows = await loadPublicConcertCandidates();
+  const rows = (await loadPublicConcertCandidates()) as CachedPublicConcert[];
 
   return rows
-    .filter((row) => {
-      const startsAt = row.startsAt;
+    .map((row) => {
+      const startsAt = asDate(row.startsAt);
+      const endsAt = asDate(row.endsAt);
+      return { row, startsAt, endsAt };
+    })
+    .filter(({ row, startsAt, endsAt }) => {
       if (!startsAt) return false;
-      const visibleUntil = concertVisibleUntil(startsAt, row.endsAt);
+      const visibleUntil = concertVisibleUntil(startsAt, endsAt);
       return isConcertVisible({
         websiteStatus: row.websiteStatus,
         startsAt,
@@ -80,7 +91,7 @@ export async function listPublicConcerts(
         now,
       });
     })
-    .map((row) => {
+    .map(({ row, startsAt, endsAt }) => {
       const hero = row.heroImage;
       const file = hero?.storedFile;
       const usable =
@@ -97,8 +108,8 @@ export async function listPublicConcerts(
         title: row.title,
         subtitle: row.subtitle,
         description: row.description,
-        startsAt: row.startsAt!,
-        endsAt: row.endsAt,
+        startsAt: startsAt!,
+        endsAt,
         location: row.location,
         address: row.address,
         programInfo: row.programInfo,

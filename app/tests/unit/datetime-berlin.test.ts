@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  asDate,
   concertVisibleUntil,
   endOfDayEuropeBerlin,
   formatBerlinDateTimeLocal,
@@ -51,6 +52,20 @@ describe("endOfDayEuropeBerlin", () => {
     const end = endOfDayEuropeBerlin(start);
     assert.equal(formatBerlinDateTimeLocal(end), "2026-10-25T23:59");
     assert.equal(end.toISOString(), "2026-10-25T22:59:59.999Z");
+  });
+});
+
+describe("asDate (cache rehydration)", () => {
+  it("revives ISO strings from unstable_cache JSON", () => {
+    const revived = asDate("2026-10-11T15:00:00.000Z");
+    assert.ok(revived instanceof Date);
+    assert.equal(revived?.toISOString(), "2026-10-11T15:00:00.000Z");
+  });
+
+  it("returns null for invalid values", () => {
+    assert.equal(asDate("not-a-date"), null);
+    assert.equal(asDate(null), null);
+    assert.equal(asDate(new Date("invalid")), null);
   });
 });
 

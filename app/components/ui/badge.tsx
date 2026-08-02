@@ -9,7 +9,9 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default: "bg-primary/15 text-primary",
-        secondary: "bg-secondary text-secondary-foreground",
+        /** Soft neutral chip — for draft / inactive / non-urgent states */
+        secondary: "bg-[#8a8478]/15 text-[#5c574e]",
+        muted: "bg-[#8a8478]/15 text-[#5c574e]",
         success: "bg-emerald-500/15 text-emerald-700",
         warning: "bg-amber-500/15 text-amber-800",
         danger: "bg-destructive/15 text-destructive",
