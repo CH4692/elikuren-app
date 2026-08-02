@@ -13,6 +13,14 @@ import { FormDrawer } from "@/components/app/form-drawer";
 import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,6 +59,8 @@ type ConcertRow = {
   title: string;
   slug: string;
   date: string | null;
+  year: number | null;
+  location: string | null;
   is_current: boolean;
   notes: string | null;
   is_visible: boolean;
@@ -61,9 +71,8 @@ type ConcertRow = {
 
 type ConcertForm = {
   title: string;
-  slug: string;
   date: string;
-  isCurrent: boolean;
+  location: string;
   notes: string;
 };
 
@@ -80,11 +89,23 @@ const selectClass =
 
 const emptyConcert = (): ConcertForm => ({
   title: "",
-  slug: "",
   date: "",
-  isCurrent: false,
+  location: "",
   notes: "",
 });
+
+function formatConcertDate(date: string | null) {
+  if (!date) return "—";
+  try {
+    return new Date(`${date}T00:00:00`).toLocaleDateString("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch {
+    return date;
+  }
+}
 
 const emptyItem = (): ItemForm => ({
   scoreId: "",
@@ -106,6 +127,8 @@ export function ConcertsPanel() {
   const [itemDrawerOpen, setItemDrawerOpen] = useState(false);
   const [reorderMode, setReorderMode] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [activeDialogOpen, setActiveDialogOpen] = useState(false);
+  const [activeDraftId, setActiveDraftId] = useState<string>("");
   const [pending, startTransition] = useTransition();
 
   async function load(q?: string) {
@@ -157,12 +180,42 @@ export function ConcertsPanel() {
   function openEdit(row: ConcertRow) {
     setForm({
       title: row.title,
-      slug: row.slug,
       date: row.date ?? "",
-      isCurrent: row.is_current,
+      location: row.location ?? "",
       notes: row.notes ?? "",
     });
     setEditTarget(row);
+  }
+
+  function openActiveDialog() {
+    const current = items.find((row) => row.is_current);
+    setActiveDraftId(current?.id ?? "");
+    setActiveDialogOpen(true);
+  }
+
+  function saveActiveConcert() {
+    startTransition(async () => {
+      const res = await fetch("/api/admin/concerts/active", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          concertId: activeDraftId || null,
+        }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { detail?: string };
+        toast.error(err.detail ?? "Aktives Konzert konnte nicht gesetzt werden");
+        return;
+      }
+      const data = (await res.json()) as { concert: ConcertRow | null };
+      setActiveDialogOpen(false);
+      await load(search || undefined);
+      if (data.concert) {
+        toast.success(`Aktives Konzert: ${data.concert.title}`);
+      } else {
+        toast.success("Kein aktives Konzert festgelegt");
+      }
+    });
   }
 
   function saveConcert(isCreate: boolean) {
@@ -173,9 +226,8 @@ export function ConcertsPanel() {
     startTransition(async () => {
       const payload = {
         title: form.title.trim(),
-        slug: form.slug.trim() || null,
         date: form.date || null,
-        isCurrent: form.isCurrent,
+        location: form.location.trim() || null,
         notes: form.notes.trim() || null,
       };
       const res = await fetch(
@@ -349,12 +401,13 @@ export function ConcertsPanel() {
   const programItems = [...(detail?.items ?? [])].sort(
     (a, b) => a.sort_order - b.sort_order,
   );
+  const activeConcert = items.find((row) => row.is_current) ?? null;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Konzerte"
-        description="Programme pflegen, aktuelles Konzert markieren und Programmpunkte zuordnen."
+        description="Programme pflegen, aktives Konzert festlegen und Programmpunkte zuordnen."
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
@@ -363,10 +416,64 @@ export function ConcertsPanel() {
         }
       />
 
+      <section className="rounded-2xl border border-[#d9d2c4] bg-white p-4 sm:p-5">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-heading text-lg font-semibold text-[#1f1f23]">
+            Aktives Konzert
+          </h2>
+        </div>
+        {activeConcert ? (
+          <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-[#C8A24D]/40 bg-[#C8A24D]/10 px-4 py-4">
+            <div className="min-w-0 space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-heading text-xl font-semibold text-[#1f1f23]">
+                  {activeConcert.title}
+                </p>
+                <Badge variant="success">Aktiv</Badge>
+                {activeConcert.year ? (
+                  <Badge
+                    variant="default"
+                    className="rounded-md px-2.5 py-1 text-sm font-semibold"
+                  >
+                    {activeConcert.year}
+                  </Badge>
+                ) : null}
+              </div>
+              <p className="text-sm text-[#5c574e]">
+                {[
+                  formatConcertDate(activeConcert.date),
+                  activeConcert.location,
+                ]
+                  .filter((v) => v && v !== "—")
+                  .join(" · ") || "Kein Datum hinterlegt"}
+              </p>
+            </div>
+            <Button type="button" onClick={openActiveDialog}>
+              Aktives Konzert festlegen
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-dashed border-[#d9d2c4] bg-[#f7f4ee] px-4 py-4">
+            <div className="min-w-0 space-y-1">
+              <p className="font-medium text-[#1f1f23]">
+                Kein aktives Konzert festgelegt
+              </p>
+              <p className="max-w-xl text-sm text-[#5c574e]">
+                Das aktive Konzert steuert Zuordnungen für Noten, Audio und
+                weitere Bereiche im Mitgliederbereich.
+              </p>
+            </div>
+            <Button type="button" onClick={openActiveDialog}>
+              Aktives Konzert festlegen
+            </Button>
+          </div>
+        )}
+      </section>
+
       <DataTableToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Konzert suchen…"
+        searchPlaceholder="Konzert, Jahr, Ort…"
         actions={
           <Button
             type="button"
@@ -492,6 +599,7 @@ export function ConcertsPanel() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[88px]">Jahr</TableHead>
                 <TableHead>Titel</TableHead>
                 <TableHead>Datum</TableHead>
                 <TableHead>Programm</TableHead>
@@ -508,17 +616,35 @@ export function ConcertsPanel() {
                   data-state={detail?.id === row.id ? "selected" : undefined}
                 >
                   <TableCell>
+                    {row.year ? (
+                      <Badge
+                        variant="default"
+                        className="rounded-md px-2.5 py-1 text-sm font-semibold tabular-nums"
+                      >
+                        {row.year}
+                      </Badge>
+                    ) : (
+                      <span className="text-sm text-[#8a8478]">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <div className="space-y-1">
                       <p className="font-medium text-[#1f1f23]">{row.title}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {row.is_current ? (
-                          <Badge variant="success">Aktuell</Badge>
+                          <Badge variant="success">Aktiv</Badge>
                         ) : null}
-                        <span className="text-xs text-[#8a8478]">{row.slug}</span>
+                        {row.location ? (
+                          <span className="text-xs text-[#8a8478]">
+                            {row.location}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-[#8a8478]">{row.slug}</span>
+                        )}
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{row.date ?? "—"}</TableCell>
+                  <TableCell>{formatConcertDate(row.date)}</TableCell>
                   <TableCell>{row.item_count}</TableCell>
                   <TableCell>{row.recording_count}</TableCell>
                   <TableCell className="text-right">
@@ -586,7 +712,7 @@ export function ConcertsPanel() {
               ))}
             </select>
             <p className="text-xs text-[#8a8478]">
-              Auswahl übernimmt Titel, Verknüpfung und Ensemble aus dem Katalog.
+              Auswahl übernimmt Titel, Verknüpfung und Besetzung aus dem Katalog.
             </p>
           </div>
           <div className="space-y-2">
@@ -618,6 +744,86 @@ export function ConcertsPanel() {
           </div>
         </div>
       </FormDrawer>
+
+      <Dialog open={activeDialogOpen} onOpenChange={setActiveDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Aktives Konzert festlegen</DialogTitle>
+            <DialogDescription>
+              Das aktive Konzert wird für Noten, Audio und weitere Zuordnungen
+              verwendet.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#d9d2c4] bg-white px-3 py-2.5">
+              <input
+                type="radio"
+                name="active-concert"
+                className="mt-1"
+                checked={activeDraftId === ""}
+                onChange={() => setActiveDraftId("")}
+              />
+              <span>
+                <span className="block font-medium text-[#1f1f23]">
+                  Kein aktives Konzert
+                </span>
+                <span className="text-xs text-[#8a8478]">
+                  Alle aktiven Markierungen entfernen
+                </span>
+              </span>
+            </label>
+            {items.map((row) => (
+              <label
+                key={row.id}
+                className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#d9d2c4] bg-white px-3 py-2.5"
+              >
+                <input
+                  type="radio"
+                  name="active-concert"
+                  className="mt-1"
+                  checked={activeDraftId === row.id}
+                  onChange={() => setActiveDraftId(row.id)}
+                />
+                <span className="min-w-0">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-[#1f1f23]">{row.title}</span>
+                    {row.year ? (
+                      <Badge
+                        variant="default"
+                        className="rounded-md px-2 py-0.5 text-xs font-semibold"
+                      >
+                        {row.year}
+                      </Badge>
+                    ) : null}
+                  </span>
+                  <span className="block text-xs text-[#8a8478]">
+                    {[formatConcertDate(row.date), row.location]
+                      .filter((v) => v && v !== "—")
+                      .join(" · ") || "Kein Datum"}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              onClick={() => setActiveDialogOpen(false)}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              type="button"
+              disabled={pending}
+              onClick={saveActiveConcert}
+            >
+              Übernehmen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={Boolean(deleteId)}
@@ -653,21 +859,21 @@ function ConcertFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="c-slug">Slug (optional)</Label>
-        <Input
-          id="c-slug"
-          value={form.slug}
-          onChange={(e) => onChange({ ...form, slug: e.target.value })}
-          placeholder="wird aus dem Titel erzeugt"
-        />
-      </div>
-      <div className="space-y-2">
         <Label htmlFor="c-date">Datum</Label>
         <Input
           id="c-date"
           type="date"
           value={form.date}
           onChange={(e) => onChange({ ...form, date: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-location">Ort (optional)</Label>
+        <Input
+          id="c-location"
+          value={form.location}
+          onChange={(e) => onChange({ ...form, location: e.target.value })}
+          placeholder="z. B. Wien"
         />
       </div>
       <div className="space-y-2">
@@ -678,14 +884,6 @@ function ConcertFields({
           onChange={(e) => onChange({ ...form, notes: e.target.value })}
         />
       </div>
-      <label className="flex items-center gap-2 text-sm text-[#5c574e]">
-        <input
-          type="checkbox"
-          checked={form.isCurrent}
-          onChange={(e) => onChange({ ...form, isCurrent: e.target.checked })}
-        />
-        Als aktuelles Konzert markieren
-      </label>
     </div>
   );
 }

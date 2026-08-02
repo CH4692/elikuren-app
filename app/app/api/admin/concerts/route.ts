@@ -24,6 +24,7 @@ export async function POST(request: Request) {
     title?: string;
     slug?: string | null;
     date?: string | null;
+    location?: string | null;
     isCurrent?: boolean;
     notes?: string | null;
   };
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
       title: String(body.title ?? ""),
       slug: body.slug,
       date: body.date,
+      location: body.location,
       isCurrent: body.isCurrent,
       notes: body.notes,
     });

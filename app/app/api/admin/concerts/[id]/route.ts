@@ -34,6 +34,7 @@ export async function PATCH(request: Request, { params }: Params) {
     title?: string;
     slug?: string | null;
     date?: string | null;
+    location?: string | null;
     isCurrent?: boolean;
     notes?: string | null;
   };

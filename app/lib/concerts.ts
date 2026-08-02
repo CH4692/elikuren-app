@@ -131,6 +131,7 @@ export function serializeConcert(concert: {
   title: string;
   slug: string;
   date: Date | null;
+  location?: string | null;
   isCurrent: boolean;
   notes: string | null;
   isVisible: boolean;
@@ -139,11 +140,14 @@ export function serializeConcert(concert: {
   items?: Parameters<typeof serializeConcertItem>[0][];
   _count?: { items: number; recordings: number };
 }) {
+  const date = concert.date ? concert.date.toISOString().slice(0, 10) : null;
   return {
     id: concert.id,
     title: concert.title,
     slug: concert.slug,
-    date: concert.date ? concert.date.toISOString().slice(0, 10) : null,
+    date,
+    year: date ? Number(date.slice(0, 4)) : null,
+    location: concert.location ?? null,
     is_current: concert.isCurrent,
     notes: concert.notes,
     is_visible: concert.isVisible,
@@ -156,20 +160,57 @@ export function serializeConcert(concert: {
 }
 
 export async function listConcertsAdmin(q?: string) {
-  return prisma.concert.findMany({
+  const rows = await prisma.concert.findMany({
     where: q
       ? {
           OR: [
             { title: { contains: q, mode: "insensitive" } },
             { slug: { contains: q, mode: "insensitive" } },
             { notes: { contains: q, mode: "insensitive" } },
+            { location: { contains: q, mode: "insensitive" } },
           ],
         }
       : undefined,
     include: {
       _count: { select: { items: true, recordings: true } },
     },
-    orderBy: [{ isCurrent: "desc" }, { date: "desc" }, { title: "asc" }],
+  });
+
+  // Year desc, then concert date desc (null dates last), then title.
+  return rows.sort((a, b) => {
+    const yearA = a.date ? a.date.getUTCFullYear() : -1;
+    const yearB = b.date ? b.date.getUTCFullYear() : -1;
+    if (yearA !== yearB) return yearB - yearA;
+    const timeA = a.date ? a.date.getTime() : -1;
+    const timeB = b.date ? b.date.getTime() : -1;
+    if (timeA !== timeB) return timeB - timeA;
+    return a.title.localeCompare(b.title, "de");
+  });
+}
+
+/** Mark exactly one concert as active, or clear all when concertId is null. */
+export async function setActiveConcert(concertId: string | null) {
+  if (!concertId) {
+    await prisma.concert.updateMany({
+      where: { isCurrent: true },
+      data: { isCurrent: false },
+    });
+    return null;
+  }
+
+  const existing = await prisma.concert.findUnique({
+    where: { id: concertId },
+    select: { id: true, title: true },
+  });
+  if (!existing) throw new Error("Konzert nicht gefunden");
+
+  await clearOtherCurrent(concertId);
+  return prisma.concert.update({
+    where: { id: concertId },
+    data: { isCurrent: true },
+    include: {
+      _count: { select: { items: true, recordings: true } },
+    },
   });
 }
 
@@ -200,6 +241,7 @@ export async function createConcert(input: {
   title: string;
   slug?: string | null;
   date?: string | null;
+  location?: string | null;
   isCurrent?: boolean;
   notes?: string | null;
 }) {
@@ -213,6 +255,7 @@ export async function createConcert(input: {
       title,
       slug,
       date: input.date ? new Date(`${input.date}T00:00:00.000Z`) : null,
+      location: input.location?.trim() || null,
       isCurrent: Boolean(input.isCurrent),
       notes: input.notes?.trim() || null,
       isVisible: true,
@@ -229,6 +272,7 @@ export async function updateConcert(
     title?: string;
     slug?: string | null;
     date?: string | null;
+    location?: string | null;
     isCurrent?: boolean;
     notes?: string | null;
   },
@@ -254,6 +298,9 @@ export async function updateConcert(
       slug,
       ...(input.date !== undefined
         ? { date: input.date ? new Date(`${input.date}T00:00:00.000Z`) : null }
+        : {}),
+      ...(input.location !== undefined
+        ? { location: input.location?.trim() || null }
         : {}),
       ...(input.isCurrent !== undefined ? { isCurrent: input.isCurrent } : {}),
       ...(input.notes !== undefined

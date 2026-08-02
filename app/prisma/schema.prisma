@@ -263,6 +263,8 @@ model Concert {
   title       String
   slug        String        @unique
   date        DateTime?     @db.Date
+  /// Optional venue / city for the performance.
+  location    String?
   isCurrent   Boolean       @default(false) @map("is_current")
   notes       String?       @db.Text
   isVisible   Boolean       @default(true) @map("is_visible")
