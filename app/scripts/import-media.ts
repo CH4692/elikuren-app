@@ -436,21 +436,6 @@ async function applyImport(
       let sheet = await prisma.sheetFile.findFirst({
         where: { storedFileId: stored.id },
       });
-      if (!sheet) {
-        sheet = await prisma.sheetFile.create({
-          data: {
-            title: entry.title,
-            composer: entry.composer ?? "",
-            storedFileId: stored.id,
-            accessScope: "ALL_MEMBERS",
-            isVisible: true,
-          },
-        });
-        sheets += 1;
-      } else {
-        skipped += 1;
-      }
-
       if (entry.concertFolder && entry.concertTitle) {
         const key = entry.concertFolder;
         let concertId = concertCache.get(key);
@@ -465,6 +450,29 @@ async function applyImport(
           concertCache.set(key, concertId);
           if (created) concerts += 1;
         }
+
+        if (!sheet) {
+          sheet = await prisma.sheetFile.create({
+            data: {
+              title: entry.title,
+              composer: entry.composer ?? "",
+              storedFileId: stored.id,
+              accessScope: "ALL_MEMBERS",
+              isVisible: true,
+              concertId,
+            },
+          });
+          sheets += 1;
+        } else {
+          if (!sheet.concertId) {
+            sheet = await prisma.sheetFile.update({
+              where: { id: sheet.id },
+              data: { concertId },
+            });
+          }
+          skipped += 1;
+        }
+
         const existingItem = await prisma.concertItem.findFirst({
           where: { concertId, sheetFileId: sheet.id },
         });
@@ -483,6 +491,19 @@ async function applyImport(
           });
           items += 1;
         }
+      } else if (!sheet) {
+        sheet = await prisma.sheetFile.create({
+          data: {
+            title: entry.title,
+            composer: entry.composer ?? "",
+            storedFileId: stored.id,
+            accessScope: "ALL_MEMBERS",
+            isVisible: true,
+          },
+        });
+        sheets += 1;
+      } else {
+        skipped += 1;
       }
       continue;
     }

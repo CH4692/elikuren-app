@@ -76,6 +76,7 @@ export function normalizeVoiceLabel(
 ): VoiceGroup | null {
   if (!voice) return null;
   const v = voice.trim().toLowerCase().replace(/[_]+/g, "-");
+  if (v.includes("elikuren")) return "ELIKUREN";
   if (v.includes("musical") && v.includes("team")) return "MUSICAL_TEAM";
   if (
     v.includes("eight") ||
@@ -84,6 +85,7 @@ export function normalizeVoiceLabel(
   ) {
     return "EIGHT_TO_THE_BAR";
   }
+  if (v === "solo") return "SOLO";
   if (v.startsWith("sop")) return "SOPRANO";
   if (v.startsWith("alt")) return "ALTO";
   if (v.startsWith("ten")) return "TENOR";

@@ -32,11 +32,18 @@ export async function POST(request: Request) {
     voiceGroup?: VoiceGroup | null;
     audioType?: AudioType;
     accessScope?: FileAccessScope;
+    concertId?: string;
   };
 
   if (!body.storedFileId) {
     return NextResponse.json(
       { detail: "storedFileId fehlt", code: "validation_error" },
+      { status: 400 },
+    );
+  }
+  if (!body.concertId) {
+    return NextResponse.json(
+      { detail: "Konzert ist Pflicht", code: "validation_error" },
       { status: 400 },
     );
   }
@@ -49,6 +56,7 @@ export async function POST(request: Request) {
       voiceGroup: body.voiceGroup,
       audioType: body.audioType,
       accessScope: body.accessScope,
+      concertId: body.concertId,
     });
     return NextResponse.json(serializeAudio(audio), { status: 201 });
   } catch (error) {

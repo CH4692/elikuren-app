@@ -26,8 +26,8 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  ENSEMBLE_LABELS,
-  ENSEMBLE_OPTIONS,
+  BESETZUNG_OPTIONS,
+  besetzungLabel,
 } from "@/lib/voice-options";
 
 type ScoreOption = {
@@ -89,7 +89,7 @@ const emptyConcert = (): ConcertForm => ({
 const emptyItem = (): ItemForm => ({
   scoreId: "",
   title: "",
-  ensemble: "",
+  ensemble: "ELIKUREN",
   sheetFileId: "",
 });
 
@@ -217,7 +217,7 @@ export function ConcertsPanel() {
         id: item.id,
         scoreId: item.sheet_file_id ?? "",
         title: item.title,
-        ensemble: item.ensemble ?? "",
+        ensemble: item.ensemble ?? "ELIKUREN",
         sheetFileId: item.sheet_file_id ?? "",
       });
     } else {
@@ -243,7 +243,7 @@ export function ConcertsPanel() {
       scoreId: score.id,
       sheetFileId: score.id,
       title: score.title,
-      ensemble: score.voice_group ?? prev.ensemble,
+      ensemble: score.voice_group ?? "ELIKUREN",
     }));
   }
 
@@ -260,7 +260,7 @@ export function ConcertsPanel() {
         body: JSON.stringify({
           id: itemForm.id,
           title: itemForm.title.trim(),
-          ensemble: itemForm.ensemble || null,
+          ensemble: itemForm.ensemble || "ELIKUREN",
           sheetFileId: itemForm.sheetFileId.trim() || null,
           audioFileId: null,
         }),
@@ -423,9 +423,7 @@ export function ConcertsPanel() {
                       {index + 1}. {item.title}
                     </p>
                     <p className="text-xs text-[#8a8478]">
-                      {item.ensemble
-                        ? (ENSEMBLE_LABELS[item.ensemble] ?? item.ensemble)
-                        : "Elikuren / alle"}
+                      {besetzungLabel(item.ensemble)}
                       {item.sheet_file_id ? " · Note verknüpft" : ""}
                     </p>
                   </div>
@@ -602,7 +600,7 @@ export function ConcertsPanel() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="ci-ensemble">Ensemble</Label>
+            <Label htmlFor="ci-ensemble">Besetzung</Label>
             <select
               id="ci-ensemble"
               className={selectClass}
@@ -611,8 +609,8 @@ export function ConcertsPanel() {
                 setItemForm({ ...itemForm, ensemble: e.target.value })
               }
             >
-              {ENSEMBLE_OPTIONS.map((opt) => (
-                <option key={opt.value || "all"} value={opt.value}>
+              {BESETZUNG_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}

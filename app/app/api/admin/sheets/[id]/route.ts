@@ -24,6 +24,7 @@ export async function PATCH(request: Request, { params }: Params) {
           uploadStatus: true,
         },
       },
+      concert: { select: { id: true, title: true } },
     },
   });
   if (!existing) {
@@ -38,6 +39,7 @@ export async function PATCH(request: Request, { params }: Params) {
     composer?: string | null;
     voiceGroup?: VoiceGroup | null;
     accessScope?: FileAccessScope;
+    concertId?: string | null;
   };
 
   const title =
@@ -45,6 +47,12 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!title) {
     return NextResponse.json(
       { detail: "Titel ist Pflicht", code: "validation_error" },
+      { status: 400 },
+    );
+  }
+  if (body.concertId !== undefined && !body.concertId) {
+    return NextResponse.json(
+      { detail: "Konzert ist Pflicht", code: "validation_error" },
       { status: 400 },
     );
   }
@@ -59,6 +67,7 @@ export async function PATCH(request: Request, { params }: Params) {
           : undefined,
       voiceGroup: body.voiceGroup === undefined ? undefined : body.voiceGroup,
       accessScope: body.accessScope,
+      ...(body.concertId !== undefined ? { concertId: body.concertId } : {}),
     },
     include: {
       storedFile: {
@@ -70,6 +79,7 @@ export async function PATCH(request: Request, { params }: Params) {
           uploadStatus: true,
         },
       },
+      concert: { select: { id: true, title: true } },
     },
   });
 

@@ -9,11 +9,7 @@ import { PdfPreview } from "@/components/library/pdf-preview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  ENSEMBLE_LABELS,
-  ENSEMBLE_OPTIONS,
-  LIBRARY_VOICE_LABELS as VOICE_LABELS,
-} from "@/lib/voice-options";
+import { ENSEMBLE_OPTIONS, besetzungLabel } from "@/lib/voice-options";
 
 type ScoreItem = {
   id: string;
@@ -95,7 +91,8 @@ export function LibraryScores() {
 
   const programItems = (concert?.items ?? []).filter((item) => {
     if (!ensemble) return true;
-    return item.ensemble === ensemble || item.ensemble == null;
+    const casting = item.ensemble ?? "ELIKUREN";
+    return casting === ensemble;
   });
 
   return (
@@ -124,11 +121,11 @@ export function LibraryScores() {
               className={selectClass}
               value={ensemble}
               onChange={(e) => setEnsemble(e.target.value)}
-              aria-label="Ensemble"
+              aria-label="Besetzung"
             >
               {ENSEMBLE_OPTIONS.map((opt) => (
                 <option key={opt.value || "all"} value={opt.value}>
-                  {opt.value ? opt.label : "Alle Ensembles"}
+                  {opt.label}
                 </option>
               ))}
             </select>
@@ -149,7 +146,7 @@ export function LibraryScores() {
             <EmptyState
               icon={FileMusic}
               title="Kein Programm"
-              description="Für dieses Ensemble sind noch keine Programmpunkte hinterlegt."
+              description="Für diese Besetzung sind noch keine Programmpunkte hinterlegt."
             />
           ) : (
             <ul className="space-y-2">
@@ -164,9 +161,7 @@ export function LibraryScores() {
                     </p>
                     <p className="text-sm text-[#5c574e]">
                       {[
-                        item.ensemble
-                          ? (ENSEMBLE_LABELS[item.ensemble] ?? item.ensemble)
-                          : "Elikuren / alle",
+                        besetzungLabel(item.ensemble),
                         item.sheet_file?.composer || null,
                       ]
                         .filter(Boolean)
@@ -235,9 +230,7 @@ export function LibraryScores() {
                     <p className="text-sm text-[#5c574e]">
                       {[
                         item.composer || null,
-                        item.voice_group
-                          ? (VOICE_LABELS[item.voice_group] ?? item.voice_group)
-                          : null,
+                        besetzungLabel(item.voice_group),
                       ]
                         .filter(Boolean)
                         .join(" · ") || item.original_name}

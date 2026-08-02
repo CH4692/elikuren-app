@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   AUDIO_TYPE_OPTIONS as AUDIO_TYPE_BASE,
-  LIBRARY_VOICE_LABELS as VOICE_LABELS,
+  besetzungLabel,
 } from "@/lib/voice-options";
 
 type AudioItem = {
@@ -335,9 +335,7 @@ function AudioRow({
           {[
             compact ? null : item.composer || null,
             showType ? audioTypeLabel(item.audio_type) : null,
-            item.voice_group
-              ? (VOICE_LABELS[item.voice_group] ?? item.voice_group)
-              : null,
+            besetzungLabel(item.voice_group),
             item.concert_title,
           ]
             .filter(Boolean)

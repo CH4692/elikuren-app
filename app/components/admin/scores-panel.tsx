@@ -25,7 +25,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { uploadFileViaPresign } from "@/lib/upload-client";
-import { LIBRARY_VOICE_OPTIONS as VOICE_OPTIONS } from "@/lib/voice-options";
+import {
+  BESETZUNG_OPTIONS,
+  besetzungLabel,
+} from "@/lib/voice-options";
+
+type ConcertOption = {
+  id: string;
+  title: string;
+};
 
 type ScoreItem = {
   id: string;
@@ -34,6 +42,8 @@ type ScoreItem = {
   voice_group: string | null;
   access_scope: string;
   is_visible: boolean;
+  concert_id: string | null;
+  concert: ConcertOption | null;
   stored_file: {
     id: string;
     original_name: string;
@@ -49,11 +59,12 @@ type ScoreForm = {
   composer: string;
   voiceGroup: string;
   accessScope: string;
+  concertId: string;
 };
 
 const SCOPE_OPTIONS = [
   { value: "ALL_MEMBERS", label: "Alle Mitglieder" },
-  { value: "VOICE_GROUP_ONLY", label: "Nur Stimme" },
+  { value: "VOICE_GROUP_ONLY", label: "Nur Besetzung" },
   { value: "ADMIN_ONLY", label: "Nur Admin" },
 ] as const;
 
@@ -63,14 +74,10 @@ const selectClass =
 const emptyForm = (): ScoreForm => ({
   title: "",
   composer: "",
-  voiceGroup: "",
+  voiceGroup: "ELIKUREN",
   accessScope: "ALL_MEMBERS",
+  concertId: "",
 });
-
-function voiceLabel(value: string | null) {
-  if (!value) return "—";
-  return VOICE_OPTIONS.find((o) => o.value === value)?.label ?? value;
-}
 
 function scopeLabel(value: string) {
   return SCOPE_OPTIONS.find((o) => o.value === value)?.label ?? value;
@@ -78,6 +85,7 @@ function scopeLabel(value: string) {
 
 export function ScoresPanel() {
   const [items, setItems] = useState<ScoreItem[]>([]);
+  const [concerts, setConcerts] = useState<ConcertOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [pending, startTransition] = useTransition();
@@ -90,6 +98,17 @@ export function ScoresPanel() {
   } | null>(null);
   const [form, setForm] = useState<ScoreForm>(emptyForm());
   const [file, setFile] = useState<File | null>(null);
+
+  async function loadConcerts() {
+    try {
+      const res = await fetch("/api/admin/concerts");
+      if (!res.ok) return;
+      const data = (await res.json()) as { items: ConcertOption[] };
+      setConcerts(data.items);
+    } catch {
+      /* ignore */
+    }
+  }
 
   async function load(q?: string) {
     setLoading(true);
@@ -108,11 +127,13 @@ export function ScoresPanel() {
 
   useEffect(() => {
     void load();
+    void loadConcerts();
   }, []);
 
   function openCreate() {
     setForm(emptyForm());
     setFile(null);
+    void loadConcerts();
     setCreateOpen(true);
   }
 
@@ -120,9 +141,11 @@ export function ScoresPanel() {
     setForm({
       title: item.title,
       composer: item.composer,
-      voiceGroup: item.voice_group ?? "",
+      voiceGroup: item.voice_group ?? "ELIKUREN",
       accessScope: item.access_scope,
+      concertId: item.concert_id ?? item.concert?.id ?? "",
     });
+    void loadConcerts();
     setEditTarget(item);
   }
 
@@ -133,6 +156,10 @@ export function ScoresPanel() {
     }
     if (!form.title.trim()) {
       toast.error("Titel ist Pflicht");
+      return;
+    }
+    if (!form.concertId) {
+      toast.error("Konzert ist Pflicht");
       return;
     }
 
@@ -149,8 +176,9 @@ export function ScoresPanel() {
             storedFileId: uploaded.fileId,
             title: form.title.trim(),
             composer: form.composer.trim() || null,
-            voiceGroup: form.voiceGroup || null,
+            voiceGroup: form.voiceGroup || "ELIKUREN",
             accessScope: form.accessScope,
+            concertId: form.concertId,
           }),
         });
         if (!res.ok) {
@@ -177,6 +205,10 @@ export function ScoresPanel() {
       toast.error("Titel ist Pflicht");
       return;
     }
+    if (!form.concertId) {
+      toast.error("Konzert ist Pflicht");
+      return;
+    }
 
     startTransition(async () => {
       const res = await fetch(`/api/admin/sheets/${editTarget.id}`, {
@@ -185,8 +217,9 @@ export function ScoresPanel() {
         body: JSON.stringify({
           title: form.title.trim(),
           composer: form.composer.trim() || null,
-          voiceGroup: form.voiceGroup || null,
+          voiceGroup: form.voiceGroup || "ELIKUREN",
           accessScope: form.accessScope,
+          concertId: form.concertId,
         }),
       });
       if (!res.ok) {
@@ -203,7 +236,7 @@ export function ScoresPanel() {
     <div>
       <PageHeader
         title="Noten"
-        description="Chornoten hochladen und Metadaten bearbeiten."
+        description="Chornoten einem Konzert zuordnen, hochladen und Metadaten bearbeiten."
         actions={
           <Button type="button" onClick={openCreate}>
             <Plus className="size-4" />
@@ -215,7 +248,7 @@ export function ScoresPanel() {
       <DataTableToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Titel, Komponist, Dateiname…"
+        searchPlaceholder="Titel, Komponist, Konzert, Dateiname…"
         actions={
           <Button
             type="button"
@@ -247,7 +280,8 @@ export function ScoresPanel() {
               <TableRow>
                 <TableHead>Titel</TableHead>
                 <TableHead>Komponist</TableHead>
-                <TableHead>Stimme</TableHead>
+                <TableHead>Konzert</TableHead>
+                <TableHead>Besetzung</TableHead>
                 <TableHead className="text-right">Aktionen</TableHead>
               </TableRow>
             </TableHeader>
@@ -261,7 +295,8 @@ export function ScoresPanel() {
                     </div>
                   </TableCell>
                   <TableCell>{item.composer || "—"}</TableCell>
-                  <TableCell>{voiceLabel(item.voice_group)}</TableCell>
+                  <TableCell>{item.concert?.title ?? "—"}</TableCell>
+                  <TableCell>{besetzungLabel(item.voice_group)}</TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
                       <Button
@@ -296,7 +331,7 @@ export function ScoresPanel() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         title="Note hochladen"
-        description="PDF hochladen und Metadaten setzen."
+        description="PDF hochladen, Konzert zuordnen und Metadaten setzen."
         submitLabel="Hochladen"
         loading={pending}
         onSubmit={createScore}
@@ -311,7 +346,11 @@ export function ScoresPanel() {
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
           </div>
-          <ScoreFormFields form={form} onChange={setForm} />
+          <ScoreFormFields
+            form={form}
+            onChange={setForm}
+            concerts={concerts}
+          />
         </div>
       </FormDrawer>
 
@@ -327,7 +366,11 @@ export function ScoresPanel() {
         loading={pending}
         onSubmit={saveEdit}
       >
-        <ScoreFormFields form={form} onChange={setForm} />
+        <ScoreFormFields
+          form={form}
+          onChange={setForm}
+          concerts={concerts}
+        />
       </FormDrawer>
 
       <ConfirmDialog
@@ -372,12 +415,31 @@ export function ScoresPanel() {
 function ScoreFormFields({
   form,
   onChange,
+  concerts,
 }: {
   form: ScoreForm;
   onChange: (next: ScoreForm) => void;
+  concerts: ConcertOption[];
 }) {
   return (
     <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="score-concert">Konzert</Label>
+        <select
+          id="score-concert"
+          className={selectClass}
+          value={form.concertId}
+          onChange={(e) => onChange({ ...form, concertId: e.target.value })}
+          required
+        >
+          <option value="">Konzert wählen…</option>
+          {concerts.map((concert) => (
+            <option key={concert.id} value={concert.id}>
+              {concert.title}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="space-y-2">
         <Label htmlFor="score-title">Titel</Label>
         <Input
@@ -396,15 +458,14 @@ function ScoreFormFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="score-voice">Stimme</Label>
+        <Label htmlFor="score-voice">Besetzung</Label>
         <select
           id="score-voice"
           className={selectClass}
           value={form.voiceGroup}
           onChange={(e) => onChange({ ...form, voiceGroup: e.target.value })}
         >
-          <option value="">Alle / keine</option>
-          {VOICE_OPTIONS.map((opt) => (
+          {BESETZUNG_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>

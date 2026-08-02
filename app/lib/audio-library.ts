@@ -5,6 +5,19 @@ import type {
   VoiceGroup,
 } from "@/lib/generated/prisma/client";
 
+const storedFileSelect = {
+  id: true,
+  originalName: true,
+  mimeType: true,
+  sizeBytes: true,
+  uploadStatus: true,
+} as const;
+
+const concertSelect = {
+  id: true,
+  title: true,
+} as const;
+
 export function serializeAudio(
   audio: {
     id: string;
@@ -25,6 +38,7 @@ export function serializeAudio(
       sizeBytes: number;
       uploadStatus: string;
     };
+    concert?: { id: string; title: string } | null;
   },
 ) {
   return {
@@ -36,7 +50,10 @@ export function serializeAudio(
     access_scope: audio.accessScope,
     duration_seconds: audio.durationSeconds,
     is_visible: audio.isVisible,
-    concert_id: audio.concertId ?? null,
+    concert_id: audio.concertId ?? audio.concert?.id ?? null,
+    concert: audio.concert
+      ? { id: audio.concert.id, title: audio.concert.title }
+      : null,
     stored_file: {
       id: audio.storedFile.id,
       original_name: audio.storedFile.originalName,
@@ -63,20 +80,18 @@ export async function listAudioAdmin(q?: string) {
                   originalName: { contains: q, mode: "insensitive" },
                 },
               },
+              {
+                concert: {
+                  title: { contains: q, mode: "insensitive" },
+                },
+              },
             ],
           }
         : {}),
     },
     include: {
-      storedFile: {
-        select: {
-          id: true,
-          originalName: true,
-          mimeType: true,
-          sizeBytes: true,
-          uploadStatus: true,
-        },
-      },
+      storedFile: { select: storedFileSelect },
+      concert: { select: concertSelect },
     },
     orderBy: [{ updatedAt: "desc" }],
     take: 2000,
@@ -90,7 +105,7 @@ export async function createAudio(input: {
   voiceGroup?: VoiceGroup | null;
   audioType?: AudioType;
   accessScope?: FileAccessScope;
-  concertId?: string | null;
+  concertId: string;
 }) {
   const stored = await prisma.storedFile.findUnique({
     where: { id: input.storedFileId },
@@ -106,6 +121,13 @@ export async function createAudio(input: {
 
   const title = input.title.trim();
   if (!title) throw new Error("Titel ist Pflicht");
+  if (!input.concertId) throw new Error("Konzert ist Pflicht");
+
+  const concert = await prisma.concert.findUnique({
+    where: { id: input.concertId },
+    select: { id: true },
+  });
+  if (!concert) throw new Error("Konzert nicht gefunden");
 
   return prisma.audioFile.create({
     data: {
@@ -116,18 +138,11 @@ export async function createAudio(input: {
       audioType: input.audioType ?? "OTHER",
       accessScope: input.accessScope ?? "ALL_MEMBERS",
       isVisible: true,
-      concertId: input.concertId || null,
+      concertId: concert.id,
     },
     include: {
-      storedFile: {
-        select: {
-          id: true,
-          originalName: true,
-          mimeType: true,
-          sizeBytes: true,
-          uploadStatus: true,
-        },
-      },
+      storedFile: { select: storedFileSelect },
+      concert: { select: concertSelect },
     },
   });
 }

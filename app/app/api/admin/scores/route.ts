@@ -23,11 +23,18 @@ export async function POST(request: Request) {
     composer?: string | null;
     voiceGroup?: VoiceGroup | null;
     accessScope?: FileAccessScope;
+    concertId?: string;
   };
 
   if (!body.storedFileId) {
     return NextResponse.json(
       { detail: "storedFileId fehlt", code: "validation_error" },
+      { status: 400 },
+    );
+  }
+  if (!body.concertId) {
+    return NextResponse.json(
+      { detail: "Konzert ist Pflicht", code: "validation_error" },
       { status: 400 },
     );
   }
@@ -39,6 +46,7 @@ export async function POST(request: Request) {
       composer: body.composer,
       voiceGroup: body.voiceGroup,
       accessScope: body.accessScope,
+      concertId: body.concertId,
     });
     return NextResponse.json(serializeScore(sheet), { status: 201 });
   } catch (error) {

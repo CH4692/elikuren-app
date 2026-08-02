@@ -26,8 +26,14 @@ import {
 import { uploadFileViaPresign } from "@/lib/upload-client";
 import {
   AUDIO_TYPE_OPTIONS,
-  LIBRARY_VOICE_OPTIONS as VOICE_OPTIONS,
+  BESETZUNG_OPTIONS,
+  besetzungLabel,
 } from "@/lib/voice-options";
+
+type ConcertOption = {
+  id: string;
+  title: string;
+};
 
 type AudioItem = {
   id: string;
@@ -38,6 +44,8 @@ type AudioItem = {
   access_scope: string;
   duration_seconds: number | null;
   is_visible: boolean;
+  concert_id: string | null;
+  concert: ConcertOption | null;
   stored_file: {
     id: string;
     original_name: string;
@@ -54,11 +62,12 @@ type AudioForm = {
   voiceGroup: string;
   audioType: string;
   accessScope: string;
+  concertId: string;
 };
 
 const SCOPE_OPTIONS = [
   { value: "ALL_MEMBERS", label: "Alle Mitglieder" },
-  { value: "VOICE_GROUP_ONLY", label: "Nur Stimme" },
+  { value: "VOICE_GROUP_ONLY", label: "Nur Besetzung" },
   { value: "ADMIN_ONLY", label: "Nur Admin" },
 ] as const;
 
@@ -68,15 +77,11 @@ const selectClass =
 const emptyForm = (): AudioForm => ({
   title: "",
   composer: "",
-  voiceGroup: "",
+  voiceGroup: "ELIKUREN",
   audioType: "OTHER",
   accessScope: "ALL_MEMBERS",
+  concertId: "",
 });
-
-function voiceLabel(value: string | null) {
-  if (!value) return "—";
-  return VOICE_OPTIONS.find((o) => o.value === value)?.label ?? value;
-}
 
 function audioTypeLabel(value: string) {
   return AUDIO_TYPE_OPTIONS.find((o) => o.value === value)?.label ?? value;
@@ -84,6 +89,7 @@ function audioTypeLabel(value: string) {
 
 export function AudioFilesPanel() {
   const [items, setItems] = useState<AudioItem[]>([]);
+  const [concerts, setConcerts] = useState<ConcertOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [pending, startTransition] = useTransition();
@@ -92,6 +98,17 @@ export function AudioFilesPanel() {
   const [deleteTarget, setDeleteTarget] = useState<AudioItem | null>(null);
   const [form, setForm] = useState<AudioForm>(emptyForm());
   const [file, setFile] = useState<File | null>(null);
+
+  async function loadConcerts() {
+    try {
+      const res = await fetch("/api/admin/concerts");
+      if (!res.ok) return;
+      const data = (await res.json()) as { items: ConcertOption[] };
+      setConcerts(data.items);
+    } catch {
+      /* ignore */
+    }
+  }
 
   async function load(q?: string) {
     setLoading(true);
@@ -110,11 +127,13 @@ export function AudioFilesPanel() {
 
   useEffect(() => {
     void load();
+    void loadConcerts();
   }, []);
 
   function openCreate() {
     setForm(emptyForm());
     setFile(null);
+    void loadConcerts();
     setCreateOpen(true);
   }
 
@@ -122,10 +141,12 @@ export function AudioFilesPanel() {
     setForm({
       title: item.title,
       composer: item.composer,
-      voiceGroup: item.voice_group ?? "",
+      voiceGroup: item.voice_group ?? "ELIKUREN",
       audioType: item.audio_type,
       accessScope: item.access_scope,
+      concertId: item.concert_id ?? item.concert?.id ?? "",
     });
+    void loadConcerts();
     setEditTarget(item);
   }
 
@@ -136,6 +157,10 @@ export function AudioFilesPanel() {
     }
     if (!form.title.trim()) {
       toast.error("Titel ist Pflicht");
+      return;
+    }
+    if (!form.concertId) {
+      toast.error("Konzert ist Pflicht");
       return;
     }
 
@@ -153,9 +178,10 @@ export function AudioFilesPanel() {
             storedFileId: uploaded.fileId,
             title: form.title.trim(),
             composer: form.composer.trim() || null,
-            voiceGroup: form.voiceGroup || null,
+            voiceGroup: form.voiceGroup || "ELIKUREN",
             audioType: form.audioType,
             accessScope: form.accessScope,
+            concertId: form.concertId,
           }),
         });
         if (!res.ok) {
@@ -182,6 +208,10 @@ export function AudioFilesPanel() {
       toast.error("Titel ist Pflicht");
       return;
     }
+    if (!form.concertId) {
+      toast.error("Konzert ist Pflicht");
+      return;
+    }
 
     startTransition(async () => {
       const res = await fetch(`/api/admin/audio/${editTarget.id}`, {
@@ -190,9 +220,10 @@ export function AudioFilesPanel() {
         body: JSON.stringify({
           title: form.title.trim(),
           composer: form.composer.trim() || null,
-          voiceGroup: form.voiceGroup || null,
+          voiceGroup: form.voiceGroup || "ELIKUREN",
           audioType: form.audioType,
           accessScope: form.accessScope,
+          concertId: form.concertId,
         }),
       });
       if (!res.ok) {
@@ -209,7 +240,7 @@ export function AudioFilesPanel() {
     <div>
       <PageHeader
         title="Audiodateien"
-        description="Übematerial hochladen und Metadaten bearbeiten."
+        description="Übematerial einem Konzert zuordnen, hochladen und Metadaten bearbeiten."
         actions={
           <Button type="button" onClick={openCreate}>
             <Plus className="size-4" />
@@ -221,7 +252,7 @@ export function AudioFilesPanel() {
       <DataTableToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Titel, Komponist, Dateiname…"
+        searchPlaceholder="Titel, Komponist, Konzert, Dateiname…"
         actions={
           <Button
             type="button"
@@ -253,8 +284,9 @@ export function AudioFilesPanel() {
               <TableRow>
                 <TableHead>Titel</TableHead>
                 <TableHead>Komponist</TableHead>
+                <TableHead>Konzert</TableHead>
                 <TableHead>Typ</TableHead>
-                <TableHead>Stimme</TableHead>
+                <TableHead>Besetzung</TableHead>
                 <TableHead className="text-right">Aktionen</TableHead>
               </TableRow>
             </TableHeader>
@@ -268,8 +300,9 @@ export function AudioFilesPanel() {
                     </div>
                   </TableCell>
                   <TableCell>{item.composer || "—"}</TableCell>
+                  <TableCell>{item.concert?.title ?? "—"}</TableCell>
                   <TableCell>{audioTypeLabel(item.audio_type)}</TableCell>
-                  <TableCell>{voiceLabel(item.voice_group)}</TableCell>
+                  <TableCell>{besetzungLabel(item.voice_group)}</TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex items-center justify-end gap-1.5">
                       <AdminEditButton onClick={() => openEdit(item)} />
@@ -290,7 +323,7 @@ export function AudioFilesPanel() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         title="Audio hochladen"
-        description="Audiodatei hochladen und Metadaten setzen."
+        description="Audiodatei hochladen, Konzert zuordnen und Metadaten setzen."
         submitLabel="Hochladen"
         loading={pending}
         onSubmit={createAudio}
@@ -305,7 +338,11 @@ export function AudioFilesPanel() {
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
           </div>
-          <AudioFormFields form={form} onChange={setForm} />
+          <AudioFormFields
+            form={form}
+            onChange={setForm}
+            concerts={concerts}
+          />
         </div>
       </FormDrawer>
 
@@ -319,7 +356,11 @@ export function AudioFilesPanel() {
         loading={pending}
         onSubmit={saveEdit}
       >
-        <AudioFormFields form={form} onChange={setForm} />
+        <AudioFormFields
+          form={form}
+          onChange={setForm}
+          concerts={concerts}
+        />
       </FormDrawer>
 
       <ConfirmDialog
@@ -357,12 +398,31 @@ export function AudioFilesPanel() {
 function AudioFormFields({
   form,
   onChange,
+  concerts,
 }: {
   form: AudioForm;
   onChange: (next: AudioForm) => void;
+  concerts: ConcertOption[];
 }) {
   return (
     <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="audio-concert">Konzert</Label>
+        <select
+          id="audio-concert"
+          className={selectClass}
+          value={form.concertId}
+          onChange={(e) => onChange({ ...form, concertId: e.target.value })}
+          required
+        >
+          <option value="">Konzert wählen…</option>
+          {concerts.map((concert) => (
+            <option key={concert.id} value={concert.id}>
+              {concert.title}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="space-y-2">
         <Label htmlFor="audio-title">Titel</Label>
         <Input
@@ -396,15 +456,14 @@ function AudioFormFields({
         </select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="audio-voice">Stimme</Label>
+        <Label htmlFor="audio-voice">Besetzung</Label>
         <select
           id="audio-voice"
           className={selectClass}
           value={form.voiceGroup}
           onChange={(e) => onChange({ ...form, voiceGroup: e.target.value })}
         >
-          <option value="">Alle / keine</option>
-          {VOICE_OPTIONS.map((opt) => (
+          {BESETZUNG_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>

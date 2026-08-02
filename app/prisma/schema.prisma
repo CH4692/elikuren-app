@@ -37,8 +37,11 @@ enum VoiceGroup {
   ALTO
   TENOR
   BASS
+  /// Full choir / default casting.
+  ELIKUREN
   MUSICAL_TEAM
   EIGHT_TO_THE_BAR
+  SOLO
   OTHER
 }
 
@@ -212,6 +215,9 @@ model SheetFile {
   voiceGroup   VoiceGroup?     @map("voice_group")
   accessScope  FileAccessScope @default(ALL_MEMBERS) @map("access_scope")
   isVisible    Boolean         @default(true) @map("is_visible")
+  /// Concert / season this score belongs to.
+  concertId    String?         @map("concert_id")
+  concert      Concert?        @relation(fields: [concertId], references: [id], onDelete: SetNull)
   createdAt    DateTime        @default(now()) @map("created_at")
   updatedAt    DateTime        @updatedAt @map("updated_at")
   concertItems ConcertItem[]
@@ -220,6 +226,7 @@ model SheetFile {
   @@index([composer])
   @@index([voiceGroup])
   @@index([isVisible])
+  @@index([concertId])
   @@map("sheet_files")
 }
 
@@ -263,6 +270,7 @@ model Concert {
   updatedAt   DateTime      @updatedAt @map("updated_at")
   items       ConcertItem[]
   recordings  AudioFile[]
+  sheetFiles  SheetFile[]
 
   @@index([isCurrent])
   @@index([date])
@@ -277,7 +285,7 @@ model ConcertItem {
   concert      Concert     @relation(fields: [concertId], references: [id], onDelete: Cascade)
   sortOrder    Int         @default(0) @map("sort_order")
   title        String
-  ensemble     VoiceGroup? // null = Elikuren / alle; MUSICAL_TEAM / EIGHT_TO_THE_BAR for ensembles
+  ensemble     VoiceGroup? // Besetzung: ELIKUREN | MUSICAL_TEAM | EIGHT_TO_THE_BAR | SOLO
   sheetFileId  String?     @map("sheet_file_id")
   sheetFile    SheetFile?  @relation(fields: [sheetFileId], references: [id], onDelete: SetNull)
   audioFileId  String?     @map("audio_file_id")
