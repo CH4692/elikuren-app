@@ -47,7 +47,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   },
   {
     href: "/admin/scores",
-    label: "Noten & PDFs",
+    label: "Noten",
     icon: FileMusic,
     permission: "PIECE_MANAGE",
   },

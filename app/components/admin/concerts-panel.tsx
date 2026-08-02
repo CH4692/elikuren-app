@@ -572,7 +572,7 @@ export function ConcertsPanel() {
       >
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="ci-score">Note & PDF</Label>
+            <Label htmlFor="ci-score">Note</Label>
             <select
               id="ci-score"
               className={selectClass}

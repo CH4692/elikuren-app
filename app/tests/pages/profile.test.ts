@@ -27,7 +27,7 @@ test.describe("Admin scores & audio UI", () => {
   test("admin can open scores and audio admin pages", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/scores", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: "Noten & PDFs" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Noten" })).toBeVisible();
     await page.goto("/admin/audio", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Audiodateien" })).toBeVisible();
   });

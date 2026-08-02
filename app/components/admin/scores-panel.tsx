@@ -202,8 +202,8 @@ export function ScoresPanel() {
   return (
     <div>
       <PageHeader
-        title="Noten & PDFs"
-        description="Noten hochladen und Metadaten bearbeiten."
+        title="Noten"
+        description="Chornoten hochladen und Metadaten bearbeiten."
         actions={
           <Button type="button" onClick={openCreate}>
             <Plus className="size-4" />
@@ -238,7 +238,7 @@ export function ScoresPanel() {
         <EmptyState
           icon={FileMusic}
           title="Keine Noten gefunden"
-          description="Lade die erste PDF-Note über „Note hochladen“ hoch."
+          description="Lade die erste Note über „Note hochladen“ hoch."
         />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-[#ebe4d8] bg-white/70">

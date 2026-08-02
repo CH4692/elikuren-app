@@ -25,7 +25,7 @@ test.describe("Mitgliederbereich Smoke", () => {
     ).toBeVisible();
     await expect(sidebar.getByRole("link", { name: "Stücke" })).toHaveCount(0);
     await expect(
-      sidebar.getByRole("link", { name: "Noten & PDFs" }),
+      sidebar.getByRole("link", { name: "Noten", exact: true }),
     ).toBeVisible();
     await expect(
       sidebar.getByRole("link", { name: "Audiodateien" }),
