@@ -11,7 +11,11 @@
 /Übungsdateien/
 /pictures/
 /Mitgliederliste/
+/Leipzig 08. - 09.03.2025/
+/Leipzig 2026/
+/Magenta/
 app/scripts/import-manifest.json
+app/scripts/import-folder-batches-manifest.json
 
 # ----------------------------
 # Node / Next.js

@@ -20,7 +20,9 @@
     "db:seed": "npx tsx prisma/seed.ts",
     "import:media": "npx tsx scripts/import-media.ts",
     "import:media:apply": "npx tsx scripts/import-media.ts --apply",
-    "import:members": "npx tsx scripts/import-members-xlsx.ts"
+    "import:members": "npx tsx scripts/import-members-xlsx.ts",
+    "import:folder-batches": "npx tsx scripts/import-folder-batches.ts",
+    "import:folder-batches:apply": "npx tsx scripts/import-folder-batches.ts --apply"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
