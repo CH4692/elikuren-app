@@ -22,7 +22,7 @@
 | Variable | Production vs Preview |
 |----------|------------------------|
 | `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | **Split** — different Neon projects/branches |
-| `AUTH_URL` / `SITE_URL` / `NEXT_PUBLIC_SITE_URL` | **Split** — live domain vs Preview URL (`SITE_URL` preferred server-side for emails) |
+| `AUTH_URL` / `SITE_URL` / `NEXT_PUBLIC_SITE_URL` | **Split** — live domain vs Preview URL (email origin: `SITE_URL` → `AUTH_URL` → `NEXT_PUBLIC_SITE_URL`) |
 | `AUTH_SECRET` | **Split** — different secrets |
 | `R2_BUCKET_NAME` | **Split** — prod vs preview bucket |
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | **Split** if tokens are bucket-scoped |
@@ -91,7 +91,7 @@ Branch protection on `main` and `dev`: require status check **`test`**, require 
 ## 5. Auth.js / Resend / transactional email
 
 1. Verify the Resend domain for `EMAIL_FROM` (SPF/DKIM must be checked in Resend before productive sends).
-2. Set production `SITE_URL` or `AUTH_URL` to `https://kammerchor-elikuren.de` (required — no silent production fallback).
+2. Set production `SITE_URL`, `AUTH_URL`, or `NEXT_PUBLIC_SITE_URL` to the live origin (required — no silent production fallback). Priority for emails: `SITE_URL` → `AUTH_URL` → `NEXT_PUBLIC_SITE_URL`.
 3. Sign-in / sign-up: `/auth/sign-in`, `/auth/sign-up`
 4. Magic-link callback goes through `/api/auth/*`
 5. Preview / local safety:

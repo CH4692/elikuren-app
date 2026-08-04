@@ -1,5 +1,5 @@
 /**
- * Production-like environments must configure SITE_URL or AUTH_URL.
+ * Production-like environments must configure an absolute site origin.
  * Vercel Preview uses VERCEL_ENV=preview (NODE_ENV is still "production").
  */
 export function isProductionEnv(): boolean {
@@ -28,11 +28,14 @@ function normalizeAbsoluteUrl(raw: string): string {
 
 /**
  * Canonical absolute site origin for server-side email/links.
- * Priority: SITE_URL → AUTH_URL → localhost fallback (non-production only).
+ * Priority: SITE_URL → AUTH_URL → NEXT_PUBLIC_SITE_URL → localhost (non-production only).
  */
 export function getSiteUrl(): string {
   const configured =
-    process.env.SITE_URL?.trim() || process.env.AUTH_URL?.trim() || "";
+    process.env.SITE_URL?.trim() ||
+    process.env.AUTH_URL?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    "";
 
   if (configured) {
     return normalizeAbsoluteUrl(configured);
@@ -43,7 +46,7 @@ export function getSiteUrl(): string {
   }
 
   throw new Error(
-    "Missing site URL configuration: set SITE_URL or AUTH_URL for production.",
+    "Missing site URL configuration: set SITE_URL, AUTH_URL, or NEXT_PUBLIC_SITE_URL for production.",
   );
 }
 
