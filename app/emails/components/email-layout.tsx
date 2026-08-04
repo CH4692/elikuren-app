@@ -34,7 +34,7 @@ export function EmailLayout({
         style={{
           margin: 0,
           padding: "40px 16px",
-          backgroundColor: EMAIL_COLORS.cream,
+          backgroundColor: EMAIL_COLORS.forest,
           fontFamily: EMAIL_FONT_SANS,
         }}
       >
@@ -45,7 +45,7 @@ export function EmailLayout({
             backgroundColor: EMAIL_COLORS.white,
             borderRadius: "8px",
             overflow: "hidden",
-            border: `1px solid ${EMAIL_COLORS.border}`,
+            border: `1px solid ${EMAIL_COLORS.gold}`,
           }}
         >
           <EmailHeader logoUrl={logoUrl} eyebrow={eyebrow} />

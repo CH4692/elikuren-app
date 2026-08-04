@@ -23,7 +23,7 @@ export function EmailButton({ href, children }: EmailButtonProps) {
           textDecoration: "none",
           textAlign: "center",
           padding: "16px 32px",
-          borderRadius: "8px",
+          borderRadius: "999px",
           minHeight: "48px",
           border: `1px solid ${EMAIL_COLORS.gold}`,
         }}

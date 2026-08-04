@@ -20,10 +20,11 @@ export function EmailFooter({ siteUrl }: EmailFooterProps) {
       <Text
         style={{
           margin: "0 0 4px",
-          color: EMAIL_COLORS.muted,
+          color: EMAIL_COLORS.forest,
           fontFamily: EMAIL_FONT_SANS,
           fontSize: "12px",
           lineHeight: "18px",
+          fontWeight: 600,
         }}
       >
         Kammerchor Elikuren e.V.
@@ -31,7 +32,7 @@ export function EmailFooter({ siteUrl }: EmailFooterProps) {
       <Link
         href={siteUrl}
         style={{
-          color: EMAIL_COLORS.muted,
+          color: EMAIL_COLORS.gold,
           fontFamily: EMAIL_FONT_SANS,
           fontSize: "12px",
           lineHeight: "18px",
