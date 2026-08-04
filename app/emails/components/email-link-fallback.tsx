@@ -8,10 +8,6 @@ type EmailLinkFallbackProps = {
   linkLabel?: string;
 };
 
-/**
- * HTML fallback uses a short readable link label.
- * The full URL belongs in the plaintext part (and as href), not as visible clutter.
- */
 export function EmailLinkFallback({
   href,
   label = "Falls der Button nicht funktioniert:",
@@ -20,11 +16,11 @@ export function EmailLinkFallback({
   return (
     <Text
       style={{
-        margin: "20px 0 0",
+        margin: "12px 0 0",
         color: EMAIL_COLORS.muted,
         fontFamily: EMAIL_FONT_SANS,
-        fontSize: "13px",
-        lineHeight: "20px",
+        fontSize: "12px",
+        lineHeight: "18px",
         textAlign: "center",
       }}
     >
@@ -34,8 +30,8 @@ export function EmailLinkFallback({
         style={{
           color: EMAIL_COLORS.forest,
           fontFamily: EMAIL_FONT_SANS,
-          fontSize: "13px",
-          lineHeight: "20px",
+          fontSize: "12px",
+          lineHeight: "18px",
           textDecoration: "underline",
           fontWeight: 600,
         }}

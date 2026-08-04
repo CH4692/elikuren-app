@@ -34,7 +34,7 @@ export function MagicLinkEmail({
       <EmailText
         muted
         align="center"
-        style={{ marginTop: "28px", marginBottom: 0, fontSize: "13px", lineHeight: "20px" }}
+        style={{ marginTop: "16px", marginBottom: 0, fontSize: "12px", lineHeight: "18px" }}
       >
         Wenn du diesen Link nicht angefordert hast, kannst du diese E-Mail
         ignorieren.

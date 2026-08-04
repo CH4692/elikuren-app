@@ -80,7 +80,7 @@ export function ContactInquiryEmail({
         <strong>Nachricht:</strong>
       </EmailText>
       <MessageLines message={message} />
-      <Section style={{ marginTop: "28px" }}>
+      <Section style={{ marginTop: "16px" }}>
         <EmailButton href={`mailto:${email}`}>Direkt antworten</EmailButton>
       </Section>
     </EmailLayout>

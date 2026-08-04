@@ -29,12 +29,11 @@ export function EmailLayout({
   return (
     <Html lang="de">
       <Head>
-        {/* Keep brand colors in Apple Mail / iOS dark mode */}
         <meta name="color-scheme" content="light only" />
         <meta name="supported-color-schemes" content="light" />
         <style>{`
           :root { color-scheme: light only; }
-          u + div .body { background-color: ${EMAIL_COLORS.forest} !important; }
+          u + div .body { background-color: ${EMAIL_COLORS.cream} !important; }
         `}</style>
       </Head>
       <Preview>{preview}</Preview>
@@ -42,27 +41,27 @@ export function EmailLayout({
         className="body"
         style={{
           margin: 0,
-          padding: "40px 16px",
-          backgroundColor: EMAIL_COLORS.forest,
+          padding: "28px 14px",
+          backgroundColor: EMAIL_COLORS.cream,
           fontFamily: EMAIL_FONT_SANS,
           colorScheme: "light only",
         } as React.CSSProperties}
       >
         <Container
           style={{
-            maxWidth: "560px",
+            maxWidth: "520px",
             margin: "0 auto",
-            backgroundColor: EMAIL_COLORS.white,
-            borderRadius: "8px",
+            backgroundColor: EMAIL_COLORS.card,
+            borderRadius: "10px",
             overflow: "hidden",
-            border: `1px solid ${EMAIL_COLORS.gold}`,
+            border: `1px solid ${EMAIL_COLORS.border}`,
           }}
         >
           <EmailHeader logoUrl={logoUrl} eyebrow={eyebrow} />
           <Section
             style={{
-              padding: "36px 40px 40px",
-              backgroundColor: EMAIL_COLORS.white,
+              padding: "28px 32px 24px",
+              backgroundColor: EMAIL_COLORS.card,
             }}
           >
             {children}
