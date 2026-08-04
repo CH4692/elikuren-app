@@ -8,6 +8,9 @@ type ContactFormContextType = {
   errors: Record<string, string>;
   isSending: boolean;
   successMessage: string;
+  email: string;
+  setEmail: (value: string) => void;
+  emailSuggestion: string | null;
 };
 
 export function useContactForm() {
