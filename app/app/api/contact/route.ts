@@ -4,6 +4,7 @@ import {
   ContactInquiryEmail,
   contactInquiryEmailText,
 } from "@/emails/contact-inquiry-email";
+import { checkEmailAddress } from "@/lib/email-address";
 import { emailLogoUrl, emailSiteUrl } from "@/lib/email/assets";
 import { getContactEmailTo } from "@/lib/email/brand";
 import { EmailSendError, sendEmail } from "@/lib/email/send-email";
@@ -20,25 +21,29 @@ export async function POST(req: Request) {
       message?: string;
     };
 
+    const emailCheck = checkEmailAddress(String(email ?? ""));
+
     if (
       !firstName?.trim() ||
       !lastName?.trim() ||
-      !email?.trim() ||
+      !emailCheck.ok ||
       !message?.trim()
     ) {
       return NextResponse.json({ error: "Fehler beim Senden" }, { status: 400 });
     }
 
+    const normalizedEmail = emailCheck.normalized;
+
     const result = await sendEmail({
       to: getContactEmailTo(),
-      replyTo: email.trim(),
+      replyTo: normalizedEmail,
       subject: subject?.trim() || "Neue Kontaktanfrage",
       kind: "transactional",
       templateName: "contact-inquiry",
       react: ContactInquiryEmail({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        email: email.trim(),
+        email: normalizedEmail,
         subject: subject?.trim() || "",
         message: String(message),
         logoUrl: emailLogoUrl(),
@@ -47,7 +52,7 @@ export async function POST(req: Request) {
       text: contactInquiryEmailText({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        email: email.trim(),
+        email: normalizedEmail,
         subject: subject?.trim() || "",
         message: String(message),
       }),
