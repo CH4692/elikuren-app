@@ -22,12 +22,15 @@
 | Variable | Production vs Preview |
 |----------|------------------------|
 | `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | **Split** — different Neon projects/branches |
-| `AUTH_URL` / `NEXT_PUBLIC_SITE_URL` | **Split** — live domain vs Preview URL |
+| `AUTH_URL` / `SITE_URL` / `NEXT_PUBLIC_SITE_URL` | **Split** — live domain vs Preview URL (`SITE_URL` preferred server-side for emails) |
 | `AUTH_SECRET` | **Split** — different secrets |
 | `R2_BUCKET_NAME` | **Split** — prod vs preview bucket |
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | **Split** if tokens are bucket-scoped |
 | `R2_ACCOUNT_ID` / `R2_ENDPOINT` / `R2_REGION` | Share OK (same Cloudflare account) |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Share OK |
+| `CONTACT_EMAIL_TO` | Share OK (contact-form inbox) |
+| `EMAIL_REDIRECT_TO` | Preview/local only — transactional mail redirect; **never** used for magic links |
+| `EMAIL_AUTH_ALLOWED_RECIPIENTS` | Preview/local only — allowlist for magic-link recipients when using a real Resend key |
 
 Do **not** set `AUTH_ENABLE_PASSWORD_LOGIN` on Vercel (local/E2E only).
 
@@ -85,14 +88,23 @@ Repo secrets (never Production Neon):
 
 Branch protection on `main` and `dev`: require status check **`test`**, require PR, **0** approving reviews (solo).
 
-## 5. Auth.js / Resend
+## 5. Auth.js / Resend / transactional email
 
-1. Verify the Resend domain for `EMAIL_FROM`
-2. Sign-in / sign-up: `/auth/sign-in`, `/auth/sign-up`
-3. Magic-link callback goes through `/api/auth/*`
+1. Verify the Resend domain for `EMAIL_FROM` (SPF/DKIM must be checked in Resend before productive sends).
+2. Set production `SITE_URL` or `AUTH_URL` to `https://kammerchor-elikuren.de` (required — no silent production fallback).
+3. Sign-in / sign-up: `/auth/sign-in`, `/auth/sign-up`
+4. Magic-link callback goes through `/api/auth/*`
+5. Preview / local safety:
+   - Prefer a `re_test*` Resend key in CI (magic links + sends are skipped).
+   - With a real Resend key in non-production: set `EMAIL_AUTH_ALLOWED_RECIPIENTS` (comma-separated). Magic links to other addresses are **blocked**.
+   - Optional `EMAIL_REDIRECT_TO` redirects **transactional** mail only (contact, membership approval). It is **never** applied to Auth.js magic links (the link authenticates the original recipient).
+   - Preview/test environments must not use the production Auth/member database.
+
+Local preview of templates: from `app/`, run `npm run email:dev`.
 
 ## 6. Verify after Production deploy
 
 - `https://kammerchor-elikuren.de/api/health`
 - Contact form
 - Sign-in → Magic Link → Dashboard
+- Spot-check branded mail rendering in Gmail, Outlook, and Apple Mail after the first real send

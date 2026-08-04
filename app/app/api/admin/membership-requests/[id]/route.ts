@@ -1,30 +1,41 @@
 import { NextResponse } from "next/server";
 
-import { Resend } from "resend";
-
+import {
+  MembershipApprovedEmail,
+  membershipApprovedEmailText,
+} from "@/emails/membership-approved-email";
 import { requirePermission } from "@/lib/authz";
+import { emailLogoUrl, emailSiteUrl } from "@/lib/email/assets";
+import { EmailSendError, sendEmail } from "@/lib/email/send-email";
 import { reviewMembershipRequest } from "@/lib/membership-requests";
+import { absoluteUrl } from "@/lib/site-url";
 
 type Params = { params: Promise<{ id: string }> };
 
-async function sendApprovalEmail(email: string) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey || apiKey.startsWith("re_test")) return false;
-
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.AUTH_URL ||
-    "https://kammerchor-elikuren.de";
-  const resend = new Resend(apiKey);
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM ?? "noreply@kammerchor-elikuren.de",
-    to: email,
-    subject: "Zugang freigeschaltet – Kammerchor Elikuren",
-    html: `<p>Dein Zugang zum Mitgliederbereich des Kammerchors Elikuren wurde freigeschaltet.</p>
-<p>Bitte melde dich an und fordere dort deinen Magic Link an:</p>
-<p><a href="${siteUrl}/auth/sign-in">${siteUrl}/auth/sign-in</a></p>`,
-  });
-  return true;
+async function sendApprovalEmail(email: string): Promise<boolean> {
+  const signInUrl = absoluteUrl("/auth/sign-in");
+  try {
+    const result = await sendEmail({
+      to: email,
+      subject: "Zugang freigeschaltet – Kammerchor Elikuren",
+      kind: "transactional",
+      templateName: "membership-approved",
+      react: MembershipApprovedEmail({
+        signInUrl,
+        logoUrl: emailLogoUrl(),
+        siteUrl: emailSiteUrl(),
+      }),
+      text: membershipApprovedEmailText({ signInUrl }),
+    });
+    return result.status === "sent";
+  } catch (error) {
+    console.error("[email]", {
+      event: "membership_approved_send_failed",
+      templateName: "membership-approved",
+      code: error instanceof EmailSendError ? error.code : "unknown",
+    });
+    return false;
+  }
 }
 
 export async function PATCH(request: Request, { params }: Params) {
@@ -63,11 +74,8 @@ export async function PATCH(request: Request, { params }: Params) {
 
     let approvalEmailSent = false;
     if (body.status === "approved") {
-      try {
-        approvalEmailSent = await sendApprovalEmail(updated.email);
-      } catch {
-        approvalEmailSent = false;
-      }
+      // Freischaltung bleibt bestehen, auch wenn die Benachrichtigung fehlschlägt.
+      approvalEmailSent = await sendApprovalEmail(updated.email);
     }
 
     return NextResponse.json({
