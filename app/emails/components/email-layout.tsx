@@ -28,15 +28,25 @@ export function EmailLayout({
 }: EmailLayoutProps) {
   return (
     <Html lang="de">
-      <Head />
+      <Head>
+        {/* Keep brand colors in Apple Mail / iOS dark mode */}
+        <meta name="color-scheme" content="light only" />
+        <meta name="supported-color-schemes" content="light" />
+        <style>{`
+          :root { color-scheme: light only; }
+          u + div .body { background-color: ${EMAIL_COLORS.forest} !important; }
+        `}</style>
+      </Head>
       <Preview>{preview}</Preview>
       <Body
+        className="body"
         style={{
           margin: 0,
           padding: "40px 16px",
           backgroundColor: EMAIL_COLORS.forest,
           fontFamily: EMAIL_FONT_SANS,
-        }}
+          colorScheme: "light only",
+        } as React.CSSProperties}
       >
         <Container
           style={{
@@ -49,7 +59,14 @@ export function EmailLayout({
           }}
         >
           <EmailHeader logoUrl={logoUrl} eyebrow={eyebrow} />
-          <Section style={{ padding: "36px 40px 40px" }}>{children}</Section>
+          <Section
+            style={{
+              padding: "36px 40px 40px",
+              backgroundColor: EMAIL_COLORS.white,
+            }}
+          >
+            {children}
+          </Section>
           <EmailFooter siteUrl={siteUrl} />
         </Container>
       </Body>
