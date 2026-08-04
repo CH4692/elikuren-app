@@ -4,6 +4,9 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Resend from "next-auth/providers/resend";
 
+import { MagicLinkEmail, magicLinkEmailText } from "@/emails/magic-link-email";
+import { emailLogoUrl, emailSiteUrl } from "@/lib/email/assets";
+import { EmailSendError, sendEmail } from "@/lib/email/send-email";
 import { normalizeEmail } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
 import type { Role } from "@/lib/generated/prisma/client";
@@ -24,34 +27,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       from: process.env.EMAIL_FROM ?? "noreply@kammerchor-elikuren.de",
       // CI / .env.test use re_test_* — skip real Resend calls so Playwright can assert gates.
       async sendVerificationRequest(params) {
-        const apiKey = resendApiKey;
-        if (!apiKey) {
-          throw new Error(
-            "RESEND_API_KEY (or AUTH_RESEND_KEY) is not configured",
-          );
-        }
-        if (apiKey.startsWith("re_test")) {
-          console.info(
-            `[auth:e2e] magic-link skipped (test key) for ${params.identifier}`,
-          );
-          return;
-        }
-        const { identifier, url, provider } = params;
-        const res = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: provider.from,
+        const { identifier, url } = params;
+        try {
+          await sendEmail({
             to: identifier,
             subject: "Anmeldelink – Kammerchor Elikuren",
-            html: `<p><a href="${url}">${url}</a></p>`,
-          }),
-        });
-        if (!res.ok) {
-          throw new Error(`Resend error: ${await res.text()}`);
+            kind: "magic-link",
+            templateName: "magic-link",
+            react: MagicLinkEmail({
+              loginUrl: url,
+              logoUrl: emailLogoUrl(),
+              siteUrl: emailSiteUrl(),
+            }),
+            text: magicLinkEmailText({ loginUrl: url }),
+          });
+        } catch (error) {
+          if (error instanceof EmailSendError) {
+            throw error;
+          }
+          throw new EmailSendError(
+            "provider_error",
+            "Failed to send magic-link email",
+            { cause: error },
+          );
         }
       },
     }),
