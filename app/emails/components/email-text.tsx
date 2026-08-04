@@ -18,11 +18,11 @@ export function EmailText({
   return (
     <Text
       style={{
-        margin: "0 0 16px",
+        margin: "0 0 12px",
         color: muted ? EMAIL_COLORS.muted : EMAIL_COLORS.text,
         fontFamily: EMAIL_FONT_SANS,
-        fontSize: "16px",
-        lineHeight: "26px",
+        fontSize: "15px",
+        lineHeight: "22px",
         textAlign: align,
         ...style,
       }}

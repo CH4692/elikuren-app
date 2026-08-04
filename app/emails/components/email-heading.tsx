@@ -15,12 +15,12 @@ export function EmailHeading({
     <Heading
       as="h1"
       style={{
-        margin: "0 0 12px",
-        color: EMAIL_COLORS.text,
+        margin: "0 0 8px",
+        color: EMAIL_COLORS.forest,
         fontFamily: EMAIL_FONT_SERIF,
-        fontSize: "26px",
+        fontSize: "22px",
         fontWeight: 400,
-        lineHeight: "34px",
+        lineHeight: "28px",
         textAlign: align,
       }}
     >

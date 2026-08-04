@@ -7,13 +7,10 @@ type EmailButtonProps = {
   children: React.ReactNode;
 };
 
-/**
- * Brand CTA: gold fill + forest text for contrast.
- * Compact padding — oversized min-height looks bulky in Apple Mail.
- */
+/** Compact gold CTA with forest text — clear, not oversized. */
 export function EmailButton({ href, children }: EmailButtonProps) {
   return (
-    <Section style={{ textAlign: "center", margin: "28px 0 12px" }}>
+    <Section style={{ textAlign: "center", margin: "20px 0 8px" }}>
       <Button
         href={href}
         style={{
@@ -21,17 +18,16 @@ export function EmailButton({ href, children }: EmailButtonProps) {
           background: EMAIL_COLORS.gold,
           color: EMAIL_COLORS.forest,
           fontFamily: EMAIL_FONT_SANS,
-          fontSize: "15px",
+          fontSize: "14px",
           fontWeight: 700,
           lineHeight: "100%",
-          letterSpacing: "0.3px",
+          letterSpacing: "0.2px",
           textDecoration: "none",
           textAlign: "center",
           display: "inline-block",
-          padding: "14px 36px",
-          borderRadius: "999px",
-          border: `2px solid ${EMAIL_COLORS.gold}`,
-          msoPaddingAlt: "14px 36px",
+          padding: "12px 28px",
+          borderRadius: "6px",
+          border: `1px solid ${EMAIL_COLORS.gold}`,
         } as React.CSSProperties}
       >
         {children}

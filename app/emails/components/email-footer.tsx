@@ -11,20 +11,19 @@ export function EmailFooter({ siteUrl }: EmailFooterProps) {
   return (
     <Section
       style={{
-        backgroundColor: EMAIL_COLORS.cream,
-        padding: "24px 32px",
+        backgroundColor: EMAIL_COLORS.card,
+        padding: "16px 32px 20px",
         textAlign: "center",
         borderTop: `1px solid ${EMAIL_COLORS.border}`,
       }}
     >
       <Text
         style={{
-          margin: "0 0 4px",
-          color: EMAIL_COLORS.forest,
+          margin: "0 0 2px",
+          color: EMAIL_COLORS.muted,
           fontFamily: EMAIL_FONT_SANS,
-          fontSize: "12px",
-          lineHeight: "18px",
-          fontWeight: 600,
+          fontSize: "11px",
+          lineHeight: "16px",
         }}
       >
         Kammerchor Elikuren e.V.
@@ -32,10 +31,10 @@ export function EmailFooter({ siteUrl }: EmailFooterProps) {
       <Link
         href={siteUrl}
         style={{
-          color: EMAIL_COLORS.gold,
+          color: EMAIL_COLORS.muted,
           fontFamily: EMAIL_FONT_SANS,
-          fontSize: "12px",
-          lineHeight: "18px",
+          fontSize: "11px",
+          lineHeight: "16px",
           textDecoration: "underline",
         }}
       >
