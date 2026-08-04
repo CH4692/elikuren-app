@@ -122,7 +122,7 @@ export async function sendEmail(
       });
       throw new EmailSendError(
         "recipient_not_allowed",
-        "Magic-link email blocked: recipient is not in EMAIL_AUTH_ALLOWED_RECIPIENTS for this non-production environment.",
+        "Magic-link email blocked: recipient is not in the configured EMAIL_AUTH_ALLOWED_RECIPIENTS allowlist.",
       );
     }
   }

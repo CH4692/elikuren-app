@@ -37,7 +37,18 @@ describe("isMagicLinkRecipientAllowed", () => {
     );
   });
 
-  it("blocks non-allowlisted recipients outside production", () => {
+  it("allows all recipients outside production when allowlist is unset", () => {
+    assert.equal(
+      isMagicLinkRecipientAllowed("member@example.com", undefined, false),
+      true,
+    );
+    assert.equal(
+      isMagicLinkRecipientAllowed("member@example.com", "  ", false),
+      true,
+    );
+  });
+
+  it("blocks non-allowlisted recipients when allowlist is set", () => {
     assert.equal(
       isMagicLinkRecipientAllowed(
         "member@example.com",

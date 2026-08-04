@@ -30,7 +30,7 @@
 | `RESEND_API_KEY` / `EMAIL_FROM` | Share OK |
 | `CONTACT_EMAIL_TO` | Share OK (contact-form inbox) |
 | `EMAIL_REDIRECT_TO` | Preview/local only — transactional mail redirect; **never** used for magic links |
-| `EMAIL_AUTH_ALLOWED_RECIPIENTS` | Preview/local only — allowlist for magic-link recipients when using a real Resend key |
+| `EMAIL_AUTH_ALLOWED_RECIPIENTS` | Preview/local optional — if set, restricts magic-link recipients; unset allows all |
 
 Do **not** set `AUTH_ENABLE_PASSWORD_LOGIN` on Vercel (local/E2E only).
 
@@ -96,7 +96,7 @@ Branch protection on `main` and `dev`: require status check **`test`**, require 
 4. Magic-link callback goes through `/api/auth/*`
 5. Preview / local safety:
    - Prefer a `re_test*` Resend key in CI (magic links + sends are skipped).
-   - With a real Resend key in non-production: set `EMAIL_AUTH_ALLOWED_RECIPIENTS` (comma-separated). Magic links to other addresses are **blocked**.
+   - Optional `EMAIL_AUTH_ALLOWED_RECIPIENTS` (comma-separated): if set, only those addresses may receive magic links in non-production. If unset, all recipients are allowed.
    - Optional `EMAIL_REDIRECT_TO` redirects **transactional** mail only (contact, membership approval). It is **never** applied to Auth.js magic links (the link authenticates the original recipient).
    - Preview/test environments must not use the production Auth/member database.
 

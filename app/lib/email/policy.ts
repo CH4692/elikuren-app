@@ -31,8 +31,10 @@ export function parseEmailAllowlist(raw: string | undefined): Set<string> {
 }
 
 /**
- * Non-production magic links require EMAIL_AUTH_ALLOWED_RECIPIENTS membership.
  * Production always allows.
+ * Non-production: if EMAIL_AUTH_ALLOWED_RECIPIENTS is unset/empty, allow all
+ * (opt-in restriction). If set, only listed addresses may receive magic links.
+ * Magic links are never redirected via EMAIL_REDIRECT_TO.
  */
 export function isMagicLinkRecipientAllowed(
   recipient: string,
@@ -40,6 +42,7 @@ export function isMagicLinkRecipientAllowed(
   production: boolean = isProductionEnv(),
 ): boolean {
   if (production) return true;
+  if (!allowlistRaw?.trim()) return true;
   const allowlist = parseEmailAllowlist(allowlistRaw);
   return allowlist.has(normalizeEmail(recipient));
 }
