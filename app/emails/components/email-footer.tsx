@@ -7,21 +7,23 @@ type EmailFooterProps = {
 };
 
 export function EmailFooter({ siteUrl }: EmailFooterProps) {
+  const host = siteUrl.replace(/^https?:\/\//, "");
   return (
     <Section
       style={{
         backgroundColor: EMAIL_COLORS.cream,
-        padding: "20px 32px",
+        padding: "24px 32px",
         textAlign: "center",
+        borderTop: `1px solid ${EMAIL_COLORS.border}`,
       }}
     >
       <Text
         style={{
-          margin: "0 0 6px",
+          margin: "0 0 4px",
           color: EMAIL_COLORS.muted,
           fontFamily: EMAIL_FONT_SANS,
-          fontSize: "13px",
-          lineHeight: "20px",
+          fontSize: "12px",
+          lineHeight: "18px",
         }}
       >
         Kammerchor Elikuren e.V.
@@ -29,14 +31,14 @@ export function EmailFooter({ siteUrl }: EmailFooterProps) {
       <Link
         href={siteUrl}
         style={{
-          color: EMAIL_COLORS.forest,
+          color: EMAIL_COLORS.muted,
           fontFamily: EMAIL_FONT_SANS,
-          fontSize: "13px",
-          lineHeight: "20px",
+          fontSize: "12px",
+          lineHeight: "18px",
           textDecoration: "underline",
         }}
       >
-        {siteUrl.replace(/^https?:\/\//, "")}
+        {host}
       </Link>
     </Section>
   );

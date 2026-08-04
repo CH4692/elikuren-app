@@ -6,9 +6,15 @@ type EmailTextProps = {
   children: React.ReactNode;
   muted?: boolean;
   style?: React.CSSProperties;
+  align?: "left" | "center";
 };
 
-export function EmailText({ children, muted = false, style }: EmailTextProps) {
+export function EmailText({
+  children,
+  muted = false,
+  style,
+  align = "left",
+}: EmailTextProps) {
   return (
     <Text
       style={{
@@ -16,7 +22,8 @@ export function EmailText({ children, muted = false, style }: EmailTextProps) {
         color: muted ? EMAIL_COLORS.muted : EMAIL_COLORS.text,
         fontFamily: EMAIL_FONT_SANS,
         fontSize: "16px",
-        lineHeight: "24px",
+        lineHeight: "26px",
+        textAlign: align,
         ...style,
       }}
     >

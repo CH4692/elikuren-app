@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { Resend } from "resend";
 
+import { emailLogoAttachment } from "@/lib/email/assets";
 import { getEmailFromHeader } from "@/lib/email/brand";
 import {
   isMagicLinkRecipientAllowed,
@@ -128,6 +129,16 @@ export async function sendEmail(
   }
 
   const resend = new Resend(apiKey);
+  let logoAttachment: ReturnType<typeof emailLogoAttachment> | undefined;
+  try {
+    logoAttachment = emailLogoAttachment();
+  } catch {
+    logEmailEvent("error", "email_logo_attachment_missing", {
+      templateName: input.templateName,
+      kind: input.kind,
+    });
+  }
+
   const { data, error } = await resend.emails.send({
     from: getEmailFromHeader(),
     to: resolved.to,
@@ -135,6 +146,7 @@ export async function sendEmail(
     react: input.react,
     text: input.text,
     replyTo: input.replyTo,
+    attachments: logoAttachment ? [logoAttachment] : undefined,
   });
 
   if (error) {

@@ -102,6 +102,8 @@ Branch protection on `main` and `dev`: require status check **`test`**, require 
 
 Local preview of templates: from `app/`, run `npm run email:dev`.
 
+Logo images are embedded inline via Resend `cid:` attachments (from `public/email/logo.png`) so Preview Deployment Protection / SSO cannot break remote logo URLs in inboxes.
+
 ## 6. Verify after Production deploy
 
 - `https://kammerchor-elikuren.de/api/health`
