@@ -14,8 +14,9 @@ import {
   MembershipApprovedEmail,
   membershipApprovedEmailText,
 } from "../../emails/membership-approved-email";
+import { EMAIL_LOGO_CONTENT_ID } from "../../lib/email/assets";
 
-const LOGO = "https://example.com/email/logo.png";
+const LOGO = `cid:${EMAIL_LOGO_CONTENT_ID}`;
 const SITE = "https://example.com";
 const LOGIN =
   "https://example.com/api/auth/callback/resend?callbackUrl=%2Fdashboard&token=secret-token&email=a%40b.de";
@@ -28,7 +29,7 @@ function hrefOccurrences(html: string, url: string): number {
 }
 
 describe("email templates", () => {
-  it("magic link renders with exact CTA and fallback URL", async () => {
+  it("magic link renders polished CTA without exposing raw token URL text", async () => {
     const html = await render(
       MagicLinkEmail({
         loginUrl: LOGIN,
@@ -37,12 +38,13 @@ describe("email templates", () => {
       }),
     );
     assert.match(html, /Jetzt anmelden/);
-    assert.ok(hrefOccurrences(html, LOGIN) >= 1);
-    assert.match(html, /src="https:\/\/example\.com\/email\/logo\.png"/);
+    assert.match(html, /Kammerchor Elikuren/);
+    assert.match(html, /Link im Browser öffnen/);
+    assert.ok(hrefOccurrences(html, LOGIN) >= 2);
+    assert.match(html, new RegExp(`src="cid:${EMAIL_LOGO_CONTENT_ID}"`));
     assert.doesNotMatch(html, /src="\/email\//);
-
-    // Fallback visible text should contain the exact URL (React Email text node).
-    assert.ok(html.includes(LOGIN) || html.includes(LOGIN.replace(/&/g, "&amp;")));
+    // Visible body should not dump the raw token URL as link text.
+    assert.doesNotMatch(html, />https:\/\/example\.com\/api\/auth\/callback/);
 
     const text = magicLinkEmailText({ loginUrl: LOGIN });
     assert.match(text, /Mitgliederbereich/);
@@ -60,6 +62,7 @@ describe("email templates", () => {
     );
     assert.match(html, /Jetzt anmelden/);
     assert.match(html, /href="https:\/\/example\.com\/auth\/sign-in"/);
+    assert.match(html, /Link im Browser öffnen/);
     const text = membershipApprovedEmailText({ signInUrl });
     assert.match(text, /sign-in/);
   });
@@ -79,7 +82,7 @@ describe("email templates", () => {
     assert.doesNotMatch(html, /<script>alert/);
     assert.match(html, /&lt;script&gt;/);
     assert.match(html, /Zeile 2/);
-    assert.match(html, /src="https:\/\/example\.com\/email\/logo\.png"/);
+    assert.match(html, new RegExp(`src="cid:${EMAIL_LOGO_CONTENT_ID}"`));
 
     const text = contactInquiryEmailText({
       firstName: "Ada",

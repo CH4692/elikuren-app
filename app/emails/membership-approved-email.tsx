@@ -25,7 +25,7 @@ export function MembershipApprovedEmail({
       eyebrow="Mitgliederbereich"
     >
       <EmailHeading>Zugang freigeschaltet</EmailHeading>
-      <EmailText>
+      <EmailText align="center">
         Dein Zugang zum Mitgliederbereich des Kammerchors Elikuren wurde
         freigeschaltet. Melde dich an und fordere dort deinen Anmeldelink an.
       </EmailText>
@@ -48,5 +48,11 @@ export function membershipApprovedEmailText({
     signInUrl,
   ].join("\n");
 }
+
+MembershipApprovedEmail.PreviewProps = {
+  signInUrl: "https://kammerchor-elikuren.de/auth/sign-in",
+  logoUrl: "cid:elikuren-logo",
+  siteUrl: "https://kammerchor-elikuren.de",
+} satisfies MembershipApprovedEmailProps;
 
 export default MembershipApprovedEmail;

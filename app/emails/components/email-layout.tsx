@@ -33,23 +33,23 @@ export function EmailLayout({
       <Body
         style={{
           margin: 0,
-          padding: "32px 12px",
+          padding: "40px 16px",
           backgroundColor: EMAIL_COLORS.cream,
           fontFamily: EMAIL_FONT_SANS,
         }}
       >
         <Container
           style={{
-            maxWidth: "600px",
+            maxWidth: "560px",
             margin: "0 auto",
             backgroundColor: EMAIL_COLORS.white,
-            borderRadius: "12px",
+            borderRadius: "8px",
             overflow: "hidden",
             border: `1px solid ${EMAIL_COLORS.border}`,
           }}
         >
           <EmailHeader logoUrl={logoUrl} eyebrow={eyebrow} />
-          <Section style={{ padding: "32px" }}>{children}</Section>
+          <Section style={{ padding: "36px 40px 40px" }}>{children}</Section>
           <EmailFooter siteUrl={siteUrl} />
         </Container>
       </Body>

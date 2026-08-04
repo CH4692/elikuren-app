@@ -5,25 +5,30 @@ import { EMAIL_COLORS, EMAIL_FONT_SANS } from "../tokens";
 type EmailLinkFallbackProps = {
   href: string;
   label?: string;
+  linkLabel?: string;
 };
 
+/**
+ * HTML fallback uses a short readable link label.
+ * The full URL belongs in the plaintext part (and as href), not as visible clutter.
+ */
 export function EmailLinkFallback({
   href,
-  label = "Falls der Button nicht funktioniert, öffne diesen Link:",
+  label = "Falls der Button nicht funktioniert:",
+  linkLabel = "Link im Browser öffnen",
 }: EmailLinkFallbackProps) {
   return (
-    <>
-      <Text
-        style={{
-          margin: "24px 0 8px",
-          color: EMAIL_COLORS.muted,
-          fontFamily: EMAIL_FONT_SANS,
-          fontSize: "13px",
-          lineHeight: "20px",
-        }}
-      >
-        {label}
-      </Text>
+    <Text
+      style={{
+        margin: "20px 0 0",
+        color: EMAIL_COLORS.muted,
+        fontFamily: EMAIL_FONT_SANS,
+        fontSize: "13px",
+        lineHeight: "20px",
+        textAlign: "center",
+      }}
+    >
+      {label}{" "}
       <Link
         href={href}
         style={{
@@ -31,11 +36,12 @@ export function EmailLinkFallback({
           fontFamily: EMAIL_FONT_SANS,
           fontSize: "13px",
           lineHeight: "20px",
-          wordBreak: "break-all",
+          textDecoration: "underline",
+          fontWeight: 600,
         }}
       >
-        {href}
+        {linkLabel}
       </Link>
-    </>
+    </Text>
   );
 }

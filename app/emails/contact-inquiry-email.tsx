@@ -63,7 +63,7 @@ export function ContactInquiryEmail({
       siteUrl={siteUrl}
       eyebrow="Kontaktanfrage"
     >
-      <EmailHeading>Neue Nachricht</EmailHeading>
+      <EmailHeading align="left">Neue Nachricht</EmailHeading>
       <EmailText>
         Du hast eine neue Nachricht über die Website erhalten.
       </EmailText>
