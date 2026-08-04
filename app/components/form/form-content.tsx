@@ -53,8 +53,10 @@ export default function FormContent() {
           id="email"
           name="email"
           type="email"
+          autoComplete="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
+          onBlur={() => setEmail(email)}
           className={`w-full rounded-xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary ${errors.email ? "border-destructive" : "border-border"}`}
           placeholder="deine@email.de"
         />
@@ -62,7 +64,7 @@ export default function FormContent() {
         <EmailTypoHint
           suggestion={emailSuggestion}
           onApply={setEmail}
-          className="mt-2 text-xs text-muted-foreground"
+          className="mt-2 text-xs text-primary"
         />
       </div>
 

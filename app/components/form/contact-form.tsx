@@ -20,6 +20,20 @@ export default function ContactForm({
     setEmail(value);
     const checked = checkEmailAddress(value);
     setEmailSuggestion(checked.ok ? checked.suggestion : null);
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (!value.trim()) {
+        delete next.email;
+        return next;
+      }
+      if (!checked.ok) {
+        next.email =
+          checked.error ?? "Bitte eine gültige E-Mail-Adresse eingeben.";
+        return next;
+      }
+      delete next.email;
+      return next;
+    });
   }
 
   const handleSubmit = async function (e: React.FormEvent<HTMLFormElement>) {
@@ -74,7 +88,8 @@ export default function ContactForm({
       }
 
       form.reset();
-      updateEmail("");
+      setEmail("");
+      setEmailSuggestion(null);
       setErrors({});
       setSuccessMessage("Deine Nachricht wurde erfolgreich gesendet.");
       toast.success("Erfolgreich gesendet", {
@@ -85,7 +100,7 @@ export default function ContactForm({
     }
   };
   return (
-    <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+    <form className="mt-8 space-y-5" noValidate onSubmit={handleSubmit}>
       <ContactFormContext.Provider
         value={{
           errors,
