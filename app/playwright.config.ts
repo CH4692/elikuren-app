@@ -11,6 +11,14 @@ const port = process.env.PLAYWRIGHT_PORT ?? "3000";
 const baseURL =
   process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${port}`;
 
+/** Keep Auth.js cookie host aligned with Playwright baseURL (localhost ≠ 127.0.0.1). */
+const webServerEnv = {
+  ...process.env,
+  AUTH_ENABLE_PASSWORD_LOGIN: "1",
+  AUTH_URL: baseURL,
+  NEXT_PUBLIC_SITE_URL: baseURL,
+};
+
 export default defineConfig({
   testDir: "./tests",
   testIgnore: ["**/unit/**"],
@@ -30,7 +38,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
-  workers: isCI ? 1 : undefined,
+  // Local Next.js cold-compile is flaky with many parallel logins.
+  workers: isCI ? 1 : 2,
   reporter: [
     ["html", { open: "never" }],
     ["list"],
@@ -54,11 +63,14 @@ export default defineConfig({
         url: baseURL,
         reuseExistingServer: false,
         timeout: 120_000,
+        env: webServerEnv,
       }
     : {
         command: `npm run dev -- -p ${port}`,
         url: baseURL,
-        reuseExistingServer: true,
-        timeout: 120_000,
+        // Prefer a fresh Playwright-owned server so AUTH_URL matches baseURL.
+        reuseExistingServer: !process.env.PLAYWRIGHT_REUSE_SERVER,
+        timeout: 180_000,
+        env: webServerEnv,
       },
 });

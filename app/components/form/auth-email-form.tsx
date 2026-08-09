@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
 
 import {
   requestMagicLinkAction,
@@ -30,6 +30,12 @@ export function AuthEmailForm({
   const [error, setError] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  // Client-only flag without setState-in-effect (avoids native GET before hydration).
+  const hydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   function refreshEmailHints(value: string) {
     const checked = checkEmailAddress(value);
@@ -53,9 +59,11 @@ export function AuthEmailForm({
       <p className="mt-1.5 text-sm leading-snug text-[#F4F1EB]/75">{subtitle}</p>
 
       <form
+        method="post"
         className="mt-5 flex flex-col gap-3"
         onSubmit={(event) => {
           event.preventDefault();
+          if (!hydrated) return;
           const checked = checkEmailAddress(email);
           if (!checked.ok) {
             setError(checked.error);
@@ -104,7 +112,7 @@ export function AuthEmailForm({
         />
         <Button
           type="submit"
-          disabled={pending}
+          disabled={!hydrated || pending}
           className="bg-[#C8A24D] text-[#1F1F23] hover:bg-[#d4b35e]"
         >
           {pending ? "Wird gesendet…" : submitLabel}
@@ -125,9 +133,12 @@ export function AuthEmailForm({
           <div className="my-6 border-t border-[#C8A24D]/30" />
           <p className="text-sm text-[#F4F1EB]/75">Dev/E2E: Passwort-Login</p>
           <form
+            method="post"
+            data-testid="password-sign-in"
             className="mt-3 flex flex-col gap-4"
             onSubmit={(event) => {
               event.preventDefault();
+              if (!hydrated) return;
               const formData = new FormData(event.currentTarget);
               const checked = checkEmailAddress(
                 String(formData.get("email") ?? ""),
@@ -170,7 +181,7 @@ export function AuthEmailForm({
             <Button
               type="submit"
               variant="outline"
-              disabled={pending}
+              disabled={!hydrated || pending}
               className="border-[#C8A24D] text-[#F4F1EB]"
             >
               Anmelden

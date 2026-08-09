@@ -3,7 +3,7 @@
  * Shared fixture users (`e2e-*@kammerchor-elikuren.test`) are intentionally kept.
  */
 
-export const E2E_INVOICE_NUMBER_RE = /^(E2E|UI|INT|RO)-/;
+export const E2E_INVOICE_NUMBER_RE = /^(E2E|UI|INT|RO|EDIT|ARCH|FILE)-/;
 
 /** Ephemeral membership / approved-user emails created by Playwright. */
 export function isE2EEphemeralEmail(email: string | null | undefined): boolean {

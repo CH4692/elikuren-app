@@ -13,7 +13,6 @@ import path from "node:path";
 
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { config as loadEnv } from "dotenv";
 import pg from "pg";
 
 import type {
@@ -24,9 +23,9 @@ import { PrismaClient } from "../lib/generated/prisma/client";
 import { pgSslForConnectionString } from "../lib/pg-connection";
 import { objectKeyFor } from "../lib/object-keys";
 import { r2Configured, r2Endpoint } from "../lib/r2";
+import { loadTargetEnv } from "./load-target-env";
 
-loadEnv({ path: ".env.local", quiet: true });
-loadEnv({ path: ".env", quiet: true });
+loadTargetEnv();
 
 /** Expect `npm run import:media` from the app/ directory. */
 const APP_ROOT = process.cwd();
@@ -361,15 +360,46 @@ async function uploadAndCreateStoredFile(
   });
 
   console.log(`  PUT ${objectKey} (${entry.sizeBytes} bytes)`);
-  await client.send(
-    new PutObjectCommand({
-      Bucket: requireEnv("R2_BUCKET_NAME"),
-      Key: objectKey,
-      Body: createReadStream(entry.localPath),
-      ContentType: entry.mimeType,
-      ContentLength: entry.sizeBytes,
-    }),
-  );
+  const maxAttempts = 4;
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await client.send(
+        new PutObjectCommand({
+          Bucket: requireEnv("R2_BUCKET_NAME"),
+          Key: objectKey,
+          Body: createReadStream(entry.localPath),
+          ContentType: entry.mimeType,
+          ContentLength: entry.sizeBytes,
+        }),
+      );
+      lastError = null;
+      break;
+    } catch (err) {
+      lastError = err;
+      const code =
+        err && typeof err === "object" && "code" in err
+          ? String((err as { code?: string }).code)
+          : "";
+      const name =
+        err && typeof err === "object" && "name" in err
+          ? String((err as { name?: string }).name)
+          : "";
+      const retryable =
+        code === "EPIPE" ||
+        code === "ECONNRESET" ||
+        code === "ETIMEDOUT" ||
+        name === "TimeoutError" ||
+        name === "AbortError";
+      if (!retryable || attempt === maxAttempts) throw err;
+      const delayMs = attempt * 1500;
+      console.warn(
+        `  retry ${attempt}/${maxAttempts - 1} after ${name || code} (${delayMs}ms)`,
+      );
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  if (lastError) throw lastError;
 
   return prisma.storedFile.create({
     data: {

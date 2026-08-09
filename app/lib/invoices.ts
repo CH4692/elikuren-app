@@ -195,6 +195,18 @@ export async function updateInvoice(id: string, data: InvoicePatchBody) {
   });
 }
 
+/** Soft-archive. Returns null if missing or already archived. */
+export async function archiveInvoice(id: string) {
+  const existing = await prisma.invoice.findUnique({ where: { id } });
+  if (!existing || existing.archivedAt) return null;
+
+  return prisma.invoice.update({
+    where: { id },
+    data: { archivedAt: new Date() },
+    include: invoiceInclude,
+  });
+}
+
 export const DOCUMENT_TYPES: InvoiceDocumentType[] = [
   "INCOME",
   "EXPENSE",

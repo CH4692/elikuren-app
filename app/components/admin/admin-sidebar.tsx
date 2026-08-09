@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Menu } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -14,6 +14,19 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { hasPermission, type Permission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+
+function MemberAreaLink({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <Link
+      href="/dashboard"
+      onNavigate={onNavigate}
+      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#C8A24D] transition hover:bg-[#C8A24D]/12"
+    >
+      <LayoutDashboard className="size-4 shrink-0" />
+      Mitglieder-Dashboard
+    </Link>
+  );
+}
 
 function LogoutButton({ onNavigate }: { onNavigate?: () => void }) {
   return (
@@ -96,7 +109,8 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
         <div className="min-h-0 flex-1 overflow-y-auto py-3">
           <NavList role={role} pathname={pathname} />
         </div>
-        <div className="shrink-0 border-t border-[var(--sidebar-border)] px-3 py-3">
+        <div className="shrink-0 space-y-1 border-t border-[var(--sidebar-border)] px-3 py-3">
+          <MemberAreaLink />
           <LogoutButton />
         </div>
       </aside>
@@ -126,7 +140,8 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
                 onNavigate={() => setOpen(false)}
               />
             </div>
-            <div className="shrink-0 border-t border-[var(--sidebar-border)] px-3 py-3">
+            <div className="shrink-0 space-y-1 border-t border-[var(--sidebar-border)] px-3 py-3">
+              <MemberAreaLink onNavigate={() => setOpen(false)} />
               <LogoutButton onNavigate={() => setOpen(false)} />
             </div>
           </SheetContent>

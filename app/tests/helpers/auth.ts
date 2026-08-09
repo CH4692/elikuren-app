@@ -13,17 +13,18 @@ async function loginWithCredentials(
   password: string,
 ) {
   await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded" });
-  const form = page
-    .locator("form")
-    .filter({ has: page.getByRole("button", { name: "Anmelden" }) });
+  const form = page.locator('form[data-testid="password-sign-in"]');
+  // Wait until client hydration enables submit (avoids native GET before React is ready).
+  await expect(form.getByRole("button", { name: "Anmelden" })).toBeEnabled({
+    timeout: 60_000,
+  });
 
   await form.locator('input[name="email"]').fill(email);
   await form.locator('input[name="password"]').fill(password);
-  await form.getByRole("button", { name: "Anmelden" }).click();
-
-  await expect(page).toHaveURL(/\/(dashboard|profile|admin)/, {
-    timeout: 20_000,
-  });
+  await Promise.all([
+    page.waitForURL(/\/(dashboard|profile|admin)/, { timeout: 30_000 }),
+    form.getByRole("button", { name: "Anmelden" }).click(),
+  ]);
 }
 
 export async function loginAsAdmin(page: Page) {

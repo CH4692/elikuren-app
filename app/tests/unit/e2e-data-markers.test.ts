@@ -24,6 +24,9 @@ describe("e2e data markers", () => {
     assert.equal(isE2EInvoiceNumber("UI-123"), true);
     assert.equal(isE2EInvoiceNumber("INT-123"), true);
     assert.equal(isE2EInvoiceNumber("RO-123"), true);
+    assert.equal(isE2EInvoiceNumber("EDIT-123"), true);
+    assert.equal(isE2EInvoiceNumber("ARCH-123"), true);
+    assert.equal(isE2EInvoiceNumber("FILE-123"), true);
     assert.equal(isE2EInvoiceNumber("INV-2026-001"), false);
   });
 

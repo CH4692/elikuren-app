@@ -2,6 +2,7 @@ import {
   ArrowUpRight,
   FileMusic,
   FileText,
+  LayoutDashboard,
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
@@ -44,6 +45,24 @@ export function AdminOverview({ role, kpis }: AdminOverviewProps) {
         title="Übersicht"
         description="Kennzahlen und direkter Einstieg in die Verwaltungsbereiche."
       />
+
+      <Link
+        href="/dashboard"
+        className="group flex items-center gap-3 rounded-2xl border border-[#C8A24D]/35 bg-[#C8A24D]/10 px-4 py-3.5 transition hover:border-[#C8A24D]/60 hover:bg-[#C8A24D]/16"
+      >
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#1f1f23] text-[#C8A24D]">
+          <LayoutDashboard className="size-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-[#1f1f23]">
+            Mitglieder-Dashboard
+          </span>
+          <span className="block text-xs text-[#5c574e]">
+            Noten, Audio und aktuelles Konzert wie für Mitglieder
+          </span>
+        </span>
+        <ArrowUpRight className="size-4 shrink-0 text-[#8a6d2a] transition group-hover:text-[#1f1f23]" />
+      </Link>
 
       {kpis.length === 0 ? (
         <p className="text-sm text-[#5c574e]">

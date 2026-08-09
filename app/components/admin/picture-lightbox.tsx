@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -58,13 +59,22 @@ export function PictureLightbox({
         const res = await fetch(
           `/api/files/${fileId}/url?disposition=inline`,
         );
-        if (!res.ok) throw new Error("Bild-URL nicht verfügbar");
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as {
+            detail?: string;
+          };
+          throw new Error(body.detail || "Bild konnte nicht geladen werden");
+        }
         const data = (await res.json()) as { url: string };
+        if (!data.url) throw new Error("Bild konnte nicht geladen werden");
         if (!cancelled) setUrl(data.url);
       } catch (err) {
         if (!cancelled) {
+          const message =
+            err instanceof Error ? err.message : "Bild konnte nicht geladen werden";
           setUrl(null);
-          setError(err instanceof Error ? err.message : "Fehler");
+          setError(message);
+          toast.error(message);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -163,6 +173,11 @@ export function PictureLightbox({
               alt={item?.title ?? ""}
               className="max-h-full max-w-full object-contain"
               style={{ imageOrientation: "from-image" }}
+              onError={() => {
+                setUrl(null);
+                setError("Bild konnte nicht geladen werden");
+                toast.error("Bild konnte nicht geladen werden");
+              }}
             />
           ) : null}
         </div>
