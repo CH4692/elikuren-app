@@ -14,7 +14,6 @@ import path from "node:path";
 
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { config as loadEnv } from "dotenv";
 import pg from "pg";
 
 import type {
@@ -25,9 +24,9 @@ import { PrismaClient } from "../lib/generated/prisma/client";
 import { objectKeyFor } from "../lib/object-keys";
 import { pgSslForConnectionString } from "../lib/pg-connection";
 import { r2Configured, r2Endpoint } from "../lib/r2";
+import { loadTargetEnv } from "./load-target-env";
 
-loadEnv({ path: ".env.local", quiet: true });
-loadEnv({ path: ".env", quiet: true });
+loadTargetEnv();
 
 const APP_ROOT = process.cwd();
 const REPO_ROOT = path.resolve(APP_ROOT, "..");
@@ -310,15 +309,46 @@ async function uploadAndCreateStoredFile(
   });
 
   console.log(`  PUT ${objectKey} (${entry.sizeBytes} bytes)`);
-  await client.send(
-    new PutObjectCommand({
-      Bucket: requireEnv("R2_BUCKET_NAME"),
-      Key: objectKey,
-      Body: createReadStream(entry.localPath),
-      ContentType: entry.mimeType,
-      ContentLength: entry.sizeBytes,
-    }),
-  );
+  const maxAttempts = 4;
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await client.send(
+        new PutObjectCommand({
+          Bucket: requireEnv("R2_BUCKET_NAME"),
+          Key: objectKey,
+          Body: createReadStream(entry.localPath),
+          ContentType: entry.mimeType,
+          ContentLength: entry.sizeBytes,
+        }),
+      );
+      lastError = null;
+      break;
+    } catch (err) {
+      lastError = err;
+      const code =
+        err && typeof err === "object" && "code" in err
+          ? String((err as { code?: string }).code)
+          : "";
+      const name =
+        err && typeof err === "object" && "name" in err
+          ? String((err as { name?: string }).name)
+          : "";
+      const retryable =
+        code === "EPIPE" ||
+        code === "ECONNRESET" ||
+        code === "ETIMEDOUT" ||
+        name === "TimeoutError" ||
+        name === "AbortError";
+      if (!retryable || attempt === maxAttempts) throw err;
+      const delayMs = attempt * 1500;
+      console.warn(
+        `  retry ${attempt}/${maxAttempts - 1} after ${name || code} (${delayMs}ms)`,
+      );
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  if (lastError) throw lastError;
 
   return prisma.storedFile.create({
     data: {
@@ -336,17 +366,36 @@ async function uploadAndCreateStoredFile(
 }
 
 async function resolveConcertIds(prisma: PrismaClient) {
-  const schubert = await prisma.concert.findFirst({
+  const schubertDate = new Date("2026-09-27T00:00:00.000Z");
+  const schubertSlug = slugify("Schubertkonzert 2026-09-27");
+  let schubert = await prisma.concert.findFirst({
     where: {
-      title: "Schubertkonzert",
-      date: new Date("2026-09-27T00:00:00.000Z"),
+      OR: [
+        { title: "Schubertkonzert", date: schubertDate },
+        { slug: schubertSlug },
+      ],
     },
     select: { id: true, slug: true, isCurrent: true },
   });
+  let schubertCreated = false;
   if (!schubert) {
-    throw new Error(
-      "Schubertkonzert 2026-09-27 not found — create/activate it before import",
-    );
+    schubert = await prisma.concert.create({
+      data: {
+        title: "Schubertkonzert",
+        slug: schubertSlug,
+        date: schubertDate,
+        subtitle: "Winterreise",
+        location: "Kath. Pfarrkirche St. Bonifatius",
+        address: "Hindenburgstraße 17, 31515 Wunstorf",
+        isVisible: true,
+        isCurrent: true,
+        websiteStatus: "PUBLISHED",
+        startsAt: new Date("2026-09-27T17:00:00.000Z"),
+      },
+      select: { id: true, slug: true, isCurrent: true },
+    });
+    schubertCreated = true;
+    console.log(`Created concert: ${schubert.slug}`);
   }
 
   const leipzigSlug = slugify("Leipzig 2025-03-08");
@@ -381,7 +430,7 @@ async function resolveConcertIds(prisma: PrismaClient) {
     }
   }
 
-  return { schubert, leipzig, leipzigCreated };
+  return { schubert, leipzig, leipzigCreated, schubertCreated };
 }
 
 async function applyImport(prisma: PrismaClient, entries: BatchEntry[]) {
@@ -389,13 +438,14 @@ async function applyImport(prisma: PrismaClient, entries: BatchEntry[]) {
     throw new Error("R2 env vars missing – cannot --apply");
   }
   const client = getR2Client();
-  const { schubert, leipzig, leipzigCreated } = await resolveConcertIds(prisma);
+  const { schubert, leipzig, leipzigCreated, schubertCreated } =
+    await resolveConcertIds(prisma);
 
   let sheets = 0;
   let audios = 0;
   let items = 0;
   let skipped = 0;
-  const concertsCreated = leipzigCreated ? 1 : 0;
+  const concertsCreated = (leipzigCreated ? 1 : 0) + (schubertCreated ? 1 : 0);
 
   for (const entry of entries) {
     const concertId =
