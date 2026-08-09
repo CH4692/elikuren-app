@@ -112,6 +112,16 @@ npm run db:wipe-preview
 
 Optional Preview R2 secrets for CI: `CI_R2_ACCESS_KEY_ID`, `CI_R2_SECRET_ACCESS_KEY`, `CI_R2_BUCKET_NAME`, `CI_R2_ACCOUNT_ID` or `CI_R2_ENDPOINT`.
 
+**Preview synthetic seed (after wipe — not a Production clone):**
+
+```bash
+TARGET_ENV=preview PREVIEW_SEED_CONFIRM=1 \
+PREVIEW_DATABASE_HOST=<preview-neon-hostname> \
+npm run db:seed-preview
+```
+
+Creates small labeled fixtures (Preview-Konzerte, placeholder files, `*@kammerchor-elikuren.test` users). Do **not** run `import:media` / `import:members` into Preview unless you intentionally want Production-like data.
+
 **Production seed (no wipe, no Preview clone):**
 
 ```bash
