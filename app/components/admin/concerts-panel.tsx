@@ -62,6 +62,16 @@ type ConcertItem = {
   audio_file_id: string | null;
 };
 
+type ConcertPerformanceRow = {
+  id: string;
+  starts_at: string;
+  ends_at: string | null;
+  location: string | null;
+  address: string | null;
+  label: string | null;
+  sort_order: number;
+};
+
 type ConcertRow = {
   id: string;
   title: string;
@@ -89,18 +99,25 @@ type ConcertRow = {
   is_visible: boolean;
   item_count: number;
   recording_count: number;
+  performance_count?: number;
+  performances?: ConcertPerformanceRow[];
   items?: ConcertItem[];
+};
+
+type PerformanceForm = {
+  key: string;
+  id?: string;
+  startsAt: string;
+  endsAt: string;
+  location: string;
+  address: string;
+  label: string;
 };
 
 type ConcertForm = {
   title: string;
-  date: string;
-  startsAt: string;
-  endsAt: string;
   subtitle: string;
   description: string;
-  location: string;
-  address: string;
   programInfo: string;
   leader: string;
   admissionInfo: string;
@@ -109,6 +126,7 @@ type ConcertForm = {
   ticketUrl: string;
   websiteStatus: "DRAFT" | "PUBLISHED";
   notes: string;
+  performances: PerformanceForm[];
 };
 
 type ItemForm = {
@@ -131,15 +149,25 @@ function websiteBadgeVariant(
   return "warning";
 }
 
-const emptyConcert = (): ConcertForm => ({
-  title: "",
-  date: "",
+let performanceKey = 0;
+function nextPerformanceKey() {
+  performanceKey += 1;
+  return `perf-${performanceKey}`;
+}
+
+const emptyPerformance = (): PerformanceForm => ({
+  key: nextPerformanceKey(),
   startsAt: "",
   endsAt: "",
-  subtitle: "",
-  description: "",
   location: "",
   address: "",
+  label: "",
+});
+
+const emptyConcert = (): ConcertForm => ({
+  title: "",
+  subtitle: "",
+  description: "",
   programInfo: "",
   leader: "",
   admissionInfo: "",
@@ -148,6 +176,7 @@ const emptyConcert = (): ConcertForm => ({
   ticketUrl: "",
   websiteStatus: "DRAFT",
   notes: "",
+  performances: [emptyPerformance()],
 });
 
 function formatConcertDate(date: string | null) {
@@ -273,16 +302,34 @@ export function ConcertsPanel() {
     setCreateOpen(true);
   }
 
-  function openEdit(row: ConcertRow) {
-    setForm({
+  function formFromRow(row: ConcertRow): ConcertForm {
+    const performances =
+      row.performances && row.performances.length > 0
+        ? row.performances.map((p) => ({
+            key: p.id || nextPerformanceKey(),
+            id: p.id,
+            startsAt: p.starts_at ?? "",
+            endsAt: p.ends_at ?? "",
+            location: p.location ?? "",
+            address: p.address ?? "",
+            label: p.label ?? "",
+          }))
+        : row.starts_at
+          ? [
+              {
+                key: nextPerformanceKey(),
+                startsAt: row.starts_at,
+                endsAt: row.ends_at ?? "",
+                location: row.location ?? "",
+                address: row.address ?? "",
+                label: "",
+              },
+            ]
+          : [emptyPerformance()];
+    return {
       title: row.title,
-      date: row.date ?? "",
-      startsAt: row.starts_at ?? "",
-      endsAt: row.ends_at ?? "",
       subtitle: row.subtitle ?? "",
       description: row.description ?? "",
-      location: row.location ?? "",
-      address: row.address ?? "",
       programInfo: row.program_info ?? "",
       leader: row.leader ?? "",
       admissionInfo: row.admission_info ?? "",
@@ -291,8 +338,20 @@ export function ConcertsPanel() {
       ticketUrl: row.ticket_url ?? "",
       websiteStatus: row.website_status,
       notes: row.notes ?? "",
-    });
+      performances,
+    };
+  }
+
+  function openEdit(row: ConcertRow) {
+    setForm(formFromRow(row));
     setEditTarget(row);
+    startTransition(async () => {
+      const res = await fetch(`/api/admin/concerts/${row.id}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as ConcertRow;
+      setForm(formFromRow(data));
+      setEditTarget(data);
+    });
   }
 
   function openActiveDialog() {
@@ -331,20 +390,29 @@ export function ConcertsPanel() {
       toast.error("Titel ist Pflicht");
       return;
     }
-    if (form.websiteStatus === "PUBLISHED" && !form.startsAt) {
-      toast.error("Zum Veröffentlichen muss eine Startzeit gesetzt sein.");
+    const performances = form.performances
+      .map((p) => ({
+        id: p.id,
+        startsAt: p.startsAt.trim(),
+        endsAt: p.endsAt.trim() || null,
+        location: p.location.trim() || null,
+        address: p.address.trim() || null,
+        label: p.label.trim() || null,
+      }))
+      .filter((p) => p.startsAt || p.location || p.address || p.label);
+    if (performances.some((p) => !p.startsAt)) {
+      toast.error("Jeder Termin braucht eine Startzeit.");
+      return;
+    }
+    if (form.websiteStatus === "PUBLISHED" && performances.length < 1) {
+      toast.error("Zum Veröffentlichen muss mindestens ein Termin gesetzt sein.");
       return;
     }
     startTransition(async () => {
       const payload = {
         title: form.title.trim(),
-        date: form.date || null,
-        startsAt: form.startsAt || null,
-        endsAt: form.endsAt || null,
         subtitle: form.subtitle.trim() || null,
         description: form.description.trim() || null,
-        location: form.location.trim() || null,
-        address: form.address.trim() || null,
         programInfo: form.programInfo.trim() || null,
         leader: form.leader.trim() || null,
         admissionInfo: form.admissionInfo.trim() || null,
@@ -353,6 +421,7 @@ export function ConcertsPanel() {
         ticketUrl: form.ticketUrl.trim() || null,
         websiteStatus: form.websiteStatus,
         notes: form.notes.trim() || null,
+        performances,
       };
       const res = await fetch(
         isCreate ? "/api/admin/concerts" : `/api/admin/concerts/${editTarget!.id}`,
@@ -975,6 +1044,34 @@ function ConcertFields({
   form: ConcertForm;
   onChange: (next: ConcertForm) => void;
 }) {
+  const nextPerformance = [...form.performances]
+    .filter((p) => p.startsAt)
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
+
+  function updatePerformance(key: string, patch: Partial<PerformanceForm>) {
+    onChange({
+      ...form,
+      performances: form.performances.map((p) =>
+        p.key === key ? { ...p, ...patch } : p,
+      ),
+    });
+  }
+
+  function addPerformance() {
+    onChange({
+      ...form,
+      performances: [...form.performances, emptyPerformance()],
+    });
+  }
+
+  function removePerformance(key: string) {
+    const next = form.performances.filter((p) => p.key !== key);
+    onChange({
+      ...form,
+      performances: next.length > 0 ? next : [emptyPerformance()],
+    });
+  }
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -1010,53 +1107,129 @@ function ConcertFields({
           <option value="PUBLISHED">Veröffentlicht</option>
         </select>
         <p className="text-xs text-[#8a8478]">
-          Veröffentlichen erfordert eine echte Startzeit (keine Platzhalter).
+          Veröffentlichen erfordert mindestens einen Termin mit Startzeit.
         </p>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="c-starts">Start (Europe/Berlin)</Label>
-        <Input
-          id="c-starts"
-          type="datetime-local"
-          value={form.startsAt}
-          onChange={(e) => onChange({ ...form, startsAt: e.target.value })}
-        />
+
+      <div className="space-y-3 rounded-xl border border-[#ebe4d8] bg-[#fbfaf7] p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold text-[#1f1f23]">Termine</p>
+            <p className="text-xs text-[#8a8478]">
+              Datum, Uhrzeit und Ort je Aufführung (Europe/Berlin).
+            </p>
+          </div>
+          <Button type="button" size="sm" variant="outline" onClick={addPerformance}>
+            <Plus className="size-4" />
+            Termin
+          </Button>
+        </div>
+        {nextPerformance ? (
+          <p className="text-xs text-[#5c574e]">
+            Nächster Termin:{" "}
+            <span className="font-medium text-[#1f1f23]">
+              {nextPerformance.startsAt.replace("T", " ")}
+              {nextPerformance.location ? ` · ${nextPerformance.location}` : ""}
+            </span>
+          </p>
+        ) : null}
+        <div className="space-y-3">
+          {form.performances.map((performance, index) => (
+            <div
+              key={performance.key}
+              className="space-y-3 rounded-xl border border-[#d9d2c4] bg-white p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium text-[#1f1f23]">
+                  Termin {index + 1}
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  disabled={form.performances.length <= 1}
+                  onClick={() => removePerformance(performance.key)}
+                >
+                  Entfernen
+                </Button>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor={`c-starts-${performance.key}`}>
+                    Start (Europe/Berlin)
+                  </Label>
+                  <Input
+                    id={`c-starts-${performance.key}`}
+                    type="datetime-local"
+                    value={performance.startsAt}
+                    onChange={(e) =>
+                      updatePerformance(performance.key, {
+                        startsAt: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`c-ends-${performance.key}`}>
+                    Ende (optional)
+                  </Label>
+                  <Input
+                    id={`c-ends-${performance.key}`}
+                    type="datetime-local"
+                    value={performance.endsAt}
+                    onChange={(e) =>
+                      updatePerformance(performance.key, {
+                        endsAt: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`c-label-${performance.key}`}>
+                  Label (optional)
+                </Label>
+                <Input
+                  id={`c-label-${performance.key}`}
+                  value={performance.label}
+                  onChange={(e) =>
+                    updatePerformance(performance.key, {
+                      label: e.target.value,
+                    })
+                  }
+                  placeholder="z. B. Leipzig"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`c-location-${performance.key}`}>Ort</Label>
+                <Input
+                  id={`c-location-${performance.key}`}
+                  value={performance.location}
+                  onChange={(e) =>
+                    updatePerformance(performance.key, {
+                      location: e.target.value,
+                    })
+                  }
+                  placeholder="z. B. HMT Leipzig"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`c-address-${performance.key}`}>Adresse</Label>
+                <Input
+                  id={`c-address-${performance.key}`}
+                  value={performance.address}
+                  onChange={(e) =>
+                    updatePerformance(performance.key, {
+                      address: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="c-ends">Ende (optional)</Label>
-        <Input
-          id="c-ends"
-          type="datetime-local"
-          value={form.endsAt}
-          onChange={(e) => onChange({ ...form, endsAt: e.target.value })}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="c-date">Bibliotheks-Datum (optional)</Label>
-        <Input
-          id="c-date"
-          type="date"
-          value={form.date}
-          onChange={(e) => onChange({ ...form, date: e.target.value })}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="c-location">Ort</Label>
-        <Input
-          id="c-location"
-          value={form.location}
-          onChange={(e) => onChange({ ...form, location: e.target.value })}
-          placeholder="z. B. Kath. Pfarrkirche St. Bonifatius"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="c-address">Adresse</Label>
-        <Input
-          id="c-address"
-          value={form.address}
-          onChange={(e) => onChange({ ...form, address: e.target.value })}
-        />
-      </div>
+
       <div className="space-y-2">
         <Label htmlFor="c-description">Beschreibung (Website)</Label>
         <Textarea

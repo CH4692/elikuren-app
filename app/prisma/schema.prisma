@@ -298,6 +298,7 @@ model Concert {
   createdAt     DateTime             @default(now()) @map("created_at")
   updatedAt     DateTime             @updatedAt @map("updated_at")
   items         ConcertItem[]
+  performances  ConcertPerformance[]
   recordings    AudioFile[]
   sheetFiles    SheetFile[]
 
@@ -307,6 +308,26 @@ model Concert {
   @@index([websiteStatus, startsAt])
   @@index([isVisible])
   @@map("concerts")
+}
+
+/// One scheduled performance of a concert (date/time/venue).
+model ConcertPerformance {
+  id        String    @id @default(cuid())
+  concertId String    @map("concert_id")
+  concert   Concert   @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  startsAt  DateTime  @map("starts_at")
+  endsAt    DateTime? @map("ends_at")
+  location  String?
+  address   String?
+  /// Optional short label, e.g. city name shown in public UI.
+  label     String?
+  sortOrder Int       @default(0) @map("sort_order")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([concertId, startsAt])
+  @@index([startsAt])
+  @@map("concert_performances")
 }
 
 model ConcertItem {

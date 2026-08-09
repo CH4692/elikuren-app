@@ -1,11 +1,11 @@
 import { unstable_cache } from "next/cache";
 
-import { isConcertVisible } from "@/lib/concert-visibility";
 import {
-  asDate,
-  concertVisibleUntil,
-  formatBerlinDateTimeLocal,
-} from "@/lib/datetime-berlin";
+  isConcertVisibleViaPerformances,
+  upcomingPerformances,
+} from "@/lib/concert-performances";
+import { isConcertVisible } from "@/lib/concert-visibility";
+import { asDate } from "@/lib/datetime-berlin";
 import { prisma } from "@/lib/db";
 import { publicObjectUrl, resolveMediaAlt } from "@/lib/public-media";
 
@@ -14,15 +14,26 @@ export { asDate, concertVisibleUntil } from "@/lib/datetime-berlin";
 
 export const CONCERTS_PUBLIC_CACHE_TAG = "concerts-public";
 
+export type PublicConcertPerformance = {
+  id: string;
+  startsAt: Date;
+  endsAt: Date | null;
+  location: string | null;
+  address: string | null;
+  label: string | null;
+};
+
 export type PublicConcertCard = {
   id: string;
   title: string;
   subtitle: string | null;
   description: string | null;
+  /** Next upcoming performance start (compat / sorting). */
   startsAt: Date;
   endsAt: Date | null;
   location: string | null;
   address: string | null;
+  performances: PublicConcertPerformance[];
   programInfo: string | null;
   leader: string | null;
   admissionInfo: string | null;
@@ -43,10 +54,13 @@ async function loadPublicConcertCandidatesUncached() {
   return prisma.concert.findMany({
     where: {
       websiteStatus: "PUBLISHED",
-      startsAt: { not: null },
+      performances: { some: {} },
     },
     orderBy: { startsAt: "asc" },
     include: {
+      performances: {
+        orderBy: [{ startsAt: "asc" }, { sortOrder: "asc" }],
+      },
       heroImage: {
         include: {
           storedFile: {
@@ -63,12 +77,10 @@ async function loadPublicConcertCandidatesUncached() {
   });
 }
 
-/** Obvious prefilter only — visibility decision is isConcertVisible(). */
+/** Obvious prefilter only — visibility decision uses performances. */
 const loadPublicConcertCandidates = unstable_cache(
   loadPublicConcertCandidatesUncached,
-  // Bump key when Production content is edited outside the admin API
-  // (direct DB updates do not call revalidateTag).
-  ["concerts-public-candidates-v3"],
+  ["concerts-public-candidates-v4-performances"],
   { tags: [CONCERTS_PUBLIC_CACHE_TAG] },
 );
 
@@ -79,21 +91,33 @@ export async function listPublicConcerts(
 
   return rows
     .map((row) => {
-      const startsAt = asDate(row.startsAt);
-      const endsAt = asDate(row.endsAt);
-      return { row, startsAt, endsAt };
+      const performances = (row.performances ?? [])
+        .map((p) => {
+          const startsAt = asDate(p.startsAt);
+          if (!startsAt) return null;
+          return {
+            id: p.id,
+            startsAt,
+            endsAt: asDate(p.endsAt),
+            location: p.location,
+            address: p.address,
+            label: p.label,
+          };
+        })
+        .filter((p): p is PublicConcertPerformance => p != null);
+
+      return { row, performances };
     })
-    .filter(({ row, startsAt, endsAt }) => {
-      if (!startsAt) return false;
-      const visibleUntil = concertVisibleUntil(startsAt, endsAt);
-      return isConcertVisible({
+    .filter(({ row, performances }) =>
+      isConcertVisibleViaPerformances({
         websiteStatus: row.websiteStatus,
-        startsAt,
-        visibleUntil,
+        performances,
         now,
-      });
-    })
-    .map(({ row, startsAt, endsAt }) => {
+      }),
+    )
+    .map(({ row, performances }) => {
+      const upcoming = upcomingPerformances(performances, now);
+      const primary = upcoming[0]!;
       const hero = row.heroImage;
       const file = hero?.storedFile;
       const usable =
@@ -110,10 +134,11 @@ export async function listPublicConcerts(
         title: row.title,
         subtitle: row.subtitle,
         description: row.description,
-        startsAt: startsAt!,
-        endsAt,
-        location: row.location,
-        address: row.address,
+        startsAt: primary.startsAt,
+        endsAt: primary.endsAt,
+        location: primary.location,
+        address: primary.address,
+        performances: upcoming,
         programInfo: row.programInfo,
         leader: row.leader,
         admissionInfo: row.admissionInfo,
@@ -151,5 +176,3 @@ export function formatPublicConcertTime(startsAt: Date): string {
     minute: "2-digit",
   });
 }
-
-export { formatBerlinDateTimeLocal };
