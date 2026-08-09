@@ -20,6 +20,7 @@ export default async function SignInPage({
           subtitle="Freigeschaltete Mitglieder erhalten einen Magic Link per E-Mail."
           submitLabel="Login-Link senden"
           callbackUrl={params.callbackUrl ?? "/dashboard"}
+          passwordLoginEnabled={process.env.AUTH_ENABLE_PASSWORD_LOGIN === "1"}
         />
       </div>
     </div>

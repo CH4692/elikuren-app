@@ -4,10 +4,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
 
+import { EmailTypoHint } from "@/components/form/email-typo-hint";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { checkEmailAddress } from "@/lib/email-address";
 
 const fieldClass =
   "h-9 rounded-lg border-[#C8A24D]/35 bg-[#121216] text-sm text-[#F4F1EB] placeholder:text-[#F4F1EB]/40";
@@ -16,6 +18,23 @@ export function MembershipRequestForm() {
   const [isSending, setIsSending] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null);
+
+  function updateEmail(value: string) {
+    setEmail(value);
+    const checked = checkEmailAddress(value);
+    setEmailSuggestion(checked.ok ? checked.suggestion : null);
+    if (!value.trim()) {
+      setError(null);
+      return;
+    }
+    if (!checked.ok) {
+      setError(checked.error);
+      return;
+    }
+    setError(null);
+  }
 
   if (done) {
     return (
@@ -52,7 +71,16 @@ export function MembershipRequestForm() {
         className="mt-4 flex min-h-0 flex-1 flex-col gap-3"
         onSubmit={async (event) => {
           event.preventDefault();
+          const emailCheck = checkEmailAddress(email);
+          if (!emailCheck.ok) {
+            setError(
+              emailCheck.error ?? "Bitte eine gültige E-Mail-Adresse eingeben.",
+            );
+            setEmailSuggestion(null);
+            return;
+          }
           setError(null);
+          setEmailSuggestion(emailCheck.suggestion);
           setIsSending(true);
           const form = new FormData(event.currentTarget);
           try {
@@ -62,7 +90,7 @@ export function MembershipRequestForm() {
               body: JSON.stringify({
                 firstname: String(form.get("firstname") ?? ""),
                 lastname: String(form.get("lastname") ?? ""),
-                email: String(form.get("email") ?? ""),
+                email: emailCheck.normalized,
                 voice: String(form.get("voice") ?? ""),
                 message: String(form.get("message") ?? ""),
               }),
@@ -119,7 +147,13 @@ export function MembershipRequestForm() {
               type="email"
               required
               autoComplete="email"
+              value={email}
+              onChange={(event) => updateEmail(event.target.value)}
               className={fieldClass}
+            />
+            <EmailTypoHint
+              suggestion={emailSuggestion}
+              onApply={updateEmail}
             />
           </div>
           <div className="space-y-1">

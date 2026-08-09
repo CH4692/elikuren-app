@@ -31,7 +31,10 @@ export async function POST(_request: Request, { params }: Params) {
   const canManage =
     (file.category === "INVOICE" &&
       hasPermission(gate.user.role, "INVOICE_WRITE")) ||
+    (file.category === "IMAGE" &&
+      hasPermission(gate.user.role, "MEDIA_MANAGE")) ||
     (file.category !== "INVOICE" &&
+      file.category !== "IMAGE" &&
       hasPermission(gate.user.role, "PIECE_MANAGE"));
 
   if (!isUploader && !canManage) {

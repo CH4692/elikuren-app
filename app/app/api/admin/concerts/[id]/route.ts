@@ -7,11 +7,12 @@ import {
   serializeConcert,
   updateConcert,
 } from "@/lib/concerts";
+import type { ConcertWebsiteStatus } from "@/lib/generated/prisma/client";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: Params) {
-  const gate = await requirePermission("PIECE_MANAGE");
+  const gate = await requirePermission("CONCERT_MANAGE");
   if (!gate.ok) return gate.response;
 
   const { id } = await params;
@@ -26,7 +27,7 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 export async function PATCH(request: Request, { params }: Params) {
-  const gate = await requirePermission("PIECE_MANAGE");
+  const gate = await requirePermission("CONCERT_MANAGE");
   if (!gate.ok) return gate.response;
 
   const { id } = await params;
@@ -34,7 +35,20 @@ export async function PATCH(request: Request, { params }: Params) {
     title?: string;
     slug?: string | null;
     date?: string | null;
+    startsAt?: string | null;
+    endsAt?: string | null;
+    subtitle?: string | null;
+    description?: string | null;
     location?: string | null;
+    address?: string | null;
+    programInfo?: string | null;
+    leader?: string | null;
+    admissionInfo?: string | null;
+    footer?: string | null;
+    extraInfo?: string | null;
+    ticketUrl?: string | null;
+    websiteStatus?: ConcertWebsiteStatus;
+    heroImageId?: string | null;
     isCurrent?: boolean;
     notes?: string | null;
   };
@@ -54,7 +68,7 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const gate = await requirePermission("PIECE_MANAGE");
+  const gate = await requirePermission("CONCERT_MANAGE");
   if (!gate.ok) return gate.response;
 
   const { id } = await params;

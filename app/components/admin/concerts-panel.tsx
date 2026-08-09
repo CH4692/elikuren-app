@@ -68,7 +68,22 @@ type ConcertRow = {
   slug: string;
   date: string | null;
   year: number | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  subtitle: string | null;
+  description: string | null;
   location: string | null;
+  address: string | null;
+  program_info: string | null;
+  leader: string | null;
+  admission_info: string | null;
+  footer: string | null;
+  extra_info: string | null;
+  ticket_url: string | null;
+  website_status: "DRAFT" | "PUBLISHED";
+  website_badge: string;
+  website_badge_label: string;
+  needs_starts_at: boolean;
   is_current: boolean;
   notes: string | null;
   is_visible: boolean;
@@ -80,7 +95,19 @@ type ConcertRow = {
 type ConcertForm = {
   title: string;
   date: string;
+  startsAt: string;
+  endsAt: string;
+  subtitle: string;
+  description: string;
   location: string;
+  address: string;
+  programInfo: string;
+  leader: string;
+  admissionInfo: string;
+  footer: string;
+  extraInfo: string;
+  ticketUrl: string;
+  websiteStatus: "DRAFT" | "PUBLISHED";
   notes: string;
 };
 
@@ -95,10 +122,31 @@ type ItemForm = {
 const selectClass =
   "flex h-10 w-full rounded-xl border border-[#d9d2c4] bg-white px-3 py-2 text-sm text-[#1f1f23]";
 
+/** Soft status chips: live=success, draft=muted, past/incomplete=warning */
+function websiteBadgeVariant(
+  kind: string,
+): "success" | "muted" | "warning" {
+  if (kind === "published") return "success";
+  if (kind === "draft") return "muted";
+  return "warning";
+}
+
 const emptyConcert = (): ConcertForm => ({
   title: "",
   date: "",
+  startsAt: "",
+  endsAt: "",
+  subtitle: "",
+  description: "",
   location: "",
+  address: "",
+  programInfo: "",
+  leader: "",
+  admissionInfo: "",
+  footer: "",
+  extraInfo: "",
+  ticketUrl: "",
+  websiteStatus: "DRAFT",
   notes: "",
 });
 
@@ -229,7 +277,19 @@ export function ConcertsPanel() {
     setForm({
       title: row.title,
       date: row.date ?? "",
+      startsAt: row.starts_at ?? "",
+      endsAt: row.ends_at ?? "",
+      subtitle: row.subtitle ?? "",
+      description: row.description ?? "",
       location: row.location ?? "",
+      address: row.address ?? "",
+      programInfo: row.program_info ?? "",
+      leader: row.leader ?? "",
+      admissionInfo: row.admission_info ?? "",
+      footer: row.footer ?? "",
+      extraInfo: row.extra_info ?? "",
+      ticketUrl: row.ticket_url ?? "",
+      websiteStatus: row.website_status,
       notes: row.notes ?? "",
     });
     setEditTarget(row);
@@ -271,11 +331,27 @@ export function ConcertsPanel() {
       toast.error("Titel ist Pflicht");
       return;
     }
+    if (form.websiteStatus === "PUBLISHED" && !form.startsAt) {
+      toast.error("Zum Veröffentlichen muss eine Startzeit gesetzt sein.");
+      return;
+    }
     startTransition(async () => {
       const payload = {
         title: form.title.trim(),
         date: form.date || null,
+        startsAt: form.startsAt || null,
+        endsAt: form.endsAt || null,
+        subtitle: form.subtitle.trim() || null,
+        description: form.description.trim() || null,
         location: form.location.trim() || null,
+        address: form.address.trim() || null,
+        programInfo: form.programInfo.trim() || null,
+        leader: form.leader.trim() || null,
+        admissionInfo: form.admissionInfo.trim() || null,
+        footer: form.footer.trim() || null,
+        extraInfo: form.extraInfo.trim() || null,
+        ticketUrl: form.ticketUrl.trim() || null,
+        websiteStatus: form.websiteStatus,
         notes: form.notes.trim() || null,
       };
       const res = await fetch(
@@ -682,6 +758,9 @@ export function ConcertsPanel() {
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium text-[#1f1f23]">{row.title}</p>
+                        <Badge variant={websiteBadgeVariant(row.website_badge)}>
+                          {row.website_badge_label}
+                        </Badge>
                         {row.is_current ? (
                           <Badge variant="success">Aktiv</Badge>
                         ) : null}
@@ -907,7 +986,53 @@ function ConcertFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="c-date">Datum</Label>
+        <Label htmlFor="c-subtitle">Untertitel (Website)</Label>
+        <Input
+          id="c-subtitle"
+          value={form.subtitle}
+          onChange={(e) => onChange({ ...form, subtitle: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-status">Website-Status</Label>
+        <select
+          id="c-status"
+          className={selectClass}
+          value={form.websiteStatus}
+          onChange={(e) =>
+            onChange({
+              ...form,
+              websiteStatus: e.target.value as "DRAFT" | "PUBLISHED",
+            })
+          }
+        >
+          <option value="DRAFT">Entwurf</option>
+          <option value="PUBLISHED">Veröffentlicht</option>
+        </select>
+        <p className="text-xs text-[#8a8478]">
+          Veröffentlichen erfordert eine echte Startzeit (keine Platzhalter).
+        </p>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-starts">Start (Europe/Berlin)</Label>
+        <Input
+          id="c-starts"
+          type="datetime-local"
+          value={form.startsAt}
+          onChange={(e) => onChange({ ...form, startsAt: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-ends">Ende (optional)</Label>
+        <Input
+          id="c-ends"
+          type="datetime-local"
+          value={form.endsAt}
+          onChange={(e) => onChange({ ...form, endsAt: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-date">Bibliotheks-Datum (optional)</Label>
         <Input
           id="c-date"
           type="date"
@@ -916,16 +1041,82 @@ function ConcertFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="c-location">Ort (optional)</Label>
+        <Label htmlFor="c-location">Ort</Label>
         <Input
           id="c-location"
           value={form.location}
           onChange={(e) => onChange({ ...form, location: e.target.value })}
-          placeholder="z. B. Wien"
+          placeholder="z. B. Kath. Pfarrkirche St. Bonifatius"
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="c-notes">Notizen</Label>
+        <Label htmlFor="c-address">Adresse</Label>
+        <Input
+          id="c-address"
+          value={form.address}
+          onChange={(e) => onChange({ ...form, address: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-description">Beschreibung (Website)</Label>
+        <Textarea
+          id="c-description"
+          value={form.description}
+          onChange={(e) => onChange({ ...form, description: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-program">Programm (Website)</Label>
+        <Textarea
+          id="c-program"
+          value={form.programInfo}
+          onChange={(e) => onChange({ ...form, programInfo: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-leader">Leitung</Label>
+        <Input
+          id="c-leader"
+          value={form.leader}
+          onChange={(e) => onChange({ ...form, leader: e.target.value })}
+          placeholder="z. B. Christiane Kampe"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-admission">Eintritt (optional)</Label>
+        <Input
+          id="c-admission"
+          value={form.admissionInfo}
+          onChange={(e) => onChange({ ...form, admissionInfo: e.target.value })}
+          placeholder="z. B. Frei. Spenden erwünscht."
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-footer">Footer-Text (Website)</Label>
+        <Textarea
+          id="c-footer"
+          value={form.footer}
+          onChange={(e) => onChange({ ...form, footer: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-extra">Zusatzinfo</Label>
+        <Textarea
+          id="c-extra"
+          value={form.extraInfo}
+          onChange={(e) => onChange({ ...form, extraInfo: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-ticket">Ticket-URL</Label>
+        <Input
+          id="c-ticket"
+          value={form.ticketUrl}
+          onChange={(e) => onChange({ ...form, ticketUrl: e.target.value })}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="c-notes">Interne Notizen</Label>
         <Textarea
           id="c-notes"
           value={form.notes}

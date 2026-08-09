@@ -1,24 +1,76 @@
-import { email_design } from "@/lib/email_design";
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+import {
+  ContactInquiryEmail,
+  contactInquiryEmailText,
+} from "@/emails/contact-inquiry-email";
+import { checkEmailAddress } from "@/lib/email-address";
+import { emailLogoUrl, emailSiteUrl } from "@/lib/email/assets";
+import { getContactEmailTo } from "@/lib/email/brand";
+import { EmailSendError, sendEmail } from "@/lib/email/send-email";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const { firstName, lastName, email, subject, message } = body;
+    const { firstName, lastName, email, subject, message } = body as {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      subject?: string;
+      message?: string;
+    };
 
-    await resend.emails.send({
-      from: "Kammerchor Elikuren <admin@kammerchor-elikuren.de>",
-      to: "kammerchor.elikuren@t-online.de",
-      subject: subject || "Neue Kontaktanfrage",
-      html: email_design(firstName, lastName, email, subject, message),
+    const emailCheck = checkEmailAddress(String(email ?? ""));
+
+    if (
+      !firstName?.trim() ||
+      !lastName?.trim() ||
+      !emailCheck.ok ||
+      !message?.trim()
+    ) {
+      return NextResponse.json({ error: "Fehler beim Senden" }, { status: 400 });
+    }
+
+    const normalizedEmail = emailCheck.normalized;
+
+    const result = await sendEmail({
+      to: getContactEmailTo(),
+      replyTo: normalizedEmail,
+      subject: subject?.trim() || "Neue Kontaktanfrage",
+      kind: "transactional",
+      templateName: "contact-inquiry",
+      react: ContactInquiryEmail({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: normalizedEmail,
+        subject: subject?.trim() || "",
+        message: String(message),
+        logoUrl: emailLogoUrl(),
+        siteUrl: emailSiteUrl(),
+      }),
+      text: contactInquiryEmailText({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: normalizedEmail,
+        subject: subject?.trim() || "",
+        message: String(message),
+      }),
     });
+
+    if (result.status === "skipped") {
+      // Test keys must not look like successful delivery to end users.
+      return NextResponse.json({ error: "Fehler beim Senden" }, { status: 503 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (!(error instanceof EmailSendError)) {
+      console.error("[email]", {
+        event: "contact_send_failed",
+        templateName: "contact-inquiry",
+      });
+    }
     return NextResponse.json({ error: "Fehler beim Senden" }, { status: 500 });
   }
 }
