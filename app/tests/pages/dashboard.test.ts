@@ -28,16 +28,15 @@ test.describe("Dashboard", () => {
     ).toHaveCount(0);
   });
 
-  test("admin lands on admin overview, not member dashboard", async ({
-    page,
-  }) => {
+  test("admin can open member dashboard", async ({ page }) => {
     await loginAsAdmin(page);
     await expect(page).toHaveURL(/\/admin/);
-    await expect(
-      page.getByRole("heading", { name: "Übersicht" }),
-    ).toBeVisible();
 
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/admin/);
+    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page.getByRole("heading", { name: /Hallo/i })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Schnellzugriff" }),
+    ).toBeVisible();
   });
 });

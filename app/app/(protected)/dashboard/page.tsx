@@ -5,7 +5,6 @@ import { MemberShell } from "@/components/app/member-shell";
 import { MemberDashboard } from "@/components/dashboard/member-dashboard";
 import { getCurrentConcertSummary } from "@/lib/concerts";
 import { prisma } from "@/lib/db";
-import { hasAdminAreaAccess } from "@/lib/permissions";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -21,9 +20,6 @@ export default async function DashboardPage() {
     },
   });
   if (!user?.isActive) redirect("/auth/sign-in");
-
-  // Admin-Rollen starten im Verwaltungsbereich, nicht im Mitglieder-Dashboard.
-  if (hasAdminAreaAccess(user.role)) redirect("/admin");
 
   const activeConcert = await getCurrentConcertSummary(user.role);
 

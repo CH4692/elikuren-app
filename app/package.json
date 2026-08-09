@@ -21,6 +21,8 @@
     "db:seed": "npx tsx prisma/seed.ts",
     "db:wipe-e2e": "npx tsx ./scripts/wipe-e2e-data.ts --confirm",
     "db:wipe-preview": "npx tsx ./scripts/wipe-preview.ts --confirm",
+    "db:seed-preview": "npx tsx ./scripts/seed-preview.ts --confirm",
+    "db:seed-preview-media": "npx tsx ./scripts/seed-preview-sample-media.ts --confirm",
     "db:seed-production": "npx tsx ./scripts/seed-production.ts --confirm",
     "import:media": "npx tsx scripts/import-media.ts",
     "import:media:apply": "npx tsx scripts/import-media.ts --apply",
