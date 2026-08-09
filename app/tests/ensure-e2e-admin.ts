@@ -43,6 +43,7 @@ async function upsertUser(
     update: {
       role: input.role,
       voice: input.voice ?? null,
+      phone: null,
       passwordHash,
       isActive: true,
       emailVerified: new Date(),
