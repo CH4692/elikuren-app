@@ -4,6 +4,7 @@ import { requireActiveSession } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { canAccessScopedFile } from "@/lib/files";
 import { hasPermission } from "@/lib/permissions";
+import { publicObjectUrl } from "@/lib/public-media";
 import { createPresignedGetUrl, r2Configured } from "@/lib/r2";
 
 type Params = { params: Promise<{ id: string }> };
@@ -103,6 +104,20 @@ export async function GET(request: Request, { params }: Params) {
       { detail: "Forbidden", code: "http_403" },
       { status: 403 },
     );
+  }
+
+  // PUBLIC website assets: durable CDN URL (no signing). Fixes admin thumbs
+  // when R2 API tokens are missing/invalid but the public bucket is fine.
+  if (file.visibility === "PUBLIC") {
+    const durable = publicObjectUrl(file.objectKey);
+    if (durable) {
+      return NextResponse.json({
+        url: durable,
+        expiresIn: null,
+        mimeType: file.mimeType,
+        public: true,
+      });
+    }
   }
 
   try {
