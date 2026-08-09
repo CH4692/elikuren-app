@@ -2,6 +2,7 @@ import {
   ArrowUpRight,
   FileMusic,
   FileText,
+  Home,
   LayoutDashboard,
   UserPlus,
   type LucideIcon,
@@ -46,23 +47,42 @@ export function AdminOverview({ role, kpis }: AdminOverviewProps) {
         description="Kennzahlen und direkter Einstieg in die Verwaltungsbereiche."
       />
 
-      <Link
-        href="/dashboard"
-        className="group flex items-center gap-3 rounded-2xl border border-[#C8A24D]/35 bg-[#C8A24D]/10 px-4 py-3.5 transition hover:border-[#C8A24D]/60 hover:bg-[#C8A24D]/16"
-      >
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#1f1f23] text-[#C8A24D]">
-          <LayoutDashboard className="size-4" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-medium text-[#1f1f23]">
-            Mitglieder-Dashboard
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link
+          href="/home"
+          className="group flex items-center gap-3 rounded-2xl border border-[#C8A24D]/35 bg-[#C8A24D]/10 px-4 py-3.5 transition hover:border-[#C8A24D]/60 hover:bg-[#C8A24D]/16"
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#1f1f23] text-[#C8A24D]">
+            <Home className="size-4" />
           </span>
-          <span className="block text-xs text-[#5c574e]">
-            Noten, Audio und aktuelles Konzert wie für Mitglieder
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium text-[#1f1f23]">
+              Zur Startseite
+            </span>
+            <span className="block text-xs text-[#5c574e]">
+              Öffentliche Website mit Konzerten und Inhalten
+            </span>
           </span>
-        </span>
-        <ArrowUpRight className="size-4 shrink-0 text-[#8a6d2a] transition group-hover:text-[#1f1f23]" />
-      </Link>
+          <ArrowUpRight className="size-4 shrink-0 text-[#8a6d2a] transition group-hover:text-[#1f1f23]" />
+        </Link>
+        <Link
+          href="/dashboard"
+          className="group flex items-center gap-3 rounded-2xl border border-[#d9d2c4] bg-white px-4 py-3.5 transition hover:border-[#C8A24D]/50 hover:bg-[#C8A24D]/8"
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#1f1f23] text-[#C8A24D]">
+            <LayoutDashboard className="size-4" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium text-[#1f1f23]">
+              Mitglieder-Dashboard
+            </span>
+            <span className="block text-xs text-[#5c574e]">
+              Noten, Audio und aktuelles Konzert wie für Mitglieder
+            </span>
+          </span>
+          <ArrowUpRight className="size-4 shrink-0 text-[#8a8478] transition group-hover:text-[#1f1f23]" />
+        </Link>
+      </div>
 
       {kpis.length === 0 ? (
         <p className="text-sm text-[#5c574e]">

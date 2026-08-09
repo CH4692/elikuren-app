@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, LogOut, Menu } from "lucide-react";
+import { Home, LayoutDashboard, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -15,12 +15,25 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { hasPermission, type Permission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
+function PublicSiteLink({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <Link
+      href="/home"
+      onNavigate={onNavigate}
+      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#C8A24D] transition hover:bg-[#C8A24D]/12"
+    >
+      <Home className="size-4 shrink-0" />
+      Zur Startseite
+    </Link>
+  );
+}
+
 function MemberAreaLink({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <Link
       href="/dashboard"
       onNavigate={onNavigate}
-      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#C8A24D] transition hover:bg-[#C8A24D]/12"
+      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#F4F1EB]/80 transition hover:bg-white/5 hover:text-[#F4F1EB]"
     >
       <LayoutDashboard className="size-4 shrink-0" />
       Mitglieder-Dashboard
@@ -110,6 +123,7 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
           <NavList role={role} pathname={pathname} />
         </div>
         <div className="shrink-0 space-y-1 border-t border-[var(--sidebar-border)] px-3 py-3">
+          <PublicSiteLink />
           <MemberAreaLink />
           <LogoutButton />
         </div>
@@ -141,6 +155,7 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
               />
             </div>
             <div className="shrink-0 space-y-1 border-t border-[var(--sidebar-border)] px-3 py-3">
+              <PublicSiteLink onNavigate={() => setOpen(false)} />
               <MemberAreaLink onNavigate={() => setOpen(false)} />
               <LogoutButton onNavigate={() => setOpen(false)} />
             </div>
