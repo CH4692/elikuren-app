@@ -46,4 +46,24 @@ test.describe("Mitgliederbereich Smoke", () => {
     await page.getByRole("menuitem", { name: "Admin-Dashboard" }).click();
     await expect(page).toHaveURL(/\/admin/);
   });
+
+  test("admin overview and sidebar link to member dashboard", async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto("/admin", { waitUntil: "domcontentloaded" });
+    await page
+      .getByRole("main")
+      .getByRole("link", { name: /Mitglieder-Dashboard/i })
+      .click();
+    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page.getByRole("heading", { name: /Hallo/i })).toBeVisible();
+
+    await page.goto("/admin", { waitUntil: "domcontentloaded" });
+    await page
+      .locator("aside")
+      .getByRole("link", { name: "Mitglieder-Dashboard" })
+      .click();
+    await expect(page).toHaveURL(/\/dashboard/);
+  });
 });

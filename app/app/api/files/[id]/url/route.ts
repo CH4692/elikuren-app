@@ -42,31 +42,8 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
-  if (file.visibility === "PUBLIC") {
-    if (!hasPermission(gate.user.role, "MEDIA_MANAGE")) {
-      return NextResponse.json(
-        { detail: "Forbidden", code: "http_403" },
-        { status: 403 },
-      );
-    }
-    const url = publicObjectUrl(file.objectKey);
-    if (!url) {
-      return NextResponse.json(
-        {
-          detail: "R2_PUBLIC_BASE_URL ist nicht konfiguriert",
-          code: "public_url_unconfigured",
-        },
-        { status: 503 },
-      );
-    }
-    return NextResponse.json({
-      url,
-      expiresIn: null,
-      mimeType: file.mimeType,
-      public: true,
-    });
-  }
-
+  // This route is authenticated — always return signed URLs.
+  // Durable public CDN URLs are only for unauthenticated website rendering.
   if (file.category === "INVOICE") {
     if (!hasPermission(gate.user.role, "INVOICE_READ")) {
       return NextResponse.json(
@@ -127,6 +104,20 @@ export async function GET(request: Request, { params }: Params) {
       { detail: "Forbidden", code: "http_403" },
       { status: 403 },
     );
+  }
+
+  // PUBLIC website assets: durable CDN URL (no signing). Fixes admin thumbs
+  // when R2 API tokens are missing/invalid but the public bucket is fine.
+  if (file.visibility === "PUBLIC") {
+    const durable = publicObjectUrl(file.objectKey);
+    if (durable) {
+      return NextResponse.json({
+        url: durable,
+        expiresIn: null,
+        mimeType: file.mimeType,
+        public: true,
+      });
+    }
   }
 
   try {

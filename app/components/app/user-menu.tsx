@@ -66,6 +66,7 @@ const memberOnlyLinks = [
 
 const adminLinks = [
   { href: "/admin", label: "Admin-Dashboard", icon: Shield },
+  { href: "/dashboard", label: "Mitglieder-Dashboard", icon: LayoutDashboard },
   { href: "/profile", label: "Mein Profil", icon: UserRound },
   { href: "/library/scores", label: "Noten", icon: FileMusic },
   { href: "/library/audio", label: "Audio", icon: Headphones },
