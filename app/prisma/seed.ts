@@ -22,11 +22,11 @@ const password =
 const HERBST_MARKETING = {
   subtitle: "Winterreise",
   description:
-    'Der Kammerchor Elikuren und das musical team laden herzlich zu einem besonderen Konzert ein: Franz Schuberts "Winterreise" in einer eindrucksvollen Chorfassung - als Uraufführung von von Martin Kürschner, ehemaliger Rektor der Hochschule für Musik und Theater Leipzig und aktuell Professor für Komposition und Musiktheorie.',
+    'Der Kammerchor Elikuren und das musical team laden herzlich zu einem besonderen Konzert ein: Franz Schuberts "Winterreise" in einer eindrucksvollen Chorfassung – bearbeitet von Martin Kürschner, ehemaliger Rektor der Hochschule für Musik und Theater Leipzig und aktuell Professor für Komposition und Musiktheorie.',
   location: "Kath. Pfarrkirche St. Bonifatius",
   address: "Hindenburgstraße 17, 31515 Wunstorf",
   programInfo:
-    'Franz Schuberts "Winterreise" zählt zu den bedeutenstenn Liedzyklen der Musikgeschichte. In dieser außergewähnlichen Fassung für Chor, komponiert von Martin Kürschner entfaltet das Werk eine neue klangliche Dimension.',
+    'Franz Schuberts "Winterreise" zählt zu den bedeutendsten Liedzyklen der Musikgeschichte. In dieser außergewöhnlichen Fassung für Chor, bearbeitet von Martin Kürschner, entfaltet das Werk eine neue klangliche Dimension.',
   leader: "Christiane Kampe",
   admissionInfo: "Frei. Spenden erwünscht.",
   footer: "Ein Konzertabend für alle, die Chormusik erleben möchten.",

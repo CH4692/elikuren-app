@@ -66,7 +66,9 @@ async function loadPublicConcertCandidatesUncached() {
 /** Obvious prefilter only — visibility decision is isConcertVisible(). */
 const loadPublicConcertCandidates = unstable_cache(
   loadPublicConcertCandidatesUncached,
-  ["concerts-public-candidates"],
+  // Bump key when Production content is edited outside the admin API
+  // (direct DB updates do not call revalidateTag).
+  ["concerts-public-candidates-v2"],
   { tags: [CONCERTS_PUBLIC_CACHE_TAG] },
 );
 

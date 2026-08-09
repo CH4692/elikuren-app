@@ -24,13 +24,20 @@ export function r2Endpoint(): string {
   throw new Error("R2_ENDPOINT is not configured");
 }
 
-export function r2Configured(): boolean {
+/** True when R2 API credentials are present (needed for private signed URLs). */
+export function isR2ApiConfigured(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
   return Boolean(
-    process.env.R2_ACCESS_KEY_ID &&
-      process.env.R2_SECRET_ACCESS_KEY &&
-      process.env.R2_BUCKET_NAME &&
-      (process.env.R2_ENDPOINT || process.env.R2_ACCOUNT_ID),
+    env.R2_ACCESS_KEY_ID?.trim() &&
+      env.R2_SECRET_ACCESS_KEY?.trim() &&
+      env.R2_BUCKET_NAME?.trim() &&
+      (env.R2_ENDPOINT?.trim() || env.R2_ACCOUNT_ID?.trim()),
   );
+}
+
+export function r2Configured(): boolean {
+  return isR2ApiConfigured(process.env);
 }
 
 function getClient(): S3Client {
@@ -74,6 +81,17 @@ export async function createPresignedPutUrl(input: {
   return { url, expiresIn };
 }
 
+/** Safe Content-Disposition for R2 signed GETs (ASCII fallback + RFC 5987). */
+export function contentDispositionHeader(
+  disposition: "inline" | "attachment",
+  fileName: string,
+): string {
+  const cleaned = fileName.replace(/[\r\n"]/g, "").trim() || "file";
+  const ascii = cleaned.replace(/[^\x20-\x7E]+/g, "_") || "file";
+  const encoded = encodeURIComponent(cleaned).replace(/['()]/g, escape);
+  return `${disposition}; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+}
+
 export async function createPresignedGetUrl(input: {
   objectKey: string;
   fileName: string;
@@ -87,7 +105,10 @@ export async function createPresignedGetUrl(input: {
       Bucket: bucket(),
       Key: input.objectKey,
       ResponseContentType: input.contentType,
-      ResponseContentDisposition: `${input.disposition}; filename="${input.fileName.replace(/"/g, "")}"`,
+      ResponseContentDisposition: contentDispositionHeader(
+        input.disposition,
+        input.fileName,
+      ),
     }),
     { expiresIn },
   );
