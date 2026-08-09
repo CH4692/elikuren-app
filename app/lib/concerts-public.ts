@@ -68,7 +68,7 @@ const loadPublicConcertCandidates = unstable_cache(
   loadPublicConcertCandidatesUncached,
   // Bump key when Production content is edited outside the admin API
   // (direct DB updates do not call revalidateTag).
-  ["concerts-public-candidates-v2"],
+  ["concerts-public-candidates-v3"],
   { tags: [CONCERTS_PUBLIC_CACHE_TAG] },
 );
 
