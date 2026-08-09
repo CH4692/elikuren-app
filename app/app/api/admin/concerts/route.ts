@@ -5,6 +5,7 @@ import {
   createConcert,
   listConcertsAdmin,
   serializeConcert,
+  type PerformanceWriteInput,
 } from "@/lib/concerts";
 import type { ConcertWebsiteStatus } from "@/lib/generated/prisma/client";
 
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
     heroImageId?: string | null;
     isCurrent?: boolean;
     notes?: string | null;
+    performances?: PerformanceWriteInput[];
   };
 
   try {
@@ -66,6 +68,7 @@ export async function POST(request: Request) {
       heroImageId: body.heroImageId,
       isCurrent: body.isCurrent,
       notes: body.notes,
+      performances: body.performances,
     });
     return NextResponse.json(serializeConcert(concert), { status: 201 });
   } catch (error) {

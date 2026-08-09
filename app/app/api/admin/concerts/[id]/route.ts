@@ -6,6 +6,7 @@ import {
   getConcertAdmin,
   serializeConcert,
   updateConcert,
+  type PerformanceWriteInput,
 } from "@/lib/concerts";
 import type { ConcertWebsiteStatus } from "@/lib/generated/prisma/client";
 
@@ -51,6 +52,7 @@ export async function PATCH(request: Request, { params }: Params) {
     heroImageId?: string | null;
     isCurrent?: boolean;
     notes?: string | null;
+    performances?: PerformanceWriteInput[];
   };
 
   try {
