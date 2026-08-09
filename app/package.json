@@ -29,6 +29,8 @@
     "import:members": "npx tsx scripts/import-members-xlsx.ts",
     "import:folder-batches": "npx tsx scripts/import-folder-batches.ts",
     "import:folder-batches:apply": "npx tsx scripts/import-folder-batches.ts --apply",
+    "concerts:merge-winterreise": "npx tsx ./scripts/merge-winterreise-performances.ts",
+    "concerts:merge-winterreise:apply": "npx tsx ./scripts/merge-winterreise-performances.ts --apply",
     "email:dev": "email dev --dir emails"
   },
   "prisma": {
