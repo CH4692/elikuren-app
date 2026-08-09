@@ -31,9 +31,12 @@ export function PdfPreview({ fileId, title, open, onClose }: PdfPreviewProps) {
         const body = (await res.json().catch(() => ({}))) as { detail?: string };
         throw new Error(body.detail ?? "Vorschau nicht verfügbar");
       }
-      const data = (await res.json()) as { url: string; expiresIn: number };
+      const data = (await res.json()) as {
+        url: string;
+        expiresIn?: number | null;
+      };
       setUrl(data.url);
-      setExpiresIn(data.expiresIn);
+      setExpiresIn(typeof data.expiresIn === "number" ? data.expiresIn : 0);
     } catch (err) {
       setUrl(null);
       setError(err instanceof Error ? err.message : "Fehler");
