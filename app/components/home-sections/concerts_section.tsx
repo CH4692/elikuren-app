@@ -31,22 +31,29 @@ export default async function ConcertPage() {
               "Aktuell sind keine öffentlichen Konzerte geplant."}
           </p>
         ) : (
-          <div className="grid w-full gap-12 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+          <div className="flex w-full flex-col gap-16">
             {concerts.map((concert) => (
-              <ConcertCard
+              <div
                 key={concert.id}
-                concert_name={concert.title}
-                concert_info={concert.description ?? ""}
-                concert_date={formatPublicConcertDate(concert.startsAt)}
-                concert_time={formatPublicConcertTime(concert.startsAt)}
-                concert_location={concert.location ?? ""}
-                concert_street={concert.address ?? ""}
-                concert_details_title={concert.subtitle ?? concert.title}
-                concert_details_info={concert.programInfo ?? ""}
-                concert_details_leader={concert.leader ?? ""}
-                concert_details_footer={concert.footer ?? ""}
-                concert_admission={concert.admissionInfo}
-              />
+                className="grid w-full gap-12 lg:grid-cols-[1.2fr_0.8fr] lg:items-center"
+              >
+                <ConcertCard
+                  concert_name={concert.title}
+                  concert_info={concert.description ?? ""}
+                  performances={concert.performances.map((performance) => ({
+                    date: formatPublicConcertDate(performance.startsAt),
+                    time: formatPublicConcertTime(performance.startsAt),
+                    location: performance.location ?? "",
+                    street: performance.address ?? "",
+                    label: performance.label,
+                  }))}
+                  concert_details_title={concert.subtitle ?? concert.title}
+                  concert_details_info={concert.programInfo ?? ""}
+                  concert_details_leader={concert.leader ?? ""}
+                  concert_details_footer={concert.footer ?? ""}
+                  concert_admission={concert.admissionInfo}
+                />
+              </div>
             ))}
           </div>
         )}

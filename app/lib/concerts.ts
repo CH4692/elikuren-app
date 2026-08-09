@@ -2,11 +2,16 @@ import { revalidatePath, revalidateTag } from "next/cache";
 
 import { formatConcertLabel } from "@/lib/concert-label";
 import {
+  isConcertVisibleViaPerformances,
+  mirrorFieldsFromPerformance,
+  pickMirrorPerformance,
+  sortPerformances,
+} from "@/lib/concert-performances";
+import {
   getConcertWebsiteBadge,
   isConcertVisible,
 } from "@/lib/concert-visibility";
 import {
-  berlinCalendarDateUtc,
   concertVisibleUntil,
   formatBerlinDateTimeLocal,
   parseBerlinDateTimeLocal,
@@ -23,11 +28,22 @@ const CONCERTS_PUBLIC_CACHE_TAG = "concerts-public";
 
 export { formatConcertLabel } from "@/lib/concert-label";
 
+export type PerformanceWriteInput = {
+  id?: string;
+  /** Europe/Berlin datetime-local `YYYY-MM-DDTHH:mm` */
+  startsAt: string;
+  endsAt?: string | null;
+  location?: string | null;
+  address?: string | null;
+  label?: string | null;
+  sortOrder?: number;
+};
+
 export type ConcertWriteInput = {
   title?: string;
   slug?: string | null;
   date?: string | null;
-  /** Europe/Berlin datetime-local `YYYY-MM-DDTHH:mm` or null to clear */
+  /** @deprecated Prefer `performances`. Kept for one-shot create fallback. */
   startsAt?: string | null;
   endsAt?: string | null;
   subtitle?: string | null;
@@ -44,6 +60,7 @@ export type ConcertWriteInput = {
   heroImageId?: string | null;
   isCurrent?: boolean;
   notes?: string | null;
+  performances?: PerformanceWriteInput[];
 };
 
 function parseOptionalBerlinDateTime(
@@ -69,17 +86,78 @@ function parseWebsiteStatus(
 
 function assertWebsitePublishRules(input: {
   websiteStatus: ConcertWebsiteStatus;
-  startsAt: Date | null;
-  endsAt: Date | null;
+  performanceCount: number;
 }) {
-  if (input.websiteStatus === "PUBLISHED" && !input.startsAt) {
+  if (input.websiteStatus === "PUBLISHED" && input.performanceCount < 1) {
     throw new Error(
-      "Zum Veröffentlichen muss eine Startzeit gesetzt sein.",
+      "Zum Veröffentlichen muss mindestens ein Termin gesetzt sein.",
     );
   }
-  if (input.startsAt && input.endsAt && !(input.endsAt > input.startsAt)) {
-    throw new Error("endsAt muss nach startsAt liegen.");
+}
+
+function parsePerformanceWrites(raw: PerformanceWriteInput[]): {
+  startsAt: Date;
+  endsAt: Date | null;
+  location: string | null;
+  address: string | null;
+  label: string | null;
+  sortOrder: number;
+}[] {
+  if (raw.length === 0) return [];
+  return raw.map((row, index) => {
+    const startsAt = parseOptionalBerlinDateTime(row.startsAt, "startsAt");
+    if (!startsAt) {
+      throw new Error(`Termin ${index + 1}: Startzeit ist Pflicht`);
+    }
+    const endsAt = parseOptionalBerlinDateTime(row.endsAt, "endsAt");
+    const resolvedEndsAt = endsAt === undefined ? null : endsAt;
+    if (resolvedEndsAt && !(resolvedEndsAt > startsAt)) {
+      throw new Error(`Termin ${index + 1}: endsAt muss nach startsAt liegen.`);
+    }
+    return {
+      startsAt,
+      endsAt: resolvedEndsAt,
+      location: row.location?.trim() || null,
+      address: row.address?.trim() || null,
+      label: row.label?.trim() || null,
+      sortOrder: row.sortOrder ?? index,
+    };
+  });
+}
+
+function performancesFromLegacyFields(input: ConcertWriteInput): PerformanceWriteInput[] | null {
+  if (input.startsAt == null || String(input.startsAt).trim() === "") {
+    return null;
   }
+  return [
+    {
+      startsAt: String(input.startsAt),
+      endsAt: input.endsAt,
+      location: input.location,
+      address: input.address,
+      sortOrder: 0,
+    },
+  ];
+}
+
+export function serializeConcertPerformance(row: {
+  id: string;
+  startsAt: Date;
+  endsAt: Date | null;
+  location: string | null;
+  address: string | null;
+  label: string | null;
+  sortOrder: number;
+}) {
+  return {
+    id: row.id,
+    starts_at: formatBerlinDateTimeLocal(row.startsAt),
+    ends_at: row.endsAt ? formatBerlinDateTimeLocal(row.endsAt) : null,
+    location: row.location,
+    address: row.address,
+    label: row.label,
+    sort_order: row.sortOrder,
+  };
 }
 
 function revalidatePublicConcerts() {
@@ -237,15 +315,27 @@ export function serializeConcert(
     createdAt: Date;
     updatedAt: Date;
     items?: Parameters<typeof serializeConcertItem>[0][];
-    _count?: { items: number; recordings: number };
+    performances?: Parameters<typeof serializeConcertPerformance>[0][];
+    _count?: { items: number; recordings: number; performances?: number };
   },
   now = new Date(),
 ) {
   const date = concert.date ? concert.date.toISOString().slice(0, 10) : null;
   const year = date ? Number(date.slice(0, 4)) : null;
   const websiteStatus = concert.websiteStatus ?? "DRAFT";
-  const startsAt = concert.startsAt ?? null;
-  const endsAt = concert.endsAt ?? null;
+  const performances = sortPerformances(concert.performances ?? []);
+  const mirror =
+    pickMirrorPerformance(performances, now) ??
+    (concert.startsAt
+      ? {
+          startsAt: concert.startsAt,
+          endsAt: concert.endsAt ?? null,
+          location: concert.location ?? null,
+          address: concert.address ?? null,
+        }
+      : null);
+  const startsAt = mirror?.startsAt ?? null;
+  const endsAt = mirror?.endsAt ?? null;
   const visibleUntil =
     startsAt != null ? concertVisibleUntil(startsAt, endsAt) : null;
   const badge = getConcertWebsiteBadge({
@@ -254,6 +344,19 @@ export function serializeConcert(
     visibleUntil,
     now,
   });
+  const isPubliclyVisible =
+    performances.length > 0
+      ? isConcertVisibleViaPerformances({
+          websiteStatus,
+          performances,
+          now,
+        })
+      : isConcertVisible({
+          websiteStatus,
+          startsAt,
+          visibleUntil,
+          now,
+        });
   return {
     id: concert.id,
     title: concert.title,
@@ -265,8 +368,8 @@ export function serializeConcert(
     ends_at: endsAt ? formatBerlinDateTimeLocal(endsAt) : null,
     subtitle: concert.subtitle ?? null,
     description: concert.description ?? null,
-    location: concert.location ?? null,
-    address: concert.address ?? null,
+    location: mirror?.location ?? concert.location ?? null,
+    address: mirror?.address ?? concert.address ?? null,
     program_info: concert.programInfo ?? null,
     leader: concert.leader ?? null,
     admission_info: concert.admissionInfo ?? null,
@@ -276,19 +379,17 @@ export function serializeConcert(
     website_status: websiteStatus,
     website_badge: badge.kind,
     website_badge_label: badge.label,
-    is_publicly_visible: isConcertVisible({
-      websiteStatus,
-      startsAt,
-      visibleUntil,
-      now,
-    }),
+    is_publicly_visible: isPubliclyVisible,
     hero_image_id: concert.heroImageId ?? null,
-    needs_starts_at: startsAt == null,
+    needs_starts_at: performances.length === 0 && startsAt == null,
     is_current: concert.isCurrent,
     notes: concert.notes,
     is_visible: concert.isVisible,
     item_count: concert._count?.items ?? concert.items?.length ?? 0,
     recording_count: concert._count?.recordings ?? 0,
+    performance_count:
+      concert._count?.performances ?? performances.length,
+    performances: performances.map(serializeConcertPerformance),
     items: concert.items?.map(serializeConcertItem),
     created_at: concert.createdAt.toISOString(),
     updated_at: concert.updatedAt.toISOString(),
@@ -304,11 +405,23 @@ export async function listConcertsAdmin(q?: string) {
             { slug: { contains: q, mode: "insensitive" } },
             { notes: { contains: q, mode: "insensitive" } },
             { location: { contains: q, mode: "insensitive" } },
+            {
+              performances: {
+                some: {
+                  OR: [
+                    { location: { contains: q, mode: "insensitive" } },
+                    { address: { contains: q, mode: "insensitive" } },
+                    { label: { contains: q, mode: "insensitive" } },
+                  ],
+                },
+              },
+            },
           ],
         }
       : undefined,
     include: {
-      _count: { select: { items: true, recordings: true } },
+      performances: { orderBy: [{ startsAt: "asc" }, { sortOrder: "asc" }] },
+      _count: { select: { items: true, recordings: true, performances: true } },
     },
   });
 
@@ -354,11 +467,12 @@ export async function getConcertAdmin(id: string) {
   return prisma.concert.findUnique({
     where: { id },
     include: {
+      performances: { orderBy: [{ startsAt: "asc" }, { sortOrder: "asc" }] },
       items: {
         orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
         include: itemInclude,
       },
-      _count: { select: { items: true, recordings: true } },
+      _count: { select: { items: true, recordings: true, performances: true } },
     },
   });
 }
@@ -380,23 +494,17 @@ export async function createConcert(
   if (!title) throw new Error("Titel ist Pflicht");
   const slug = await uniqueConcertSlug(input.slug?.trim() || title);
 
-  const startsAt = parseOptionalBerlinDateTime(input.startsAt, "startsAt");
-  const endsAt = parseOptionalBerlinDateTime(input.endsAt, "endsAt");
   const websiteStatus = parseWebsiteStatus(input.websiteStatus) ?? "DRAFT";
-  const resolvedStartsAt = startsAt === undefined ? null : startsAt;
-  const resolvedEndsAt = endsAt === undefined ? null : endsAt;
+  const performanceInput =
+    input.performances ?? performancesFromLegacyFields(input) ?? [];
+  const performances = parsePerformanceWrites(performanceInput);
   assertWebsitePublishRules({
     websiteStatus,
-    startsAt: resolvedStartsAt,
-    endsAt: resolvedEndsAt,
+    performanceCount: performances.length,
   });
-
-  const date =
-    resolvedStartsAt != null
-      ? berlinCalendarDateUtc(resolvedStartsAt)
-      : input.date
-        ? new Date(`${input.date}T00:00:00.000Z`)
-        : null;
+  const mirror = mirrorFieldsFromPerformance(
+    pickMirrorPerformance(performances),
+  );
 
   return prisma
     .$transaction(async (tx) => {
@@ -411,13 +519,13 @@ export async function createConcert(
         data: {
           title,
           slug,
-          date,
-          startsAt: resolvedStartsAt,
-          endsAt: resolvedEndsAt,
+          date: mirror.date,
+          startsAt: mirror.startsAt,
+          endsAt: mirror.endsAt,
           subtitle: input.subtitle?.trim() || null,
           description: input.description?.trim() || null,
-          location: input.location?.trim() || null,
-          address: input.address?.trim() || null,
+          location: mirror.location,
+          address: mirror.address,
           programInfo: input.programInfo?.trim() || null,
           leader: input.leader?.trim() || null,
           admissionInfo: input.admissionInfo?.trim() || null,
@@ -429,9 +537,22 @@ export async function createConcert(
           isCurrent: Boolean(input.isCurrent),
           notes: input.notes?.trim() || null,
           isVisible: true,
+          performances: {
+            create: performances.map((p) => ({
+              startsAt: p.startsAt,
+              endsAt: p.endsAt,
+              location: p.location,
+              address: p.address,
+              label: p.label,
+              sortOrder: p.sortOrder,
+            })),
+          },
         },
         include: {
-          _count: { select: { items: true, recordings: true } },
+          performances: { orderBy: [{ startsAt: "asc" }, { sortOrder: "asc" }] },
+          _count: {
+            select: { items: true, recordings: true, performances: true },
+          },
         },
       });
     })
@@ -442,7 +563,12 @@ export async function createConcert(
 }
 
 export async function updateConcert(id: string, input: ConcertWriteInput) {
-  const existing = await prisma.concert.findUnique({ where: { id } });
+  const existing = await prisma.concert.findUnique({
+    where: { id },
+    include: {
+      performances: { orderBy: [{ startsAt: "asc" }, { sortOrder: "asc" }] },
+    },
+  });
   if (!existing) throw new Error("Konzert nicht gefunden");
 
   const title =
@@ -454,25 +580,29 @@ export async function updateConcert(id: string, input: ConcertWriteInput) {
       ? await uniqueConcertSlug(input.slug?.trim() || title, id)
       : existing.slug;
 
-  const startsAt = parseOptionalBerlinDateTime(input.startsAt, "startsAt");
-  const endsAt = parseOptionalBerlinDateTime(input.endsAt, "endsAt");
-  const nextStartsAt =
-    startsAt !== undefined ? startsAt : existing.startsAt;
-  const nextEndsAt = endsAt !== undefined ? endsAt : existing.endsAt;
   const nextWebsiteStatus =
     parseWebsiteStatus(input.websiteStatus) ?? existing.websiteStatus;
+
+  const replacePerformances = input.performances !== undefined;
+  const nextPerformances = replacePerformances
+    ? parsePerformanceWrites(input.performances ?? [])
+    : existing.performances.map((p, index) => ({
+        startsAt: p.startsAt,
+        endsAt: p.endsAt,
+        location: p.location,
+        address: p.address,
+        label: p.label,
+        sortOrder: p.sortOrder ?? index,
+      }));
+
   assertWebsitePublishRules({
     websiteStatus: nextWebsiteStatus,
-    startsAt: nextStartsAt,
-    endsAt: nextEndsAt,
+    performanceCount: nextPerformances.length,
   });
 
-  let nextDate = existing.date;
-  if (startsAt !== undefined) {
-    nextDate = startsAt ? berlinCalendarDateUtc(startsAt) : existing.date;
-  } else if (input.date !== undefined) {
-    nextDate = input.date ? new Date(`${input.date}T00:00:00.000Z`) : null;
-  }
+  const mirror = mirrorFieldsFromPerformance(
+    pickMirrorPerformance(nextPerformances),
+  );
 
   return prisma
     .$transaction(async (tx) => {
@@ -483,25 +613,38 @@ export async function updateConcert(id: string, input: ConcertWriteInput) {
         });
       }
 
+      if (replacePerformances) {
+        await tx.concertPerformance.deleteMany({ where: { concertId: id } });
+        if (nextPerformances.length > 0) {
+          await tx.concertPerformance.createMany({
+            data: nextPerformances.map((p) => ({
+              concertId: id,
+              startsAt: p.startsAt,
+              endsAt: p.endsAt,
+              location: p.location,
+              address: p.address,
+              label: p.label,
+              sortOrder: p.sortOrder,
+            })),
+          });
+        }
+      }
+
       return tx.concert.update({
         where: { id },
         data: {
           title,
           slug,
-          date: nextDate,
-          ...(startsAt !== undefined ? { startsAt } : {}),
-          ...(endsAt !== undefined ? { endsAt } : {}),
+          date: mirror.date,
+          startsAt: mirror.startsAt,
+          endsAt: mirror.endsAt,
+          location: mirror.location,
+          address: mirror.address,
           ...(input.subtitle !== undefined
             ? { subtitle: input.subtitle?.trim() || null }
             : {}),
           ...(input.description !== undefined
             ? { description: input.description?.trim() || null }
-            : {}),
-          ...(input.location !== undefined
-            ? { location: input.location?.trim() || null }
-            : {}),
-          ...(input.address !== undefined
-            ? { address: input.address?.trim() || null }
             : {}),
           ...(input.programInfo !== undefined
             ? { programInfo: input.programInfo?.trim() || null }
@@ -535,11 +678,16 @@ export async function updateConcert(id: string, input: ConcertWriteInput) {
             : {}),
         },
         include: {
+          performances: {
+            orderBy: [{ startsAt: "asc" }, { sortOrder: "asc" }],
+          },
           items: {
             orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
             include: itemInclude,
           },
-          _count: { select: { items: true, recordings: true } },
+          _count: {
+            select: { items: true, recordings: true, performances: true },
+          },
         },
       });
     })
