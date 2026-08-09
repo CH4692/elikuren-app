@@ -4,7 +4,6 @@ import {
   isConcertVisibleViaPerformances,
   upcomingPerformances,
 } from "@/lib/concert-performances";
-import { isConcertVisible } from "@/lib/concert-visibility";
 import { asDate } from "@/lib/datetime-berlin";
 import { prisma } from "@/lib/db";
 import { publicObjectUrl, resolveMediaAlt } from "@/lib/public-media";
