@@ -26,6 +26,9 @@ export async function cleanupE2ETestData(
         { invoiceNumber: { startsWith: "UI-" } },
         { invoiceNumber: { startsWith: "INT-" } },
         { invoiceNumber: { startsWith: "RO-" } },
+        { invoiceNumber: { startsWith: "EDIT-" } },
+        { invoiceNumber: { startsWith: "ARCH-" } },
+        { invoiceNumber: { startsWith: "FILE-" } },
       ],
     },
   });
