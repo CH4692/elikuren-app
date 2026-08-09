@@ -385,12 +385,13 @@ async function resolveConcertIds(prisma: PrismaClient) {
         slug: schubertSlug,
         date: schubertDate,
         subtitle: "Winterreise",
-        location: "Kath. Pfarrkirche St. Bonifatius",
-        address: "Hindenburgstraße 17, 31515 Wunstorf",
+        location: "Hochschule für Musik und Theater Leipzig",
+        address: "Grassistraße 8, 04107 Leipzig",
         isVisible: true,
         isCurrent: true,
         websiteStatus: "PUBLISHED",
-        startsAt: new Date("2026-09-27T17:00:00.000Z"),
+        // 17:00 Europe/Berlin (CEST) on 2026-09-27
+        startsAt: new Date("2026-09-27T15:00:00.000Z"),
       },
       select: { id: true, slug: true, isCurrent: true },
     });
