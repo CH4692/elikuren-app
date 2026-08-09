@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireActiveSession, requirePermission } from "@/lib/authz";
 import { hasPermission } from "@/lib/permissions";
 import {
+  archiveInvoice,
   getInvoiceById,
   INVOICE_STATUSES,
   serializeInvoice,
@@ -12,18 +13,20 @@ import type { InvoiceStatus } from "@/lib/generated/prisma/client";
 
 type Params = { params: Promise<{ id: string }> };
 
+function notFound() {
+  return NextResponse.json(
+    { detail: "Beleg nicht gefunden", code: "http_404" },
+    { status: 404 },
+  );
+}
+
 export async function GET(_request: Request, { params }: Params) {
   const gate = await requirePermission("INVOICE_READ");
   if (!gate.ok) return gate.response;
 
   const { id } = await params;
   const invoice = await getInvoiceById(id);
-  if (!invoice) {
-    return NextResponse.json(
-      { detail: "Beleg nicht gefunden", code: "http_404" },
-      { status: 404 },
-    );
-  }
+  if (!invoice || invoice.archivedAt) return notFound();
 
   return NextResponse.json(serializeInvoice(invoice));
 }
@@ -34,12 +37,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const { id } = await params;
   const invoice = await getInvoiceById(id);
-  if (!invoice) {
-    return NextResponse.json(
-      { detail: "Beleg nicht gefunden", code: "http_404" },
-      { status: 404 },
-    );
-  }
+  if (!invoice || invoice.archivedAt) return notFound();
 
   const body = (await request.json()) as {
     document_type?: string;
@@ -139,4 +137,19 @@ export async function PATCH(request: Request, { params }: Params) {
   });
 
   return NextResponse.json(serializeInvoice(updated));
+}
+
+export async function DELETE(_request: Request, { params }: Params) {
+  const gate = await requirePermission("INVOICE_WRITE");
+  if (!gate.ok) return gate.response;
+
+  const { id } = await params;
+  const archived = await archiveInvoice(id);
+  if (!archived) return notFound();
+
+  return NextResponse.json({
+    ok: true,
+    archived: true,
+    invoice: serializeInvoice(archived),
+  });
 }

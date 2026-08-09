@@ -73,11 +73,13 @@ npm run dev
 
 | Befehl | Ebene |
 |---|---|
+| `npm run test:setup` | Playwright Chromium einmalig installieren |
 | `npm run test:unit` | Unit |
 | `npm run test:e2e` | Playwright (Integration + UI) |
 | `npm run test` | Unit + E2E |
 
-E2E-Nutzer: `tests/global-setup.ts` → `tests/ensure-e2e-admin.ts` (braucht Neon in `.env.local`).
+Lokal: `npm install && npm run test:setup`, Neon + `AUTH_ENABLE_PASSWORD_LOGIN=1` in `.env.local`.  
+E2E-Nutzer: `tests/global-setup.ts` → `tests/ensure-e2e-admin.ts`.
 
 ## Scripts
 

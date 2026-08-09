@@ -13,6 +13,7 @@
     "test:ui": "playwright test tests/pages tests/smoke",
     "test": "npm run test:unit && npm run test:e2e",
     "test:e2e": "playwright test tests/integration tests/pages tests/smoke",
+    "test:setup": "npx playwright install chromium",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
