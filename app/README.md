@@ -6,6 +6,9 @@ Next.js application for Kammerchor Elikuren (UI + API routes).
 - **Database:** Neon PostgreSQL (Prisma)
 - **Auth:** Auth.js (magic link via Resend)
 - **Email:** Resend
+- **Files:** Cloudflare R2
+
+Produkt-Features (Website, Mitglieder, Admin, Finanzen): siehe [Root-README](../README.md#features).
 
 ## Environment files
 
