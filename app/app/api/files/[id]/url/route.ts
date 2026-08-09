@@ -2,23 +2,17 @@ import { NextResponse } from "next/server";
 
 import { requireActiveSession } from "@/lib/authz";
 import { prisma } from "@/lib/db";
+import { planFileDelivery } from "@/lib/file-delivery";
 import { canAccessScopedFile } from "@/lib/files";
 import { hasPermission } from "@/lib/permissions";
 import { publicObjectUrl } from "@/lib/public-media";
-import { createPresignedGetUrl, r2Configured } from "@/lib/r2";
+import { createPresignedGetUrl, isR2ApiConfigured } from "@/lib/r2";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(request: Request, { params }: Params) {
   const gate = await requireActiveSession();
   if (!gate.ok) return gate.response;
-
-  if (!r2Configured()) {
-    return NextResponse.json(
-      { detail: "Dateispeicher ist nicht konfiguriert", code: "r2_unconfigured" },
-      { status: 503 },
-    );
-  }
 
   const { id } = await params;
   const dispositionParam = new URL(request.url).searchParams.get("disposition");
@@ -42,8 +36,6 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
-  // This route is authenticated — always return signed URLs.
-  // Durable public CDN URLs are only for unauthenticated website rendering.
   if (file.category === "INVOICE") {
     if (!hasPermission(gate.user.role, "INVOICE_READ")) {
       return NextResponse.json(
@@ -106,18 +98,27 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
-  // PUBLIC website assets: durable CDN URL (no signing). Fixes admin thumbs
-  // when R2 API tokens are missing/invalid but the public bucket is fine.
-  if (file.visibility === "PUBLIC") {
-    const durable = publicObjectUrl(file.objectKey);
-    if (durable) {
-      return NextResponse.json({
-        url: durable,
-        expiresIn: null,
-        mimeType: file.mimeType,
-        public: true,
-      });
-    }
+  const delivery = planFileDelivery({
+    visibility: file.visibility,
+    objectKey: file.objectKey,
+    apiConfigured: isR2ApiConfigured(),
+    publicUrl: publicObjectUrl(file.objectKey),
+  });
+
+  if (delivery.kind === "public") {
+    return NextResponse.json({
+      url: delivery.url,
+      expiresIn: null,
+      mimeType: file.mimeType,
+      public: true,
+    });
+  }
+
+  if (delivery.kind === "unavailable") {
+    return NextResponse.json(
+      { detail: "Dateispeicher ist nicht konfiguriert", code: delivery.code },
+      { status: 503 },
+    );
   }
 
   try {

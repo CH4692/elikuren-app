@@ -154,6 +154,9 @@ Logo images are embedded inline via Resend `cid:` attachments (from `public/emai
 ## 6. Verify after Production deploy
 
 - `https://kammerchor-elikuren.de/api/health`
+  - `auth.*` flags should be `true`
+  - `r2.api`, `r2.bucket`, and `r2.publicBase` should be `true` (empty R2 API key strings break Noten/Audio signed URLs)
 - Contact form
 - Sign-in → Magic Link → Dashboard
+- Open a Noten-PDF and play an Audio track (signed R2 GET)
 - Spot-check branded mail rendering in Gmail, Outlook, and Apple Mail after the first real send
