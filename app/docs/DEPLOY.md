@@ -86,6 +86,20 @@ Repo secrets (never Production Neon):
 - `CI_DATABASE_URL` — Preview/test Neon pooled URL
 - `CI_DATABASE_URL_UNPOOLED` — direct URL (falls back to pooled if unset)
 
+### E2E / Playwright test data
+
+Playwright leaves marker rows (`*@example.com` users & membership requests, invoices `E2E-`/`UI-`/`INT-`/`RO-`). Cleanup:
+
+- **Automatic:** Playwright `globalTeardown` runs `npm run db:wipe-e2e` whenever a real `DATABASE_URL` is set (local and CI full suite), then re-upserts the shared `e2e-*@kammerchor-elikuren.test` fixtures.
+- **Manual (Preview Neon):** GitHub Action **Wipe E2E data** (`workflow_dispatch`), or locally against Preview only:
+
+```bash
+# Preview DATABASE_URL in .env.local — never Production
+npm run db:wipe-e2e
+```
+
+Shared fixture users are kept; CMS, concerts, and imported members are not deleted.
+
 Branch protection on `main` and `dev`: require status check **`test`**, require PR, **0** approving reviews (solo).
 
 ## 5. Auth.js / Resend / transactional email

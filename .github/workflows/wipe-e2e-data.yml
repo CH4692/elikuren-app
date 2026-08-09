@@ -1,0 +1,53 @@
+# One-off / manual cleanup of Playwright marker data on Preview Neon.
+# Uses CI_DATABASE_URL (never Production).
+name: Wipe E2E data
+
+on:
+  workflow_dispatch:
+  # Run once when this cleanup PR opens/updates against dev, so Preview is scrubbed
+  # without waiting for a merge to main (full suite).
+  pull_request:
+    branches: [dev]
+    paths:
+      - "app/scripts/wipe-e2e-data.ts"
+      - "app/lib/e2e-data-cleanup.ts"
+      - "app/lib/e2e-data-markers.ts"
+      - ".github/workflows/wipe-e2e-data.yml"
+
+concurrency:
+  group: wipe-e2e-data
+  cancel-in-progress: false
+
+jobs:
+  wipe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Wipe E2E marker data on Preview Neon
+        env:
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.CI_DATABASE_URL_UNPOOLED || secrets.CI_DATABASE_URL }}
+          E2E_WIPE_CONFIRM: "1"
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::GitHub secret CI_DATABASE_URL is required (Preview/test Neon only)."
+            exit 1
+          fi
+          npm run db:wipe-e2e

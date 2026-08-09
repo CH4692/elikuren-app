@@ -18,6 +18,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "npx tsx prisma/seed.ts",
+    "db:wipe-e2e": "npx tsx ./scripts/wipe-e2e-data.ts --confirm",
     "import:media": "npx tsx scripts/import-media.ts",
     "import:media:apply": "npx tsx scripts/import-media.ts --apply",
     "import:members": "npx tsx scripts/import-members-xlsx.ts",
