@@ -66,4 +66,23 @@ test.describe("Mitgliederbereich Smoke", () => {
       .click();
     await expect(page).toHaveURL(/\/dashboard/);
   });
+
+  test("admin overview and sidebar link to public homepage", async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto("/admin", { waitUntil: "domcontentloaded" });
+    await page
+      .getByRole("main")
+      .getByRole("link", { name: /Zur Startseite/i })
+      .click();
+    await expect(page).toHaveURL(/\/home/);
+
+    await page.goto("/admin", { waitUntil: "domcontentloaded" });
+    await page
+      .locator("aside")
+      .getByRole("link", { name: "Zur Startseite" })
+      .click();
+    await expect(page).toHaveURL(/\/home/);
+  });
 });
