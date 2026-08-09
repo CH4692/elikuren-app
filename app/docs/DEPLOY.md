@@ -100,6 +100,29 @@ npm run db:wipe-e2e
 
 Shared fixture users are kept; CMS, concerts, and imported members are not deleted.
 
+### Full Preview wipe + Production seed
+
+**Preview empty (DB + optional R2):** GitHub Action **Wipe Preview**, or:
+
+```bash
+TARGET_ENV=preview PREVIEW_WIPE_CONFIRM=1 \
+PREVIEW_DATABASE_HOST=<preview-neon-hostname> \
+npm run db:wipe-preview
+```
+
+Optional Preview R2 secrets for CI: `CI_R2_ACCESS_KEY_ID`, `CI_R2_SECRET_ACCESS_KEY`, `CI_R2_BUCKET_NAME`, `CI_R2_ACCOUNT_ID` or `CI_R2_ENDPOINT`.
+
+**Production seed (no wipe, no Preview clone):**
+
+```bash
+TARGET_ENV=production SEED_PRODUCTION_CONFIRM=1 \
+PRODUCTION_DATABASE_HOST=<production-neon-hostname> \
+DATABASE_URL=... DATABASE_URL_UNPOOLED=... \
+npm run db:seed-production
+```
+
+This runs `prisma/seed.ts` (admin + CMS skeleton + Herbst marketing fill). Concerts/media need Production R2 + `import:media:apply` / `import:folder-batches:apply`; members need `import:members`. Never `pg_dump` Preview into Production.
+
 Branch protection on `main` and `dev`: require status check **`test`**, require PR, **0** approving reviews (solo).
 
 ## 5. Auth.js / Resend / transactional email

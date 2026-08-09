@@ -1,0 +1,77 @@
+# Full Preview wipe: truncate Preview Neon app tables + empty Preview R2 (if secrets set).
+# Never use Production credentials in this workflow.
+name: Wipe Preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      wipe_r2:
+        description: "Also empty Preview R2 bucket"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+  pull_request:
+    branches: [dev]
+    paths:
+      - "app/scripts/wipe-preview.ts"
+      - "app/lib/wipe-database.ts"
+      - "app/lib/wipe-r2-bucket.ts"
+      - "app/lib/env-guards.ts"
+      - ".github/workflows/wipe-preview.yml"
+
+concurrency:
+  group: wipe-preview
+  cancel-in-progress: false
+
+jobs:
+  wipe-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Wipe Preview Neon (+ optional R2)
+        env:
+          TARGET_ENV: preview
+          PREVIEW_WIPE_CONFIRM: "1"
+          CI: "true"
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.CI_DATABASE_URL_UNPOOLED || secrets.CI_DATABASE_URL }}
+          PREVIEW_DATABASE_HOST: ${{ vars.PREVIEW_DATABASE_HOST || secrets.PREVIEW_DATABASE_HOST }}
+          PRODUCTION_DATABASE_HOST: ${{ vars.PRODUCTION_DATABASE_HOST || secrets.PRODUCTION_DATABASE_HOST }}
+          R2_ACCOUNT_ID: ${{ secrets.CI_R2_ACCOUNT_ID || secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.CI_R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.CI_R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.CI_R2_BUCKET_NAME }}
+          R2_ENDPOINT: ${{ secrets.CI_R2_ENDPOINT }}
+          R2_REGION: auto
+          R2_PREVIEW_BUCKET_NAME: ${{ secrets.CI_R2_BUCKET_NAME }}
+          WIPE_R2_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.wipe_r2 || 'true' }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::CI_DATABASE_URL secret required (Preview Neon only)."
+            exit 1
+          fi
+          if [ "$WIPE_R2_INPUT" != "true" ]; then
+            npx tsx ./scripts/wipe-preview.ts --confirm --skip-r2
+          else
+            npx tsx ./scripts/wipe-preview.ts --confirm
+          fi
