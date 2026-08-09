@@ -7,16 +7,15 @@
  *
  * Default file: ../Mitgliederliste/Mitgliederliste_Elikuren.xlsx
  */
-import { config as loadEnv } from "dotenv";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../lib/generated/prisma/client";
 import pg from "pg";
 import * as XLSX from "xlsx";
+import { loadTargetEnv } from "./load-target-env";
 
-loadEnv({ path: ".env.local", quiet: true });
-loadEnv({ path: ".env", quiet: true });
+loadTargetEnv();
 
 type ParsedMember = {
   firstname: string | null;

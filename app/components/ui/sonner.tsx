@@ -18,6 +18,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       position="bottom-center"
       className="toaster group"
+      richColors
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,
@@ -30,6 +31,18 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-bg": "#1E3A2F",
           "--normal-text": "#F4F1EB",
           "--normal-border": "rgba(200, 162, 77, 0.35)",
+          "--success-bg": "#1E3A2F",
+          "--success-text": "#F4F1EB",
+          "--success-border": "rgba(200, 162, 77, 0.35)",
+          "--error-bg": "#7F1D1D",
+          "--error-text": "#FEF2F2",
+          "--error-border": "rgba(248, 113, 113, 0.45)",
+          "--warning-bg": "#78350F",
+          "--warning-text": "#FFFBEB",
+          "--warning-border": "rgba(251, 191, 36, 0.45)",
+          "--info-bg": "#1E3A5F",
+          "--info-text": "#F4F1EB",
+          "--info-border": "rgba(147, 197, 253, 0.35)",
           "--border-radius": "16px",
         } as React.CSSProperties
       }
