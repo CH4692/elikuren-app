@@ -4,7 +4,7 @@ import { requirePermission } from "@/lib/authz";
 import { serializeConcert, setActiveConcert } from "@/lib/concerts";
 
 export async function POST(request: Request) {
-  const gate = await requirePermission("PIECE_MANAGE");
+  const gate = await requirePermission("CONCERT_MANAGE");
   if (!gate.ok) return gate.response;
 
   const body = (await request.json()) as { concertId?: string | null };

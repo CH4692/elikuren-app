@@ -80,6 +80,7 @@ jobs:
           DATABASE_URL: ${{ secrets.CI_DATABASE_URL || 'postgresql://build:build@127.0.0.1:5432/build?sslmode=disable' }}
           DATABASE_URL_UNPOOLED: ${{ secrets.CI_DATABASE_URL_UNPOOLED || secrets.CI_DATABASE_URL || 'postgresql://build:build@127.0.0.1:5432/build?sslmode=disable' }}
         run: npx playwright test
+        # globalTeardown wipes marker-based E2E rows when a real DATABASE_URL is set.
 
       - name: Upload Playwright report
         if: ${{ always() }}

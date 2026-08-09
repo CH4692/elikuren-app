@@ -7,7 +7,7 @@ import { hasPermission } from "@/lib/permissions";
 export default async function AdminConcertsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/sign-in");
-  if (!hasPermission(session.user.role, "PIECE_MANAGE")) {
+  if (!hasPermission(session.user.role, "CONCERT_MANAGE")) {
     redirect("/dashboard");
   }
 

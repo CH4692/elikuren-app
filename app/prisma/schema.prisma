@@ -60,7 +60,9 @@ enum StoredFileCategory {
   OTHER
 }
 
+/// Technical blob access. PUBLIC objects live under R2 prefix `public/`.
 enum FileVisibility {
+  PUBLIC
   MEMBERS
   ADMIN
 }
@@ -99,6 +101,11 @@ enum InvoiceStatus {
   PAID
   OVERDUE
   CANCELLED
+}
+
+enum ConcertWebsiteStatus {
+  DRAFT
+  PUBLISHED
 }
 
 model User {
@@ -149,6 +156,7 @@ model MembershipRequest {
   adminNote    String?                 @map("admin_note") @db.Text
   status       MembershipRequestStatus @default(pending)
   createdAt    DateTime                @default(now()) @map("created_at")
+  updatedAt    DateTime                @updatedAt @map("updated_at")
   approvedAt   DateTime?               @map("approved_at")
   approvedById String?                 @map("approved_by_id")
   approvedBy   User?                   @relation("ApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
@@ -179,32 +187,39 @@ model StoredFile {
   deletedAt    DateTime?         @map("deleted_at")
   sheetFiles   SheetFile[]
   audioFiles   AudioFile[]
-  galleryImages GalleryImage[]
+  mediaAssets  MediaAsset[]
   invoices     Invoice[]
 
   @@index([uploadStatus])
   @@index([category])
+  @@index([visibility])
   @@map("stored_files")
 }
 
-/// Website / archive photos managed in admin.
-model GalleryImage {
+/// Editorial media (was GalleryImage). Technical access via StoredFile.visibility.
+model MediaAsset {
   id           String     @id @default(cuid())
   title        String
+  altText      String     @default("") @map("alt_text")
+  isDecorative Boolean    @default(false) @map("is_decorative")
   caption      String?    @db.Text
   takenAt      DateTime?  @map("taken_at") @db.Date
   storedFileId String     @map("stored_file_id")
   storedFile   StoredFile @relation(fields: [storedFileId], references: [id], onDelete: Restrict)
-  isVisible    Boolean    @default(true) @map("is_visible")
+  /// Editorial active flag (not access control).
+  isActive     Boolean    @default(true) @map("is_active")
+  isArchived   Boolean    @default(false) @map("is_archived")
   sortOrder    Int        @default(0) @map("sort_order")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
+  concertHeros Concert[]  @relation("ConcertHeroImage")
 
   @@index([title])
   @@index([takenAt])
-  @@index([isVisible])
+  @@index([isActive])
+  @@index([isArchived])
   @@index([sortOrder])
-  @@map("gallery_images")
+  @@map("media_assets")
 }
 
 model SheetFile {
@@ -216,7 +231,6 @@ model SheetFile {
   voiceGroup   VoiceGroup?     @map("voice_group")
   accessScope  FileAccessScope @default(ALL_MEMBERS) @map("access_scope")
   isVisible    Boolean         @default(true) @map("is_visible")
-  /// Concert / season this score belongs to.
   concertId    String?         @map("concert_id")
   concert      Concert?        @relation(fields: [concertId], references: [id], onDelete: SetNull)
   createdAt    DateTime        @default(now()) @map("created_at")
@@ -242,7 +256,6 @@ model AudioFile {
   accessScope     FileAccessScope @default(ALL_MEMBERS) @map("access_scope")
   durationSeconds Int?            @map("duration_seconds")
   isVisible       Boolean         @default(true) @map("is_visible")
-  /// When set, this track is a concert recording (or practice linked to an event).
   concertId       String?         @map("concert_id")
   concert         Concert?        @relation(fields: [concertId], references: [id], onDelete: SetNull)
   createdAt       DateTime        @default(now()) @map("created_at")
@@ -258,37 +271,51 @@ model AudioFile {
   @@map("audio_files")
 }
 
-/// Performance / season program (setlist). Master catalog stays on SheetFile/AudioFile.
 model Concert {
-  id          String        @id @default(cuid())
-  title       String
-  slug        String        @unique
-  date        DateTime?     @db.Date
-  /// Optional venue / city for the performance.
-  location    String?
-  isCurrent   Boolean       @default(false) @map("is_current")
-  notes       String?       @db.Text
-  isVisible   Boolean       @default(true) @map("is_visible")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-  items       ConcertItem[]
-  recordings  AudioFile[]
-  sheetFiles  SheetFile[]
+  id            String               @id @default(cuid())
+  title         String
+  slug          String               @unique
+  /// Legacy calendar date for member library; synced from startsAt when set.
+  date          DateTime?            @db.Date
+  startsAt      DateTime?            @map("starts_at")
+  endsAt        DateTime?            @map("ends_at")
+  subtitle      String?
+  description   String?              @db.Text
+  location      String?
+  address       String?
+  programInfo   String?              @map("program_info") @db.Text
+  leader        String?
+  admissionInfo String?              @map("admission_info") @db.Text
+  footer        String?              @db.Text
+  extraInfo     String?              @map("extra_info") @db.Text
+  ticketUrl     String?              @map("ticket_url")
+  websiteStatus ConcertWebsiteStatus @default(DRAFT) @map("website_status")
+  heroImageId   String?              @map("hero_image_id")
+  heroImage     MediaAsset?          @relation("ConcertHeroImage", fields: [heroImageId], references: [id], onDelete: Restrict)
+  isCurrent     Boolean              @default(false) @map("is_current")
+  notes         String?              @db.Text
+  isVisible     Boolean              @default(true) @map("is_visible")
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+  items         ConcertItem[]
+  recordings    AudioFile[]
+  sheetFiles    SheetFile[]
 
   @@index([isCurrent])
   @@index([date])
+  @@index([startsAt])
+  @@index([websiteStatus, startsAt])
   @@index([isVisible])
   @@map("concerts")
 }
 
-/// Ordered program entry; optionally links a score and/or practice/concert audio.
 model ConcertItem {
   id           String      @id @default(cuid())
   concertId    String      @map("concert_id")
   concert      Concert     @relation(fields: [concertId], references: [id], onDelete: Cascade)
   sortOrder    Int         @default(0) @map("sort_order")
   title        String
-  ensemble     VoiceGroup? // Besetzung: ELIKUREN | MUSICAL_TEAM | EIGHT_TO_THE_BAR | SOLO
+  ensemble     VoiceGroup?
   sheetFileId  String?     @map("sheet_file_id")
   sheetFile    SheetFile?  @relation(fields: [sheetFileId], references: [id], onDelete: SetNull)
   audioFileId  String?     @map("audio_file_id")
@@ -303,6 +330,32 @@ model ConcertItem {
   @@map("concert_items")
 }
 
+model SitePage {
+  id        String        @id @default(cuid())
+  key       String        @unique
+  title     String
+  sections  SiteSection[]
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@map("site_pages")
+}
+
+model SiteSection {
+  id        String   @id @default(cuid())
+  pageId    String   @map("page_id")
+  page      SitePage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  key       String
+  isVisible Boolean  @default(true) @map("is_visible")
+  data      Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([pageId, key])
+  @@index([pageId])
+  @@map("site_sections")
+}
+
 model UserFavorite {
   id         String             @id @default(cuid())
   userId     String             @map("user_id")
@@ -310,6 +363,7 @@ model UserFavorite {
   targetType FavoriteTargetType @map("target_type")
   targetId   String             @map("target_id")
   createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
 
   @@unique([userId, targetType, targetId])
   @@index([userId])

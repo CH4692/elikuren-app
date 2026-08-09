@@ -1,9 +1,91 @@
+import { revalidatePath, revalidateTag } from "next/cache";
+
 import { formatConcertLabel } from "@/lib/concert-label";
+import {
+  getConcertWebsiteBadge,
+  isConcertVisible,
+} from "@/lib/concert-visibility";
+import {
+  berlinCalendarDateUtc,
+  concertVisibleUntil,
+  formatBerlinDateTimeLocal,
+  parseBerlinDateTimeLocal,
+} from "@/lib/datetime-berlin";
 import { prisma } from "@/lib/db";
-import type { Role, VoiceGroup } from "@/lib/generated/prisma/client";
+import type {
+  ConcertWebsiteStatus,
+  Role,
+  VoiceGroup,
+} from "@/lib/generated/prisma/client";
 import { hasPermission } from "@/lib/permissions";
 
+const CONCERTS_PUBLIC_CACHE_TAG = "concerts-public";
+
 export { formatConcertLabel } from "@/lib/concert-label";
+
+export type ConcertWriteInput = {
+  title?: string;
+  slug?: string | null;
+  date?: string | null;
+  /** Europe/Berlin datetime-local `YYYY-MM-DDTHH:mm` or null to clear */
+  startsAt?: string | null;
+  endsAt?: string | null;
+  subtitle?: string | null;
+  description?: string | null;
+  location?: string | null;
+  address?: string | null;
+  programInfo?: string | null;
+  leader?: string | null;
+  admissionInfo?: string | null;
+  footer?: string | null;
+  extraInfo?: string | null;
+  ticketUrl?: string | null;
+  websiteStatus?: ConcertWebsiteStatus | "DRAFT" | "PUBLISHED";
+  heroImageId?: string | null;
+  isCurrent?: boolean;
+  notes?: string | null;
+};
+
+function parseOptionalBerlinDateTime(
+  value: string | null | undefined,
+  field: string,
+): Date | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value.trim() === "") return null;
+  try {
+    return parseBerlinDateTimeLocal(value);
+  } catch {
+    throw new Error(`${field}: ungültige Datum/Uhrzeit`);
+  }
+}
+
+function parseWebsiteStatus(
+  value: ConcertWriteInput["websiteStatus"],
+): ConcertWebsiteStatus | undefined {
+  if (value === undefined) return undefined;
+  if (value === "DRAFT" || value === "PUBLISHED") return value;
+  throw new Error("websiteStatus muss DRAFT oder PUBLISHED sein");
+}
+
+function assertWebsitePublishRules(input: {
+  websiteStatus: ConcertWebsiteStatus;
+  startsAt: Date | null;
+  endsAt: Date | null;
+}) {
+  if (input.websiteStatus === "PUBLISHED" && !input.startsAt) {
+    throw new Error(
+      "Zum Veröffentlichen muss eine Startzeit gesetzt sein.",
+    );
+  }
+  if (input.startsAt && input.endsAt && !(input.endsAt > input.startsAt)) {
+    throw new Error("endsAt muss nach startsAt liegen.");
+  }
+}
+
+function revalidatePublicConcerts() {
+  revalidateTag(CONCERTS_PUBLIC_CACHE_TAG, "max");
+  revalidatePath("/home");
+}
 
 function slugify(input: string) {
   return input
@@ -129,22 +211,49 @@ export function serializeConcertItem(item: {
   };
 }
 
-export function serializeConcert(concert: {
-  id: string;
-  title: string;
-  slug: string;
-  date: Date | null;
-  location?: string | null;
-  isCurrent: boolean;
-  notes: string | null;
-  isVisible: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  items?: Parameters<typeof serializeConcertItem>[0][];
-  _count?: { items: number; recordings: number };
-}) {
+export function serializeConcert(
+  concert: {
+    id: string;
+    title: string;
+    slug: string;
+    date: Date | null;
+    startsAt?: Date | null;
+    endsAt?: Date | null;
+    subtitle?: string | null;
+    description?: string | null;
+    location?: string | null;
+    address?: string | null;
+    programInfo?: string | null;
+    leader?: string | null;
+    admissionInfo?: string | null;
+    footer?: string | null;
+    extraInfo?: string | null;
+    ticketUrl?: string | null;
+    websiteStatus?: ConcertWebsiteStatus;
+    heroImageId?: string | null;
+    isCurrent: boolean;
+    notes: string | null;
+    isVisible: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    items?: Parameters<typeof serializeConcertItem>[0][];
+    _count?: { items: number; recordings: number };
+  },
+  now = new Date(),
+) {
   const date = concert.date ? concert.date.toISOString().slice(0, 10) : null;
   const year = date ? Number(date.slice(0, 4)) : null;
+  const websiteStatus = concert.websiteStatus ?? "DRAFT";
+  const startsAt = concert.startsAt ?? null;
+  const endsAt = concert.endsAt ?? null;
+  const visibleUntil =
+    startsAt != null ? concertVisibleUntil(startsAt, endsAt) : null;
+  const badge = getConcertWebsiteBadge({
+    websiteStatus,
+    startsAt,
+    visibleUntil,
+    now,
+  });
   return {
     id: concert.id,
     title: concert.title,
@@ -152,7 +261,29 @@ export function serializeConcert(concert: {
     slug: concert.slug,
     date,
     year,
+    starts_at: startsAt ? formatBerlinDateTimeLocal(startsAt) : null,
+    ends_at: endsAt ? formatBerlinDateTimeLocal(endsAt) : null,
+    subtitle: concert.subtitle ?? null,
+    description: concert.description ?? null,
     location: concert.location ?? null,
+    address: concert.address ?? null,
+    program_info: concert.programInfo ?? null,
+    leader: concert.leader ?? null,
+    admission_info: concert.admissionInfo ?? null,
+    footer: concert.footer ?? null,
+    extra_info: concert.extraInfo ?? null,
+    ticket_url: concert.ticketUrl ?? null,
+    website_status: websiteStatus,
+    website_badge: badge.kind,
+    website_badge_label: badge.label,
+    is_publicly_visible: isConcertVisible({
+      websiteStatus,
+      startsAt,
+      visibleUntil,
+      now,
+    }),
+    hero_image_id: concert.heroImageId ?? null,
+    needs_starts_at: startsAt == null,
     is_current: concert.isCurrent,
     notes: concert.notes,
     is_visible: concert.isVisible,
@@ -242,46 +373,75 @@ async function clearOtherCurrent(exceptId?: string) {
   });
 }
 
-export async function createConcert(input: {
-  title: string;
-  slug?: string | null;
-  date?: string | null;
-  location?: string | null;
-  isCurrent?: boolean;
-  notes?: string | null;
-}) {
+export async function createConcert(
+  input: ConcertWriteInput & { title: string },
+) {
   const title = input.title.trim();
   if (!title) throw new Error("Titel ist Pflicht");
   const slug = await uniqueConcertSlug(input.slug?.trim() || title);
-  if (input.isCurrent) await clearOtherCurrent();
 
-  return prisma.concert.create({
-    data: {
-      title,
-      slug,
-      date: input.date ? new Date(`${input.date}T00:00:00.000Z`) : null,
-      location: input.location?.trim() || null,
-      isCurrent: Boolean(input.isCurrent),
-      notes: input.notes?.trim() || null,
-      isVisible: true,
-    },
-    include: {
-      _count: { select: { items: true, recordings: true } },
-    },
+  const startsAt = parseOptionalBerlinDateTime(input.startsAt, "startsAt");
+  const endsAt = parseOptionalBerlinDateTime(input.endsAt, "endsAt");
+  const websiteStatus = parseWebsiteStatus(input.websiteStatus) ?? "DRAFT";
+  const resolvedStartsAt = startsAt === undefined ? null : startsAt;
+  const resolvedEndsAt = endsAt === undefined ? null : endsAt;
+  assertWebsitePublishRules({
+    websiteStatus,
+    startsAt: resolvedStartsAt,
+    endsAt: resolvedEndsAt,
   });
+
+  const date =
+    resolvedStartsAt != null
+      ? berlinCalendarDateUtc(resolvedStartsAt)
+      : input.date
+        ? new Date(`${input.date}T00:00:00.000Z`)
+        : null;
+
+  return prisma
+    .$transaction(async (tx) => {
+      if (input.isCurrent) {
+        await tx.concert.updateMany({
+          where: { isCurrent: true },
+          data: { isCurrent: false },
+        });
+      }
+
+      return tx.concert.create({
+        data: {
+          title,
+          slug,
+          date,
+          startsAt: resolvedStartsAt,
+          endsAt: resolvedEndsAt,
+          subtitle: input.subtitle?.trim() || null,
+          description: input.description?.trim() || null,
+          location: input.location?.trim() || null,
+          address: input.address?.trim() || null,
+          programInfo: input.programInfo?.trim() || null,
+          leader: input.leader?.trim() || null,
+          admissionInfo: input.admissionInfo?.trim() || null,
+          footer: input.footer?.trim() || null,
+          extraInfo: input.extraInfo?.trim() || null,
+          ticketUrl: input.ticketUrl?.trim() || null,
+          websiteStatus,
+          heroImageId: input.heroImageId?.trim() || null,
+          isCurrent: Boolean(input.isCurrent),
+          notes: input.notes?.trim() || null,
+          isVisible: true,
+        },
+        include: {
+          _count: { select: { items: true, recordings: true } },
+        },
+      });
+    })
+    .then((created) => {
+      revalidatePublicConcerts();
+      return created;
+    });
 }
 
-export async function updateConcert(
-  id: string,
-  input: {
-    title?: string;
-    slug?: string | null;
-    date?: string | null;
-    location?: string | null;
-    isCurrent?: boolean;
-    notes?: string | null;
-  },
-) {
+export async function updateConcert(id: string, input: ConcertWriteInput) {
   const existing = await prisma.concert.findUnique({ where: { id } });
   if (!existing) throw new Error("Konzert nicht gefunden");
 
@@ -294,36 +454,104 @@ export async function updateConcert(
       ? await uniqueConcertSlug(input.slug?.trim() || title, id)
       : existing.slug;
 
-  if (input.isCurrent) await clearOtherCurrent(id);
-
-  return prisma.concert.update({
-    where: { id },
-    data: {
-      title,
-      slug,
-      ...(input.date !== undefined
-        ? { date: input.date ? new Date(`${input.date}T00:00:00.000Z`) : null }
-        : {}),
-      ...(input.location !== undefined
-        ? { location: input.location?.trim() || null }
-        : {}),
-      ...(input.isCurrent !== undefined ? { isCurrent: input.isCurrent } : {}),
-      ...(input.notes !== undefined
-        ? { notes: input.notes?.trim() || null }
-        : {}),
-    },
-    include: {
-      items: {
-        orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
-        include: itemInclude,
-      },
-      _count: { select: { items: true, recordings: true } },
-    },
+  const startsAt = parseOptionalBerlinDateTime(input.startsAt, "startsAt");
+  const endsAt = parseOptionalBerlinDateTime(input.endsAt, "endsAt");
+  const nextStartsAt =
+    startsAt !== undefined ? startsAt : existing.startsAt;
+  const nextEndsAt = endsAt !== undefined ? endsAt : existing.endsAt;
+  const nextWebsiteStatus =
+    parseWebsiteStatus(input.websiteStatus) ?? existing.websiteStatus;
+  assertWebsitePublishRules({
+    websiteStatus: nextWebsiteStatus,
+    startsAt: nextStartsAt,
+    endsAt: nextEndsAt,
   });
+
+  let nextDate = existing.date;
+  if (startsAt !== undefined) {
+    nextDate = startsAt ? berlinCalendarDateUtc(startsAt) : existing.date;
+  } else if (input.date !== undefined) {
+    nextDate = input.date ? new Date(`${input.date}T00:00:00.000Z`) : null;
+  }
+
+  return prisma
+    .$transaction(async (tx) => {
+      if (input.isCurrent) {
+        await tx.concert.updateMany({
+          where: { isCurrent: true, id: { not: id } },
+          data: { isCurrent: false },
+        });
+      }
+
+      return tx.concert.update({
+        where: { id },
+        data: {
+          title,
+          slug,
+          date: nextDate,
+          ...(startsAt !== undefined ? { startsAt } : {}),
+          ...(endsAt !== undefined ? { endsAt } : {}),
+          ...(input.subtitle !== undefined
+            ? { subtitle: input.subtitle?.trim() || null }
+            : {}),
+          ...(input.description !== undefined
+            ? { description: input.description?.trim() || null }
+            : {}),
+          ...(input.location !== undefined
+            ? { location: input.location?.trim() || null }
+            : {}),
+          ...(input.address !== undefined
+            ? { address: input.address?.trim() || null }
+            : {}),
+          ...(input.programInfo !== undefined
+            ? { programInfo: input.programInfo?.trim() || null }
+            : {}),
+          ...(input.leader !== undefined
+            ? { leader: input.leader?.trim() || null }
+            : {}),
+          ...(input.admissionInfo !== undefined
+            ? { admissionInfo: input.admissionInfo?.trim() || null }
+            : {}),
+          ...(input.footer !== undefined
+            ? { footer: input.footer?.trim() || null }
+            : {}),
+          ...(input.extraInfo !== undefined
+            ? { extraInfo: input.extraInfo?.trim() || null }
+            : {}),
+          ...(input.ticketUrl !== undefined
+            ? { ticketUrl: input.ticketUrl?.trim() || null }
+            : {}),
+          ...(input.websiteStatus !== undefined
+            ? { websiteStatus: nextWebsiteStatus }
+            : {}),
+          ...(input.heroImageId !== undefined
+            ? { heroImageId: input.heroImageId?.trim() || null }
+            : {}),
+          ...(input.isCurrent !== undefined
+            ? { isCurrent: input.isCurrent }
+            : {}),
+          ...(input.notes !== undefined
+            ? { notes: input.notes?.trim() || null }
+            : {}),
+        },
+        include: {
+          items: {
+            orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+            include: itemInclude,
+          },
+          _count: { select: { items: true, recordings: true } },
+        },
+      });
+    })
+    .then((updated) => {
+      revalidatePublicConcerts();
+      return updated;
+    });
 }
 
 export async function deleteConcert(id: string) {
   await prisma.concert.delete({ where: { id } });
+  revalidatePublicConcerts();
 }
 
 export async function upsertConcertItem(

@@ -22,12 +22,15 @@
 | Variable | Production vs Preview |
 |----------|------------------------|
 | `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | **Split** — different Neon projects/branches |
-| `AUTH_URL` / `NEXT_PUBLIC_SITE_URL` | **Split** — live domain vs Preview URL |
+| `AUTH_URL` / `SITE_URL` / `NEXT_PUBLIC_SITE_URL` | **Split** — live domain vs Preview URL (email origin: `SITE_URL` → `AUTH_URL` → `NEXT_PUBLIC_SITE_URL`) |
 | `AUTH_SECRET` | **Split** — different secrets |
 | `R2_BUCKET_NAME` | **Split** — prod vs preview bucket |
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | **Split** if tokens are bucket-scoped |
 | `R2_ACCOUNT_ID` / `R2_ENDPOINT` / `R2_REGION` | Share OK (same Cloudflare account) |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Share OK |
+| `CONTACT_EMAIL_TO` | Share OK (contact-form inbox) |
+| `EMAIL_REDIRECT_TO` | Preview/local only — transactional mail redirect; **never** used for magic links |
+| `EMAIL_AUTH_ALLOWED_RECIPIENTS` | Preview/local optional — if set, restricts magic-link recipients; unset allows all |
 
 Do **not** set `AUTH_ENABLE_PASSWORD_LOGIN` on Vercel (local/E2E only).
 
@@ -83,16 +86,41 @@ Repo secrets (never Production Neon):
 - `CI_DATABASE_URL` — Preview/test Neon pooled URL
 - `CI_DATABASE_URL_UNPOOLED` — direct URL (falls back to pooled if unset)
 
+### E2E / Playwright test data
+
+Playwright leaves marker rows (`*@example.com` users & membership requests, invoices `E2E-`/`UI-`/`INT-`/`RO-`). Cleanup:
+
+- **Automatic:** Playwright `globalTeardown` runs `npm run db:wipe-e2e` whenever a real `DATABASE_URL` is set (local and CI full suite), then re-upserts the shared `e2e-*@kammerchor-elikuren.test` fixtures.
+- **Manual (Preview Neon):** GitHub Action **Wipe E2E data** (`workflow_dispatch`), or locally against Preview only:
+
+```bash
+# Preview DATABASE_URL in .env.local — never Production
+npm run db:wipe-e2e
+```
+
+Shared fixture users are kept; CMS, concerts, and imported members are not deleted.
+
 Branch protection on `main` and `dev`: require status check **`test`**, require PR, **0** approving reviews (solo).
 
-## 5. Auth.js / Resend
+## 5. Auth.js / Resend / transactional email
 
-1. Verify the Resend domain for `EMAIL_FROM`
-2. Sign-in / sign-up: `/auth/sign-in`, `/auth/sign-up`
-3. Magic-link callback goes through `/api/auth/*`
+1. Verify the Resend domain for `EMAIL_FROM` (SPF/DKIM must be checked in Resend before productive sends).
+2. Set production `SITE_URL`, `AUTH_URL`, or `NEXT_PUBLIC_SITE_URL` to the live origin (required — no silent production fallback). Priority for emails: `SITE_URL` → `AUTH_URL` → `NEXT_PUBLIC_SITE_URL`.
+3. Sign-in / sign-up: `/auth/sign-in`, `/auth/sign-up`
+4. Magic-link callback goes through `/api/auth/*`
+5. Preview / local safety:
+   - Prefer a `re_test*` Resend key in CI (magic links + sends are skipped).
+   - Optional `EMAIL_AUTH_ALLOWED_RECIPIENTS` (comma-separated): if set, only those addresses may receive magic links in non-production. If unset, all recipients are allowed.
+   - Optional `EMAIL_REDIRECT_TO` redirects **transactional** mail only (contact, membership approval). It is **never** applied to Auth.js magic links (the link authenticates the original recipient).
+   - Preview/test environments must not use the production Auth/member database.
+
+Local preview of templates: from `app/`, run `npm run email:dev`.
+
+Logo images are embedded inline via Resend `cid:` attachments (from `public/email/logo.png`) so Preview Deployment Protection / SSO cannot break remote logo URLs in inboxes.
 
 ## 6. Verify after Production deploy
 
 - `https://kammerchor-elikuren.de/api/health`
 - Contact form
 - Sign-in → Magic Link → Dashboard
+- Spot-check branded mail rendering in Gmail, Outlook, and Apple Mail after the first real send

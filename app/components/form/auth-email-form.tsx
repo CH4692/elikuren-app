@@ -1,46 +1,49 @@
-import { AuthError } from "next-auth";
-import { headers } from "next/headers";
+"use client";
 
-import { signIn } from "@/auth";
-import { prisma } from "@/lib/db";
-import { normalizeEmail } from "@/lib/permissions";
-import { postLoginPath } from "@/lib/post-login-path";
-import { canRequestMagicLink } from "@/lib/membership-requests";
+import { useState, useTransition } from "react";
+
 import {
-  allowMagicLinkRequest,
-  clientIpFromHeaders,
-} from "@/lib/rate-limit";
+  requestMagicLinkAction,
+  requestPasswordSignInAction,
+} from "@/lib/auth-email-actions";
+import { checkEmailAddress } from "@/lib/email-address";
 import { Button } from "@/components/ui/button";
-
-async function resolvePostLoginRedirect(email: string, fallback: string) {
-  // Explicit deep-links (e.g. /profile) stay as requested.
-  if (fallback && fallback !== "/dashboard") return fallback;
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: { role: true },
-  });
-  return postLoginPath(user?.role, fallback);
-}
+import { EmailTypoHint } from "@/components/form/email-typo-hint";
 
 type AuthEmailFormProps = {
   title: string;
   subtitle: string;
   submitLabel: string;
   callbackUrl?: string;
+  /** Mirrored from server env so the client bundle stays free of secrets. */
+  passwordLoginEnabled?: boolean;
 };
-
-/** Password login is for local/E2E only — not shown on Vercel Preview/Production. */
-function passwordLoginEnabled() {
-  return process.env.AUTH_ENABLE_PASSWORD_LOGIN === "1";
-}
 
 export function AuthEmailForm({
   title,
   subtitle,
   submitLabel,
   callbackUrl = "/dashboard",
+  passwordLoginEnabled = false,
 }: AuthEmailFormProps) {
-  const showPassword = passwordLoginEnabled();
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function refreshEmailHints(value: string) {
+    const checked = checkEmailAddress(value);
+    setSuggestion(checked.ok ? checked.suggestion : null);
+    if (!value.trim()) {
+      setError(null);
+      return;
+    }
+    if (!checked.ok) {
+      setError(checked.error);
+      return;
+    }
+    setError(null);
+  }
 
   return (
     <div className="w-full max-w-md rounded-2xl border border-[#C8A24D]/40 bg-[#1F1F23]/95 p-6 text-[#F4F1EB] shadow-xl backdrop-blur-sm sm:p-7">
@@ -51,34 +54,26 @@ export function AuthEmailForm({
 
       <form
         className="mt-5 flex flex-col gap-3"
-        action={async (formData) => {
-          "use server";
-          const email = normalizeEmail(String(formData.get("email") ?? ""));
-          if (!email) return;
-
-          const hdrs = await headers();
-          const ip = clientIpFromHeaders(hdrs);
-          const rateOk = allowMagicLinkRequest(email, ip);
-          const allowed = rateOk && (await canRequestMagicLink(email));
-
-          if (!allowed) {
-            const { redirect } = await import("next/navigation");
-            redirect("/auth/error?error=AccessDenied");
+        onSubmit={(event) => {
+          event.preventDefault();
+          const checked = checkEmailAddress(email);
+          if (!checked.ok) {
+            setError(checked.error);
+            setSuggestion(null);
+            return;
           }
-
-          try {
-            const redirectTo = await resolvePostLoginRedirect(email, callbackUrl);
-            await signIn("resend", {
-              email,
-              redirectTo,
-            });
-          } catch (error) {
-            if (error instanceof AuthError) {
-              const { redirect } = await import("next/navigation");
-              redirect(`/auth/error?error=${error.type}`);
+          setError(null);
+          setSuggestion(checked.suggestion);
+          const formData = new FormData(event.currentTarget);
+          formData.set("email", checked.normalized);
+          formData.set("callbackUrl", callbackUrl);
+          startTransition(async () => {
+            const result = await requestMagicLinkAction(formData);
+            if (!result.ok) {
+              setError(result.error);
+              setSuggestion(result.suggestion ?? null);
             }
-            throw error;
-          }
+          });
         }}
       >
         <label className="flex flex-col gap-2 text-sm">
@@ -89,14 +84,30 @@ export function AuthEmailForm({
             name="email"
             autoComplete="email"
             placeholder="name@example.com"
+            value={email}
+            onChange={(event) => {
+              const value = event.target.value;
+              setEmail(value);
+              refreshEmailHints(value);
+            }}
+            onBlur={() => refreshEmailHints(email)}
             className="h-9 rounded-lg border border-[#C8A24D]/50 bg-[#121216] px-3 py-2 text-sm text-[#F4F1EB] outline-none ring-[#C8A24D] focus:ring-2"
           />
         </label>
+        {error ? <p className="text-sm text-red-300">{error}</p> : null}
+        <EmailTypoHint
+          suggestion={suggestion}
+          onApply={(next) => {
+            setEmail(next);
+            refreshEmailHints(next);
+          }}
+        />
         <Button
           type="submit"
+          disabled={pending}
           className="bg-[#C8A24D] text-[#1F1F23] hover:bg-[#d4b35e]"
         >
-          {submitLabel}
+          {pending ? "Wird gesendet…" : submitLabel}
         </Button>
         <p className="text-xs text-[#F4F1EB]/60">
           Noch kein Zugang?{" "}
@@ -109,41 +120,30 @@ export function AuthEmailForm({
         </p>
       </form>
 
-      {showPassword ? (
+      {passwordLoginEnabled ? (
         <>
           <div className="my-6 border-t border-[#C8A24D]/30" />
-          <p className="text-sm text-[#F4F1EB]/75">
-            Dev/E2E: Passwort-Login
-          </p>
+          <p className="text-sm text-[#F4F1EB]/75">Dev/E2E: Passwort-Login</p>
           <form
             className="mt-3 flex flex-col gap-4"
-            action={async (formData) => {
-              "use server";
-              if (!passwordLoginEnabled()) return;
-
-              const email = String(formData.get("email") ?? "")
-                .trim()
-                .toLowerCase();
-              const password = String(formData.get("password") ?? "");
-              if (!email || !password) return;
-
-              try {
-                const redirectTo = await resolvePostLoginRedirect(
-                  email,
-                  callbackUrl,
-                );
-                await signIn("credentials", {
-                  email,
-                  password,
-                  redirectTo,
-                });
-              } catch (error) {
-                if (error instanceof AuthError) {
-                  const { redirect } = await import("next/navigation");
-                  redirect(`/auth/error?error=${error.type}`);
-                }
-                throw error;
+            onSubmit={(event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              const checked = checkEmailAddress(
+                String(formData.get("email") ?? ""),
+              );
+              if (!checked.ok) {
+                setError(checked.error);
+                return;
               }
+              formData.set("email", checked.normalized);
+              formData.set("callbackUrl", callbackUrl);
+              startTransition(async () => {
+                const result = await requestPasswordSignInAction(formData);
+                if (!result.ok) {
+                  setError(result.error);
+                }
+              });
             }}
           >
             <label className="flex flex-col gap-2 text-sm">
@@ -170,6 +170,7 @@ export function AuthEmailForm({
             <Button
               type="submit"
               variant="outline"
+              disabled={pending}
               className="border-[#C8A24D] text-[#F4F1EB]"
             >
               Anmelden

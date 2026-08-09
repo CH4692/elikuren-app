@@ -1,7 +1,8 @@
 import type { MembershipRequestStatus } from "@/lib/generated/prisma/client";
 
-import { normalizeEmail } from "@/lib/permissions";
+import { checkEmailAddress } from "@/lib/email-address";
 import { prisma } from "@/lib/db";
+import { normalizeEmail } from "@/lib/permissions";
 
 const SUCCESS_COPY =
   "Falls dein Zugang bereits freigegeben wurde, erhältst du in Kürze einen Anmeldelink. Andernfalls wirst du informiert, sobald ein Administrator deinen Zugang freigegeben hat.";
@@ -17,10 +18,11 @@ export async function createMembershipRequest(input: {
   message?: string;
   voice?: string;
 }): Promise<{ ok: true; created: boolean }> {
-  const email = normalizeEmail(input.email);
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  const emailCheck = checkEmailAddress(input.email);
+  if (!emailCheck.ok) {
     throw new Error("INVALID_EMAIL");
   }
+  const email = emailCheck.normalized;
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {

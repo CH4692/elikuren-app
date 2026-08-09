@@ -65,6 +65,16 @@ describe("objectKeyFor", () => {
       }),
       "site/images/2026/08/img-1.jpg",
     );
+    assert.equal(
+      objectKeyFor({
+        category: "IMAGE",
+        fileId: "img-2",
+        extension: "jpg",
+        publicWebsite: true,
+        at,
+      }),
+      "public/site/images/2026/08/img-2.jpg",
+    );
   });
 
   it("maps audio types to kinds", () => {

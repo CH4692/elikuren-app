@@ -1,6 +1,7 @@
 "use client";
 
 import { ContactFormContext } from "@/hooks/useForm";
+import { checkEmailAddress } from "@/lib/email-address";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -12,16 +13,40 @@ export default function ContactForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSending, setIsSending] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [email, setEmail] = useState("");
+  const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null);
+
+  function updateEmail(value: string) {
+    setEmail(value);
+    const checked = checkEmailAddress(value);
+    setEmailSuggestion(checked.ok ? checked.suggestion : null);
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (!value.trim()) {
+        delete next.email;
+        return next;
+      }
+      if (!checked.ok) {
+        next.email =
+          checked.error ?? "Bitte eine gültige E-Mail-Adresse eingeben.";
+        return next;
+      }
+      delete next.email;
+      return next;
+    });
+  }
+
   const handleSubmit = async function (e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const form = e.currentTarget;
     const formData = new FormData(form);
+    const emailCheck = checkEmailAddress(email);
 
     const data = {
       firstName: String(formData.get("firstName") || "").trim(),
       lastName: String(formData.get("lastName") || "").trim(),
-      email: String(formData.get("email") || "").trim(),
+      email: emailCheck.normalized,
       subject: String(formData.get("subject") || "").trim(),
       message: String(formData.get("message") || "").trim(),
     };
@@ -30,15 +55,16 @@ export default function ContactForm({
 
     if (!data.firstName) newErrors.firstName = "Bitte Vornamen eingeben.";
     if (!data.lastName) newErrors.lastName = "Bitte Nachnamen eingeben.";
-    if (!data.email) newErrors.email = "Bitte E-Mail eingeben.";
+    if (!email.trim()) newErrors.email = "Bitte E-Mail eingeben.";
+    else if (!emailCheck.ok) {
+      newErrors.email =
+        emailCheck.error ?? "Bitte eine gültige E-Mail-Adresse eingeben.";
+    }
     if (!data.subject) newErrors.subject = "Bitte Betreff eingeben.";
     if (!data.message) newErrors.message = "Bitte Nachricht eingeben.";
 
-    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-      newErrors.email = "Bitte eine gültige E-Mail-Adresse eingeben.";
-    }
-
     setErrors(newErrors);
+    setEmailSuggestion(emailCheck.ok ? emailCheck.suggestion : null);
     setSuccessMessage("");
 
     if (Object.keys(newErrors).length > 0) {
@@ -62,6 +88,8 @@ export default function ContactForm({
       }
 
       form.reset();
+      setEmail("");
+      setEmailSuggestion(null);
       setErrors({});
       setSuccessMessage("Deine Nachricht wurde erfolgreich gesendet.");
       toast.success("Erfolgreich gesendet", {
@@ -72,9 +100,16 @@ export default function ContactForm({
     }
   };
   return (
-    <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+    <form className="mt-8 space-y-5" noValidate onSubmit={handleSubmit}>
       <ContactFormContext.Provider
-        value={{ errors, isSending, successMessage }}
+        value={{
+          errors,
+          isSending,
+          successMessage,
+          email,
+          setEmail: updateEmail,
+          emailSuggestion,
+        }}
       >
         {children}
       </ContactFormContext.Provider>

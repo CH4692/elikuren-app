@@ -2,10 +2,17 @@
 import { useContactForm } from "@/hooks/useForm";
 import { Send } from "lucide-react";
 import AlertFail from "./alert-fail";
+import { EmailTypoHint } from "./email-typo-hint";
 import { Spinner } from "../ui/spinner";
 
 export default function FormContent() {
-  const { errors, isSending } = useContactForm();
+  const {
+    errors,
+    isSending,
+    email,
+    setEmail,
+    emailSuggestion,
+  } = useContactForm();
   return (
     <>
       <div className="grid gap-5 sm:grid-cols-2">
@@ -46,10 +53,19 @@ export default function FormContent() {
           id="email"
           name="email"
           type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          onBlur={() => setEmail(email)}
           className={`w-full rounded-xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary ${errors.email ? "border-destructive" : "border-border"}`}
           placeholder="deine@email.de"
         />
         {errors.email && <AlertFail description={errors.email} />}
+        <EmailTypoHint
+          suggestion={emailSuggestion}
+          onApply={setEmail}
+          className="mt-2 text-xs text-primary"
+        />
       </div>
 
       <div>
