@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
 
 import {
   requestMagicLinkAction,
@@ -30,11 +30,12 @@ export function AuthEmailForm({
   const [error, setError] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  // Avoid native GET submit before React hydration (common with Next.js cold compile in Playwright).
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
+  // Client-only flag without setState-in-effect (avoids native GET before hydration).
+  const hydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   function refreshEmailHints(value: string) {
     const checked = checkEmailAddress(value);
