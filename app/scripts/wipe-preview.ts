@@ -15,8 +15,10 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
 import { PrismaClient } from "../lib/generated/prisma/client";
+import { databaseHost } from "../lib/db-url";
 import {
   assertPreviewWipeAllowed,
+  connectionStringFromEnv,
   requireConfirm,
 } from "../lib/env-guards";
 import { pgSslForConnectionString } from "../lib/pg-connection";
@@ -30,6 +32,13 @@ loadEnv({ path: ".env.wipe", override: true, quiet: true });
 
 async function main() {
   requireConfirm("PREVIEW_WIPE_CONFIRM", "--confirm", process.argv);
+
+  // Derive host pin from DATABASE_URL when unset (CI Preview Neon).
+  if (!process.env.PREVIEW_DATABASE_HOST?.trim()) {
+    const url = connectionStringFromEnv(process.env);
+    process.env.PREVIEW_DATABASE_HOST = databaseHost(url);
+  }
+
   const { url, host } = assertPreviewWipeAllowed(process.env);
 
   const skipR2 =

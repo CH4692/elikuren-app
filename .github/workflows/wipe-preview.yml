@@ -52,9 +52,9 @@ jobs:
         env:
           TARGET_ENV: preview
           PREVIEW_WIPE_CONFIRM: "1"
+          CI: "true"
           DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
           DATABASE_URL_UNPOOLED: ${{ secrets.CI_DATABASE_URL_UNPOOLED || secrets.CI_DATABASE_URL }}
-          # Optional host pin — set repo variable/secret to Neon Preview hostname.
           PREVIEW_DATABASE_HOST: ${{ vars.PREVIEW_DATABASE_HOST || secrets.PREVIEW_DATABASE_HOST }}
           PRODUCTION_DATABASE_HOST: ${{ vars.PRODUCTION_DATABASE_HOST || secrets.PRODUCTION_DATABASE_HOST }}
           R2_ACCOUNT_ID: ${{ secrets.CI_R2_ACCOUNT_ID || secrets.R2_ACCOUNT_ID }}
@@ -69,17 +69,6 @@ jobs:
           if [ -z "$DATABASE_URL" ]; then
             echo "::error::CI_DATABASE_URL secret required (Preview Neon only)."
             exit 1
-          fi
-          # Derive Preview host pin from the URL when not explicitly configured.
-          if [ -z "$PREVIEW_DATABASE_HOST" ]; then
-            PREVIEW_DATABASE_HOST="$(node <<'NODE'
-const u = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
-if (!u) throw new Error("DATABASE_URL missing");
-console.log(new URL(u.replace(/^postgresql:/i, "http:")).hostname);
-NODE
-)"
-            export PREVIEW_DATABASE_HOST
-            echo "Using PREVIEW_DATABASE_HOST=$PREVIEW_DATABASE_HOST"
           fi
           if [ "$WIPE_R2_INPUT" != "true" ]; then
             npx tsx ./scripts/wipe-preview.ts --confirm --skip-r2
