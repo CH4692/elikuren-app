@@ -32,6 +32,8 @@ export default defineConfig({
           "**/smoke/security-authz.test.ts",
           "**/smoke/performance.test.ts",
           "**/smoke/a11y.test.ts",
+          "**/smoke/status-errors.test.ts",
+          "**/smoke/route-integrity.test.ts",
           "**/pages/home.test.ts",
           "**/pages/content.test.ts",
         ],

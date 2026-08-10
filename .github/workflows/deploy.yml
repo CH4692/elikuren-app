@@ -14,9 +14,10 @@ concurrency:
 env:
   NEXT_TELEMETRY_DISABLED: 1
   CI: true
-  # Full suite on every CI run for this workflow (dev and main).
-  # Ensures release candidates on dev are fully tested before promote to main.
-  CI_FULL: "true"
+  # Shift-Left: PRs into dev run smoke. Full suite on push to dev/main,
+  # PRs into main, and manual workflow_dispatch — so candidates are proven
+  # before promote to Production.
+  CI_FULL: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.base_ref == 'main' }}
 
 jobs:
   test:

@@ -1,5 +1,7 @@
-import type { Prisma, Role, User } from "@/lib/generated/prisma/client";
+import type { Prisma, Role } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/db";
+
+export { serializeUser } from "@/lib/users-serialize";
 
 export type UserUpdateInput = {
   firstname?: string | null;
@@ -14,29 +16,6 @@ export type UserUpdateInput = {
   memberSince?: string | null;
   role?: Role | null;
 };
-
-export function serializeUser(user: User) {
-  return {
-    id: user.id,
-    name: user.name,
-    firstname: user.firstname,
-    lastname: user.lastname,
-    street: user.street,
-    house_number: user.houseNumber,
-    postal_code: user.postalCode,
-    location: user.location,
-    phone: user.phone,
-    email: user.email,
-    birthday: user.birthday?.toISOString().slice(0, 10) ?? null,
-    created_at: user.createdAt.toISOString(),
-    last_signed_in: user.lastSignedIn?.toISOString() ?? null,
-    updated_at: user.updatedAt?.toISOString() ?? null,
-    member_since: user.memberSince?.toISOString().slice(0, 10) ?? null,
-    role: user.role,
-    voice: user.voice,
-    is_active: user.isActive,
-  };
-}
 
 export async function getUserById(userId: string) {
   return prisma.user.findUnique({ where: { id: userId } });
