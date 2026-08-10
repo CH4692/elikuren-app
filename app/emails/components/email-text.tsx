@@ -1,11 +1,12 @@
 import { Text } from "react-email";
 
+import { emailStyle, type EmailStyle } from "../style";
 import { EMAIL_COLORS, EMAIL_FONT_SANS } from "../tokens";
 
 type EmailTextProps = {
   children: React.ReactNode;
   muted?: boolean;
-  style?: React.CSSProperties;
+  style?: EmailStyle;
   align?: "left" | "center";
 };
 
@@ -17,7 +18,7 @@ export function EmailText({
 }: EmailTextProps) {
   return (
     <Text
-      style={{
+      style={emailStyle({
         margin: "0 0 12px",
         color: muted ? EMAIL_COLORS.muted : EMAIL_COLORS.text,
         fontFamily: EMAIL_FONT_SANS,
@@ -25,7 +26,7 @@ export function EmailText({
         lineHeight: "22px",
         textAlign: align,
         ...style,
-      }}
+      })}
     >
       {children}
     </Text>

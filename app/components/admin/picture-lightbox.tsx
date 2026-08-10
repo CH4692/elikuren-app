@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -172,7 +172,7 @@ export function PictureLightbox({
               src={url}
               alt={item?.title ?? ""}
               className="max-h-full max-w-full object-contain"
-              style={{ imageOrientation: "from-image" }}
+              style={{ imageOrientation: "from-image" } as CSSProperties}
               onError={() => {
                 setUrl(null);
                 setError("Bild konnte nicht geladen werden");

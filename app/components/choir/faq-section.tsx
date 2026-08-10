@@ -6,37 +6,37 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const faqs = [
-  {
-    q: "Brauch ich Chorerfahrung?",
-    a: "Erste Chorerfahrung oder sicheres Notenlesen helfen – entscheidend sind Interesse, Verlässlichkeit und Freude am gemeinsamen Klang.",
-  },
-  {
-    q: "Wie werde ich Mitglied?",
-    a: "Über „Mitglied werden“ stellst du eine Anfrage. Der Vorstand prüft sie und schaltet dich danach für den Magic-Link-Login frei.",
-  },
-  {
-    q: "Welche Ensembles gibt es?",
-    a: "Den Kammerchor Elikuren sowie kleinere Formationen wie eight to the bar und das musical team – je nach Stimme und Interesse.",
-  },
-  {
-    q: "Wo finde ich Konzerttermine?",
-    a: "Aktuelle Konzerte stehen auf der Startseite unter „Konzerte“. Zusätzlich informieren wir über unsere Kanäle und vor Ort.",
-  },
-];
+export type FaqItem = {
+  id: string;
+  question: string;
+  answer: string;
+};
 
-export function FaqSection() {
+export function FaqSection({
+  title,
+  items,
+}: {
+  title: string;
+  items: FaqItem[];
+}) {
+  if (items.length === 0) return null;
+
   return (
     <section aria-labelledby="faq-heading">
-      <h2 id="faq-heading" className="mb-6 text-3xl font-semibold tracking-tight">
-        Häufige Fragen
+      <h2
+        id="faq-heading"
+        className="mb-6 text-3xl font-semibold tracking-tight"
+      >
+        {title}
       </h2>
       <div className="grid gap-4 md:grid-cols-2">
-        {faqs.map((faq) => (
-          <Card key={faq.q}>
+        {items.map((faq) => (
+          <Card key={faq.id}>
             <CardHeader>
-              <CardTitle className="text-lg">{faq.q}</CardTitle>
-              <CardDescription className="leading-7">{faq.a}</CardDescription>
+              <CardTitle className="text-lg">{faq.question}</CardTitle>
+              <CardDescription className="leading-7">
+                {faq.answer}
+              </CardDescription>
             </CardHeader>
             <CardContent />
           </Card>

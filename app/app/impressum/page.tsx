@@ -1,6 +1,13 @@
 import Link from "next/link";
 
-export default function ImpressumPage() {
+import { getGlobalOrganizationPublic } from "@/lib/site-content";
+
+export default async function ImpressumPage() {
+  const org = await getGlobalOrganizationPublic();
+  const boardLines = org
+    ? [...org.boardLines].sort((a, b) => a.sortOrder - b.sortOrder)
+    : [];
+
   return (
     <section className="min-h-[100svh] bg-background px-6 py-24 text-foreground">
       <div className="mx-auto max-w-3xl space-y-8">
@@ -11,52 +18,70 @@ export default function ImpressumPage() {
             <strong>Angaben gemäß § 5 TMG</strong>
           </p>
 
-          <p>
-            Kammerchor Elikuren e.V.
-            <br />
-            Habichthorst 2a
-            <br />
-            31315 Wunstorf
-            <br />
-            Deutschland
-          </p>
+          {org ? (
+            <p>
+              {org.legalName}
+              <br />
+              {org.street}
+              <br />
+              {org.postalCode} {org.city}
+              <br />
+              {org.country}
+            </p>
+          ) : (
+            <p className="text-foreground/60">
+              Organisationsdaten derzeit nicht verfügbar.
+            </p>
+          )}
 
-          <p>
-            <strong>Vertreten durch:</strong>
-            <br />
-            Agnes Christiane Kampe (Vorstand)
-            <br />
-            Niklas Pruschinski (Vorstand)
-            <br />
-            Charles Heller (Vorstand)
-            <br />
-            Marc Alexender Kiel (Vorstand)
-          </p>
+          {boardLines.length > 0 ? (
+            <p>
+              <strong>Vertreten durch:</strong>
+              <br />
+              {boardLines.map((line) => (
+                <span key={line.id} className="block">
+                  {line.text}
+                </span>
+              ))}
+            </p>
+          ) : null}
 
-          <p>
-            <strong>Kontakt</strong>
-            <br />
-            E-Mail:{" "}
-            <Link href="mailto:kammerchor.elikuren@t-online.de">
-              kammerchor.elikuren@t-online.de
-            </Link>
-          </p>
+          {org?.email ? (
+            <p>
+              <strong>Kontakt</strong>
+              <br />
+              E-Mail:{" "}
+              <Link href={`mailto:${org.email}`}>{org.email}</Link>
+              {org.phone.trim() ? (
+                <>
+                  <br />
+                  Telefon: {org.phone}
+                </>
+              ) : null}
+            </p>
+          ) : null}
 
-          <p>
-            <strong>Registereintrag</strong>
-            <br />
-            Registernummer: VR 203208
-          </p>
+          {org?.registerNumber ? (
+            <p>
+              <strong>Registereintrag</strong>
+              <br />
+              Registernummer: {org.registerNumber}
+            </p>
+          ) : null}
 
-          <p>
-            <strong>Verantwortlich für den Inhalt nach § 55 Abs. 2 MStV</strong>
-            <br />
-            Charles Heller
-            <br />
-            Immengarten 9
-            <br />
-            31134 Hildesheim
-          </p>
+          {org?.contentResponsible.trim() ? (
+            <p>
+              <strong>
+                Verantwortlich für den Inhalt nach § 55 Abs. 2 MStV
+              </strong>
+              <br />
+              {org.contentResponsible.split("\n").map((line, index) => (
+                <span key={`cr-${index}`} className="block">
+                  {line}
+                </span>
+              ))}
+            </p>
+          ) : null}
 
           <p>
             <strong>Haftung für Inhalte</strong>

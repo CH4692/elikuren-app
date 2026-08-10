@@ -1,5 +1,6 @@
 import { Heading } from "react-email";
 
+import { emailStyle } from "../style";
 import { EMAIL_COLORS, EMAIL_FONT_SERIF } from "../tokens";
 
 type EmailHeadingProps = {
@@ -14,7 +15,7 @@ export function EmailHeading({
   return (
     <Heading
       as="h1"
-      style={{
+      style={emailStyle({
         margin: "0 0 8px",
         color: EMAIL_COLORS.forest,
         fontFamily: EMAIL_FONT_SERIF,
@@ -22,7 +23,7 @@ export function EmailHeading({
         fontWeight: 400,
         lineHeight: "28px",
         textAlign: align,
-      }}
+      })}
     >
       {children}
     </Heading>

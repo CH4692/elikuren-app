@@ -213,6 +213,7 @@ model MediaAsset {
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
   concertHeros Concert[]  @relation("ConcertHeroImage")
+  sitePageOgImages SitePage[] @relation("SitePageOgImage")
 
   @@index([title])
   @@index([takenAt])
@@ -352,13 +353,20 @@ model ConcertItem {
 }
 
 model SitePage {
-  id        String        @id @default(cuid())
-  key       String        @unique
-  title     String
-  sections  SiteSection[]
-  createdAt DateTime      @default(now()) @map("created_at")
-  updatedAt DateTime      @updatedAt @map("updated_at")
+  id              String      @id @default(cuid())
+  key             String      @unique
+  title           String
+  /// Admin-only short description shown in the Website overview.
+  description     String?
+  metaTitle       String?     @map("meta_title")
+  metaDescription String?     @map("meta_description") @db.Text
+  ogImageId       String?     @map("og_image_id")
+  ogImage         MediaAsset? @relation("SitePageOgImage", fields: [ogImageId], references: [id], onDelete: SetNull)
+  sections        SiteSection[]
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
 
+  @@index([ogImageId])
   @@map("site_pages")
 }
 

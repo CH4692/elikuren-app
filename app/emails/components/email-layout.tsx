@@ -7,9 +7,10 @@ import {
   Section,
 } from "react-email";
 
+import { emailStyle } from "../style";
+import { EMAIL_COLORS, EMAIL_FONT_SANS } from "../tokens";
 import { EmailFooter } from "./email-footer";
 import { EmailHeader } from "./email-header";
-import { EMAIL_COLORS, EMAIL_FONT_SANS } from "../tokens";
 
 type EmailLayoutProps = {
   preview: string;
@@ -39,30 +40,30 @@ export function EmailLayout({
       <Preview>{preview}</Preview>
       <Body
         className="body"
-        style={{
+        style={emailStyle({
           margin: 0,
           padding: "28px 14px",
           backgroundColor: EMAIL_COLORS.cream,
           fontFamily: EMAIL_FONT_SANS,
           colorScheme: "light only",
-        } as React.CSSProperties}
+        })}
       >
         <Container
-          style={{
+          style={emailStyle({
             maxWidth: "520px",
             margin: "0 auto",
             backgroundColor: EMAIL_COLORS.card,
             borderRadius: "10px",
             overflow: "hidden",
             border: `1px solid ${EMAIL_COLORS.border}`,
-          }}
+          })}
         >
           <EmailHeader logoUrl={logoUrl} eyebrow={eyebrow} />
           <Section
-            style={{
+            style={emailStyle({
               padding: "28px 32px 24px",
               backgroundColor: EMAIL_COLORS.card,
-            }}
+            })}
           >
             {children}
           </Section>

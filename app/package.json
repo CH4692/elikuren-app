@@ -26,6 +26,8 @@
     "db:seed-production": "npx tsx ./scripts/seed-production.ts --confirm",
     "import:media": "npx tsx scripts/import-media.ts",
     "import:media:apply": "npx tsx scripts/import-media.ts --apply",
+    "migrate:cms-static-media": "npx tsx scripts/migrate-cms-static-media.ts",
+    "migrate:cms-static-media:apply": "npx tsx scripts/migrate-cms-static-media.ts --apply",
     "import:members": "npx tsx scripts/import-members-xlsx.ts",
     "import:folder-batches": "npx tsx scripts/import-folder-batches.ts",
     "import:folder-batches:apply": "npx tsx scripts/import-folder-batches.ts --apply",

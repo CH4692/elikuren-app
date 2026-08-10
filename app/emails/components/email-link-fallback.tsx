@@ -1,5 +1,6 @@
 import { Link, Text } from "react-email";
 
+import { emailStyle } from "../style";
 import { EMAIL_COLORS, EMAIL_FONT_SANS } from "../tokens";
 
 type EmailLinkFallbackProps = {
@@ -15,26 +16,26 @@ export function EmailLinkFallback({
 }: EmailLinkFallbackProps) {
   return (
     <Text
-      style={{
+      style={emailStyle({
         margin: "12px 0 0",
         color: EMAIL_COLORS.muted,
         fontFamily: EMAIL_FONT_SANS,
         fontSize: "12px",
         lineHeight: "18px",
         textAlign: "center",
-      }}
+      })}
     >
       {label}{" "}
       <Link
         href={href}
-        style={{
+        style={emailStyle({
           color: EMAIL_COLORS.forest,
           fontFamily: EMAIL_FONT_SANS,
           fontSize: "12px",
           lineHeight: "18px",
           textDecoration: "underline",
           fontWeight: 600,
-        }}
+        })}
       >
         {linkLabel}
       </Link>

@@ -1,60 +1,26 @@
-import { ArrowRight, CalendarDays, LucideProps } from "lucide-react";
+import { ArrowRight, CalendarDays, type LucideIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { ForwardRefExoticComponent, RefAttributes } from "react";
 
 export type EnsembleData = {
   name: string;
-  eyebrow: "Ensemble";
+  eyebrow: string;
   claim: string;
   intro: string;
-  story: string[];
+  story: Array<{ id: string; text: string }>;
   subtitle1: string;
   subtitle2: string;
-  profile: [
-    {
-      title: string;
-      text: string;
-      icon: ForwardRefExoticComponent<
-        Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
-      >;
-    },
-    {
-      title: string;
-      text: string;
-      icon: ForwardRefExoticComponent<
-        Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
-      >;
-    },
-    {
-      title: string;
-      text: string;
-      icon: ForwardRefExoticComponent<
-        Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
-      >;
-    },
-  ];
-  highlights: string[];
+  profile: Array<{
+    id: string;
+    title: string;
+    text: string;
+    icon: LucideIcon;
+  }>;
+  highlights: Array<{ id: string; text: string }>;
   ctaTitle: string;
   ctaText: string;
-  images: [
-    {
-      src: string;
-      alt: string;
-    },
-    {
-      src: string;
-      alt: string;
-    },
-    {
-      src: string;
-      alt: string;
-    },
-    {
-      src: string;
-      alt: string;
-    },
-  ];
+  images: Array<{ id: string; src: string; alt: string }>;
+  showGallery?: boolean;
 };
 
 export default function EnsembleContent({
@@ -62,17 +28,23 @@ export default function EnsembleContent({
 }: {
   ensemble: EnsembleData;
 }) {
+  const heroImage = ensemble.images[0];
+  const storyImage = ensemble.images[1] ?? ensemble.images[0];
+  const galleryImages = ensemble.images.slice(1);
+
   return (
     <>
-      <section className="relative overflow-hidden mt-24">
-        <div className="absolute inset-0 ">
-          <Image
-            src={ensemble.images[0].src}
-            alt={ensemble.images[0].alt}
-            fill
-            priority
-            className="object-cover"
-          />
+      <section className="relative mt-24 overflow-hidden">
+        <div className="absolute inset-0">
+          {heroImage ? (
+            <Image
+              src={heroImage.src}
+              alt={heroImage.alt}
+              fill
+              priority
+              className="object-cover"
+            />
+          ) : null}
           <div className="absolute inset-0 bg-black/60" />
         </div>
 
@@ -128,31 +100,33 @@ export default function EnsembleContent({
 
             <div className="mt-6 space-y-5 text-base leading-8 text-muted-foreground">
               {ensemble.story.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
+                <p key={paragraph.id}>{paragraph.text}</p>
               ))}
             </div>
 
             <div className="mt-8 flex flex-wrap gap-3">
               {ensemble.highlights.map((item) => (
                 <span
-                  key={item}
+                  key={item.id}
                   className="rounded-full border border-second-background bg-secondary px-4 py-2 text-sm text-second-background"
                 >
-                  {item}
+                  {item.text}
                 </span>
               ))}
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-[2rem] shadow-xl">
-            <Image
-              src={ensemble.images[1].src}
-              alt={ensemble.images[1].alt}
-              width={1200}
-              height={900}
-              className="aspect-[4/5] w-full object-cover"
-            />
-          </div>
+          {storyImage ? (
+            <div className="overflow-hidden rounded-[2rem] shadow-xl">
+              <Image
+                src={storyImage.src}
+                alt={storyImage.alt}
+                width={1200}
+                height={900}
+                className="aspect-[4/5] w-full object-cover"
+              />
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -169,10 +143,9 @@ export default function EnsembleContent({
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {ensemble.profile.map((item) => {
               const Icon = item.icon;
-
               return (
                 <article
-                  key={item.title}
+                  key={item.id}
                   className="rounded-[1.75rem] border border-border bg-background p-6 shadow-sm"
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -190,35 +163,37 @@ export default function EnsembleContent({
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-20 lg:px-12">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.25em] text-primary">
-              Eindrücke
-            </p>
-            <h2 className="mt-4 text-3xl font-light sm:text-4xl">
-              Bilder aus Proben und Auftritten
-            </h2>
-          </div>
-        </div>
-
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {ensemble.images.slice(1).map((image) => (
-            <div
-              key={image.src}
-              className="overflow-hidden rounded-[1.75rem] shadow-sm"
-            >
-              <Image
-                src={image.src}
-                alt={image.alt}
-                width={1000}
-                height={800}
-                className="aspect-[4/3] w-full object-cover transition duration-300 hover:scale-[1.02]"
-              />
+      {ensemble.showGallery !== false && galleryImages.length > 0 ? (
+        <section className="mx-auto max-w-7xl px-6 py-20 lg:px-12">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.25em] text-primary">
+                Eindrücke
+              </p>
+              <h2 className="mt-4 text-3xl font-light sm:text-4xl">
+                Bilder aus Proben und Auftritten
+              </h2>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {galleryImages.map((image) => (
+              <div
+                key={image.id}
+                className="overflow-hidden rounded-[1.75rem] shadow-sm"
+              >
+                <Image
+                  src={image.src}
+                  alt={image.alt}
+                  width={1000}
+                  height={800}
+                  className="aspect-[4/3] w-full object-cover transition duration-300 hover:scale-[1.02]"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="bg-second-primary text-white">
         <div className="mx-auto max-w-7xl px-6 py-20 lg:px-12">

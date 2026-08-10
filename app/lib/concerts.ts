@@ -161,7 +161,8 @@ export function serializeConcertPerformance(row: {
 }
 
 function revalidatePublicConcerts() {
-  revalidateTag(CONCERTS_PUBLIC_CACHE_TAG, "max");
+  // Immediate expire — same CMS Phase-4 rule (not stale-while-revalidate "max").
+  revalidateTag(CONCERTS_PUBLIC_CACHE_TAG, { expire: 0 });
   revalidatePath("/home");
 }
 

@@ -1,45 +1,56 @@
 import Image from "next/image";
-import { Button } from "../ui/button";
-import Link from "next/link";
 
-export default function ChorleitungPage() {
+import { SiteLink } from "@/components/site/site-link";
+import { Button } from "@/components/ui/button";
+import { getSectionDataPublic } from "@/lib/site-content";
+import { resolveCmsMedia } from "@/lib/site-content/media";
+
+export default async function ChorleitungPage() {
+  const data = await getSectionDataPublic<{
+    eyebrow: string;
+    name: string;
+    body: string;
+    ctaLabel: string;
+    ctaHref: string;
+    portrait: unknown;
+  }>("home", "chorleitung");
+
+  if (!data) return null;
+
+  const portrait = await resolveCmsMedia(data.portrait);
+
   return (
     <section
       id="chorleitung"
-      className="min-h-screen w-full flex lg:gap-41 justify-center items-center bg-second-primary"
+      className="flex min-h-screen w-full items-center justify-center bg-second-primary lg:gap-41"
     >
-      <div className="mx-auto grid max-w-7xl p-4 pt-25 items-center gap-8 lg:grid-cols-2">
+      <div className="mx-auto grid max-w-7xl items-center gap-8 p-4 pt-25 lg:grid-cols-2">
         <div className="flex justify-center">
-          <div className="relative h-72 w-72 overflow-hidden rounded-full lg:h-[28rem] md:w-[28rem]">
-            <Image
-              src="/chorleitung.jpg"
-              alt="Christiane Kampe"
-              fill
-              className="object-cover"
-            />
+          <div className="relative h-72 w-72 overflow-hidden rounded-full md:w-[28rem] lg:h-[28rem]">
+            {portrait ? (
+              <Image
+                src={portrait.src}
+                alt={portrait.alt || data.name}
+                fill
+                className="object-cover"
+              />
+            ) : null}
           </div>
         </div>
 
         <div className="text-white">
-          <p className="mb-6 text-sm uppercase tracking-[0.2em] text-primary font-light leading-tight">
-            Chorleitung
+          <p className="mb-6 text-sm font-light leading-tight uppercase tracking-[0.2em] text-primary">
+            {data.eyebrow}
           </p>
 
-          <h2 className="mb-6 text-4xl font-bold lg:text-5xl">
-            Christiane Kampe
-          </h2>
+          <h2 className="mb-6 text-4xl font-bold lg:text-5xl">{data.name}</h2>
 
           <p className="max-w-xl text-lg leading-8 text-foreground/90">
-            Seit vielen Jahren prägt Christiane Kampe die musikalische Identität
-            unseres Chores mit Leidenschaft, Erfahrung und musikalischer Tiefe.
-            Sie war über Jahrzehnte als engagierte Musikpädagogin an der
-            Musikschule Wunstorf tätig und führte zahlreiche Chöre und Ensembles
-            zu künstlerischen Höhepunkten – von anspruchsvollen Konzerten bis
-            hin zu festlichen Auftritten in der Region.
+            {data.body}
           </p>
 
           <Button className="mt-4" size="xl" asChild>
-            <Link href="/chorleitung">Mehr erfahren</Link>
+            <SiteLink href={data.ctaHref}>{data.ctaLabel}</SiteLink>
           </Button>
         </div>
       </div>
