@@ -14,8 +14,9 @@ concurrency:
 env:
   NEXT_TELEMETRY_DISABLED: 1
   CI: true
-  # Full suite on main (push or PR targeting main); smoke on dev.
-  CI_FULL: ${{ github.base_ref == 'main' || github.ref_name == 'main' }}
+  # Full suite on every CI run for this workflow (dev and main).
+  # Ensures release candidates on dev are fully tested before promote to main.
+  CI_FULL: "true"
 
 jobs:
   test:
@@ -56,7 +57,7 @@ jobs:
           CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
         run: |
           if [ -z "$CI_DATABASE_URL" ]; then
-            echo "::error::GitHub secret CI_DATABASE_URL is required for the full suite on main. Use the Preview/test Neon URLs (never Production)."
+            echo "::error::GitHub secret CI_DATABASE_URL is required for the full suite on dev and main. Use the Preview/test Neon URLs (never Production)."
             exit 1
           fi
 

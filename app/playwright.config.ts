@@ -22,7 +22,7 @@ const webServerEnv = {
 export default defineConfig({
   testDir: "./tests",
   testIgnore: ["**/unit/**"],
-  // CI default: public smoke only. CI_FULL=1 (main): full e2e suite.
+  // CI without CI_FULL: public smoke subset. CI_FULL=1 (dev/main CI): full e2e suite.
   ...(isCI && !isFullCI
     ? {
         testMatch: [

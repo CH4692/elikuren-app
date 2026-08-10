@@ -7,10 +7,9 @@
 
 | Branch | What runs |
 |--------|-----------|
-| `dev` | typecheck, lint, **unit tests**, dependency audit (`scripts/ci-npm-audit.mjs`, high+/critical with documented allowlist), build, Playwright smoke (routes/health/home/content + security/perf/a11y) |
-| `main` | + `prisma migrate deploy` on CI DB, full Playwright |
+| `dev` and `main` | typecheck, lint, unit tests, dependency audit (`scripts/ci-npm-audit.mjs`), `prisma migrate deploy` on CI DB, build, **full Playwright** (incl. security/perf/a11y smokes) |
 
-Full suite on `main` needs GitHub secrets `CI_DATABASE_URL` and optionally `CI_DATABASE_URL_UNPOOLED` (Preview/test Neon — never Production).
+Full suite on `dev` and `main` needs GitHub secrets `CI_DATABASE_URL` and optionally `CI_DATABASE_URL_UNPOOLED` (Preview/test Neon — never Production). This way candidates are fully tested on `dev` before promote to `main`.
 
 Local full auth/admin E2E: `cd app && npm run test` with Neon in `.env.local`.
 
