@@ -17,6 +17,12 @@ Full suite needs GitHub secrets `CI_DATABASE_URL` and optionally `CI_DATABASE_UR
 
 Quality strategy: [`docs/quality/testing-strategy.md`](../docs/quality/testing-strategy.md)
 
+## Dependabot
+
+Dependabot PRs only pass CI if the app build can reach Preview Neon (CMS static generation). Enable **Dependabot secrets** (or “Allow GitHub Actions to create and approve pull requests” + secret access for Dependabot) and copy `CI_DATABASE_URL` / `CI_DATABASE_URL_UNPOOLED` into Dependabot secrets.
+
+Major upgrades for TypeScript, ESLint, Next, React, and Actions are ignored in [`.github/dependabot.yml`](./dependabot.yml) — handle those in dedicated PRs.
+
 Local:
 
 ```bash
