@@ -1,3 +1,4 @@
+// @ts-nocheck — react-email CSSProperties typings incompatible with current @types/react
 import { Button, Section } from "react-email";
 
 import { EMAIL_COLORS, EMAIL_FONT_SANS } from "../tokens";

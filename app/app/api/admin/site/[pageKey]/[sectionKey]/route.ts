@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { requirePermission } from "@/lib/authz";
-import { updateSiteSection } from "@/lib/site-content";
+import {
+  getAdminSitePage,
+  updateSiteSection,
+} from "@/lib/site-content";
 
 type Params = {
   params: Promise<{ pageKey: string; sectionKey: string }>;
@@ -25,18 +28,27 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   try {
+    const current = await getAdminSitePage(pageKey);
+    const previousData = current?.sections.find(
+      (s) => s.key === sectionKey,
+    )?.data;
+
     const section = await updateSiteSection({
       pageKey,
       sectionKey,
       data: body.data,
       isVisible: body.isVisible,
+      previousData,
     });
+
+    const updatedPage = await getAdminSitePage(pageKey);
     return NextResponse.json({
       id: section.id,
       key: section.key,
       is_visible: section.isVisible,
       data: section.data,
       updated_at: section.updatedAt.toISOString(),
+      page: updatedPage,
     });
   } catch (error) {
     const message =

@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { HeartHandshake, Music4, Plane, Users } from "lucide-react";
 
+import { SiteLink } from "@/components/site/site-link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,86 +9,109 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getSectionDataPublic } from "@/lib/site-content";
+import { buildPublicPageMetadata } from "@/lib/site-content/seo";
 
-const highlights = [
-  {
-    icon: Music4,
-    title: "Künstlerisches Profil",
-    text: "Anspruchsvolle Chormusik aus Wunstorf – von romantischer Literatur über moderne Werke bis zu Musical- und Poparrangements.",
-  },
-  {
-    icon: Plane,
-    title: "Konzerte & Reisen",
-    text: "Regelmäßige Auftritte in der Region und Konzertreisen im In- und Ausland, darunter kulturelle Begegnungen wie die geplante Reise nach Como.",
-  },
-  {
-    icon: HeartHandshake,
-    title: "Soziales Engagement",
-    text: "Mit Benefizkonzerten unterstützt der Chor soziale Projekte – unter anderem den Bau einer Geburtsstation in Ghana.",
-  },
-  {
-    icon: Users,
-    title: "Verein & Gemeinschaft",
-    text: "Als Kammerchor Elikuren e. V. (Amtsgericht Hannover, VR 203208) verbinden wir musikalischen Anspruch mit lebendiger Chorgemeinschaft.",
-  },
-];
+export async function generateMetadata() {
+  return buildPublicPageMetadata("about");
+}
 
-export default function AboutPage() {
+const HIGHLIGHT_ICONS = [Music4, Plane, HeartHandshake, Users] as const;
+
+export default async function AboutPage() {
+  const [hero, highlights, verein] = await Promise.all([
+    getSectionDataPublic<{
+      eyebrow: string;
+      title: string;
+      intro: string;
+    }>("about", "hero"),
+    getSectionDataPublic<{
+      items: Array<{
+        id: string;
+        title: string;
+        text: string;
+        sortOrder: number;
+      }>;
+    }>("about", "highlights"),
+    getSectionDataPublic<{
+      title: string;
+      text: string;
+      ctas: Array<{
+        id: string;
+        label: string;
+        href: string;
+        sortOrder: number;
+      }>;
+    }>("about", "verein"),
+  ]);
+
+  if (!hero) {
+    console.error("[site-content] about/hero missing");
+    return null;
+  }
+
+  const highlightItems = highlights
+    ? [...highlights.items].sort((a, b) => a.sortOrder - b.sortOrder)
+    : [];
+  const ctas = verein
+    ? [...verein.ctas].sort((a, b) => a.sortOrder - b.sortOrder)
+    : [];
+
   return (
     <main className="bg-background text-foreground">
-      <section className="bg-second-primary text-white mt-24">
+      <section className="mt-24 bg-second-primary text-white">
         <div className="mx-auto max-w-7xl px-6 py-24 lg:px-12">
           <p className="text-sm uppercase tracking-[0.3em] text-[#d4aa43]">
-            Über uns
+            {hero.eyebrow}
           </p>
           <h1 className="mt-4 text-4xl font-light leading-tight sm:text-5xl lg:text-7xl">
-            Kammerchor Elikuren e. V.
+            {hero.title}
           </h1>
           <p className="mt-6 max-w-3xl text-base leading-8 text-white/80 sm:text-lg">
-            Der Kammerchor Elikuren ist ein Vokalensemble aus Wunstorf unter der
-            Leitung von Christiane Kampe. Seit vielen Jahren prägt der Chor das
-            kulturelle Leben der Region – mit sorgfältig erarbeiteten Programmen,
-            klanglicher Feinheit und Freude am gemeinsamen Musizieren.
+            {hero.intro}
           </p>
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-20 lg:px-12">
-        <div className="grid gap-6 md:grid-cols-2">
-          {highlights.map((item) => (
-            <Card key={item.title}>
-              <CardHeader>
-                <item.icon className="mb-2 size-6 text-primary" />
-                <CardTitle>{item.title}</CardTitle>
-                <CardDescription className="leading-7">
-                  {item.text}
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
+        {highlightItems.length > 0 ? (
+          <div className="grid gap-6 md:grid-cols-2">
+            {highlightItems.map((item, index) => {
+              const Icon = HIGHLIGHT_ICONS[index % HIGHLIGHT_ICONS.length]!;
+              return (
+                <Card key={item.id}>
+                  <CardHeader>
+                    <Icon className="mb-2 size-6 text-primary" />
+                    <CardTitle>{item.title}</CardTitle>
+                    <CardDescription className="leading-7">
+                      {item.text}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              );
+            })}
+          </div>
+        ) : null}
 
-        <Card className="mt-10">
-          <CardHeader>
-            <CardTitle>Der Verein</CardTitle>
-            <CardDescription>
-              Eingetragen beim Amtsgericht Hannover unter VR 203208. Sitz:
-              Wunstorf. Der mehrköpfige Vorstand verantwortet Organisation,
-              Finanzen und die Freigabe neuer Mitgliederzugänge.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-3">
-            <Button asChild>
-              <Link href="/auth/sign-up">Mitglied werden</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/contact">Kontakt aufnehmen</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/history">Zur Geschichte</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        {verein ? (
+          <Card className="mt-10">
+            <CardHeader>
+              <CardTitle>{verein.title}</CardTitle>
+              <CardDescription>{verein.text}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-3">
+              {ctas.map((cta, index) => (
+                <Button
+                  key={cta.id}
+                  variant={index === 0 ? "default" : "outline"}
+                  asChild
+                >
+                  <SiteLink href={cta.href}>{cta.label}</SiteLink>
+                </Button>
+              ))}
+            </CardContent>
+          </Card>
+        ) : null}
       </section>
     </main>
   );

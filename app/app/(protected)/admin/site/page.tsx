@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
-import { SiteContentPanel } from "@/components/admin/site-content-panel";
+import { WebsiteOverview } from "@/components/admin/cms/website-overview";
 import { hasPermission } from "@/lib/permissions";
 
 export default async function AdminSitePage() {
@@ -11,5 +11,5 @@ export default async function AdminSitePage() {
     redirect("/dashboard");
   }
 
-  return <SiteContentPanel />;
+  return <WebsiteOverview />;
 }

@@ -1,4 +1,8 @@
-export default function DatenschutzPage() {
+import { getGlobalOrganizationPublic } from "@/lib/site-content";
+
+export default async function DatenschutzPage() {
+  const org = await getGlobalOrganizationPublic();
+
   return (
     <section className="min-h-[100svh] bg-background px-6 py-24 text-foreground">
       <div className="mx-auto max-w-3xl space-y-10">
@@ -21,16 +25,24 @@ export default function DatenschutzPage() {
             <p>
               Verantwortlich für die Datenverarbeitung auf dieser Website ist:
             </p>
-            <p>
-              Kammerchor Elikuren e.V.
-              <br />
-              Habichthorst 2a
-              <br />
-              31315 Wunstorf
-              <br />
-              Deutschland
-            </p>
-            <p>E-Mail: kammerchor.elikuren@t-online.de</p>
+            {org ? (
+              <>
+                <p>
+                  {org.legalName}
+                  <br />
+                  {org.street}
+                  <br />
+                  {org.postalCode} {org.city}
+                  <br />
+                  {org.country}
+                </p>
+                <p>E-Mail: {org.email}</p>
+              </>
+            ) : (
+              <p className="text-foreground/60">
+                Organisationsdaten derzeit nicht verfügbar.
+              </p>
+            )}
           </section>
 
           <section className="space-y-3">

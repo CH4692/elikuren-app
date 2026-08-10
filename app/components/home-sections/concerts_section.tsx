@@ -12,24 +12,24 @@ export default async function ConcertPage() {
     eyebrow: string;
     emptyMessage: string;
   }>("home", "concerts_intro");
+
+  if (!intro) return null;
+
   const concerts = await listPublicConcerts();
 
   return (
     <section
       id="concerts"
-      className="min-h-screen pt-16 lg:p-8 w-full flex bg-second-primary justify-center items-center"
+      className="flex min-h-screen w-full items-center justify-center bg-second-primary pt-16 lg:p-8"
     >
-      <div className="relative mx-auto flex flex-col min-h-[100svh] max-w-7xl items-center px-6 py-24 lg:px-12">
+      <div className="relative mx-auto flex min-h-[100svh] max-w-7xl flex-col items-center px-6 py-24 lg:px-12">
         <div className="w-full">
-          <p className="mb-4 text-sm uppercase justify-start tracking-[0.3em] text-[#d4aa43]">
-            {intro?.eyebrow ?? "Konzerte"}
+          <p className="mb-4 justify-start text-sm uppercase tracking-[0.3em] text-[#d4aa43]">
+            {intro.eyebrow}
           </p>
         </div>
         {concerts.length === 0 ? (
-          <p className="w-full text-[#5c574e]">
-            {intro?.emptyMessage ??
-              "Aktuell sind keine öffentlichen Konzerte geplant."}
-          </p>
+          <p className="w-full text-[#5c574e]">{intro.emptyMessage}</p>
         ) : (
           <div className="flex w-full flex-col gap-16">
             {concerts.map((concert) => (

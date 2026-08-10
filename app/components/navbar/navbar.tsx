@@ -1,72 +1,78 @@
 import { Inter } from "next/font/google";
+import Link from "next/link";
+
+import { AuthNav } from "@/components/navbar/auth-nav";
+import Logo from "@/components/logo";
+import { SiteLink } from "@/components/site/site-link";
 import {
   NavigationMenu,
+  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuList,
   NavigationMenuTrigger,
-  NavigationMenuContent,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import Logo from "../logo";
-import Link from "next/link";
-import { AuthNav } from "./auth-nav";
+import type { PublicNavItem } from "@/lib/site-content/public-chrome";
 
 export const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
 
-export default function Navbar() {
+export default function Navbar({ items }: { items: PublicNavItem[] }) {
   return (
     <header
-      className={`${inter.variable} fixed left-0 w-full hidden lg:flex top-0 z-50 justify-around items-center p-2 bg-background/80 backdrop-blur-md border-b-second-background`}
+      className={`${inter.variable} fixed top-0 left-0 z-50 hidden w-full items-center justify-around border-b-second-background bg-background/80 p-2 backdrop-blur-md lg:flex`}
     >
       <Logo />
       <NavigationMenu>
         <NavigationMenuList>
-          <NavigationMenuItem>
-            <NavigationMenuTrigger>Über Uns</NavigationMenuTrigger>
+          {items.map((item) => {
+            const children = item.children ?? [];
+            if (children.length > 0) {
+              return (
+                <NavigationMenuItem key={item.id}>
+                  <NavigationMenuTrigger>{item.label}</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[220px] gap-2 bg-background p-4">
+                      {children.map((child) => (
+                        <li
+                          key={child.id}
+                          className="transition-all hover:cursor-pointer hover:text-primary"
+                        >
+                          <SiteLink href={child.href} className="block w-full">
+                            {child.label}
+                          </SiteLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              );
+            }
 
-            <NavigationMenuContent>
-              <ul className="grid w-[220px] gap-2 p-4 bg-background">
-                <li className="hover:text-primary hover:cursor-pointer transition-all">
-                  <Link href="/about">Über den Verein</Link>
-                </li>
-                <li className="hover:text-primary hover:cursor-pointer">
-                  <Link href="/chorleitung" className="w-full block">
-                    Chorleitung
+            if (!item.href) return null;
+
+            return (
+              <NavigationMenuItem key={item.id}>
+                {item.href.startsWith("https://") ? (
+                  <SiteLink
+                    href={item.href}
+                    className={navigationMenuTriggerStyle()}
+                  >
+                    {item.label}
+                  </SiteLink>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={navigationMenuTriggerStyle()}
+                  >
+                    {item.label}
                   </Link>
-                </li>
-                <li className="hover:text-primary hover:cursor-pointer">
-                  <Link href="/history">Geschichte</Link>
-                </li>
-                <li className="hover:text-primary hover:cursor-pointer">
-                  <Link href="/proben">Proben & Mitsingen</Link>
-                </li>
-              </ul>
-            </NavigationMenuContent>
-          </NavigationMenuItem>
-
-          <NavigationMenuItem>
-            <Link
-              href="/home#concerts"
-              className={navigationMenuTriggerStyle()}
-            >
-              Konzerte
-            </Link>
-          </NavigationMenuItem>
-
-          <NavigationMenuItem>
-            <Link href="/home#joinus" className={navigationMenuTriggerStyle()}>
-              Ensembles
-            </Link>
-          </NavigationMenuItem>
-
-          <NavigationMenuItem>
-            <Link href="/contact" className={navigationMenuTriggerStyle()}>
-              Kontakt
-            </Link>
-          </NavigationMenuItem>
+                )}
+              </NavigationMenuItem>
+            );
+          })}
         </NavigationMenuList>
       </NavigationMenu>
       <AuthNav variant="desktop" />
