@@ -1,4 +1,3 @@
-// @ts-nocheck — react-email CSSProperties typings incompatible with current @types/react
 import { Section, Text } from "react-email";
 
 import {
@@ -7,6 +6,7 @@ import {
   EmailLayout,
   EmailText,
 } from "./components";
+import { emailStyle } from "./style";
 import { EMAIL_COLORS, EMAIL_FONT_SANS } from "./tokens";
 
 export type ContactInquiryEmailProps = {
@@ -23,23 +23,23 @@ function MessageLines({ message }: { message: string }) {
   const lines = message.split("\n");
   return (
     <Section
-      style={{
+      style={emailStyle({
         backgroundColor: EMAIL_COLORS.cream,
         padding: "16px",
         borderRadius: "8px",
-      }}
+      })}
     >
       {lines.map((line, index) => (
         <Text
           key={`line-${index}`}
-          style={{
+          style={emailStyle({
             margin: 0,
             color: EMAIL_COLORS.text,
             fontFamily: EMAIL_FONT_SANS,
             fontSize: "15px",
             lineHeight: "22px",
             whiteSpace: "pre-wrap",
-          }}
+          })}
         >
           {line.length > 0 ? line : "\u00A0"}
         </Text>
@@ -81,7 +81,7 @@ export function ContactInquiryEmail({
         <strong>Nachricht:</strong>
       </EmailText>
       <MessageLines message={message} />
-      <Section style={{ marginTop: "16px" }}>
+      <Section style={emailStyle({ marginTop: "16px" })}>
         <EmailButton href={`mailto:${email}`}>Direkt antworten</EmailButton>
       </Section>
     </EmailLayout>

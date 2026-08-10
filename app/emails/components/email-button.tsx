@@ -1,6 +1,6 @@
-// @ts-nocheck — react-email CSSProperties typings incompatible with current @types/react
 import { Button, Section } from "react-email";
 
+import { emailStyle } from "../style";
 import { EMAIL_COLORS, EMAIL_FONT_SANS } from "../tokens";
 
 type EmailButtonProps = {
@@ -11,10 +11,10 @@ type EmailButtonProps = {
 /** Compact gold CTA with forest text — clear, not oversized. */
 export function EmailButton({ href, children }: EmailButtonProps) {
   return (
-    <Section style={{ textAlign: "center", margin: "20px 0 8px" }}>
+    <Section style={emailStyle({ textAlign: "center", margin: "20px 0 8px" })}>
       <Button
         href={href}
-        style={{
+        style={emailStyle({
           backgroundColor: EMAIL_COLORS.gold,
           background: EMAIL_COLORS.gold,
           color: EMAIL_COLORS.forest,
@@ -29,7 +29,7 @@ export function EmailButton({ href, children }: EmailButtonProps) {
           padding: "12px 28px",
           borderRadius: "6px",
           border: `1px solid ${EMAIL_COLORS.gold}`,
-        } as React.CSSProperties}
+        })}
       >
         {children}
       </Button>
