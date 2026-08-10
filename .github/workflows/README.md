@@ -2,24 +2,29 @@
 
 | Workflow | Trigger | Suite |
 |---|---|---|
-| `deploy.yml` (`CI` / job `test`) | push/PR on `main`, `dev` | see below |
+| `deploy.yml` (`CI` / job `test`) | push/PR on `main`, `dev`; `workflow_dispatch` | see stages |
 | `codeql.yml` | push/PR on `main`, `dev` + weekly | CodeQL SAST |
+| `mutation.yml` | weekly + `workflow_dispatch` | Stryker pilot (non-blocking report) |
 
-| Branch | What runs |
+## Stages
+
+| Event | Gates |
 |--------|-----------|
-| `dev` | typecheck, lint, **unit tests**, dependency audit (`scripts/ci-npm-audit.mjs`, high+/critical with documented allowlist), build, Playwright smoke (routes/health/home/content + security/perf/a11y) |
-| `main` | + `prisma migrate deploy` on CI DB, full Playwright |
+| **PR → `dev`** (Shift-Left) | typecheck, lint, unit, dependency audit, build, Playwright **smoke** (routes, health, security, a11y, perf, status/errors, route-integrity) + CodeQL |
+| **Push → `dev` / `main`**, **PR → `main`**, **manual dispatch** | + `prisma migrate deploy` on CI DB + **full Playwright** |
 
-Full suite on `main` needs GitHub secrets `CI_DATABASE_URL` and optionally `CI_DATABASE_URL_UNPOOLED` (Preview/test Neon — never Production).
+Full suite needs GitHub secrets `CI_DATABASE_URL` and optionally `CI_DATABASE_URL_UNPOOLED` (Preview/test Neon — never Production).
 
-Local full auth/admin E2E: `cd app && npm run test` with Neon in `.env.local`.
+Quality strategy: [`docs/quality/testing-strategy.md`](../docs/quality/testing-strategy.md)
 
-Focused local runs:
+Local:
 
 ```bash
 cd app
 npm run test:unit
+npm run test:unit:coverage
 npm run test:security
 npm run test:perf
 npm run test:a11y
+npm run test:mutation   # pilot; not a PR blocker
 ```

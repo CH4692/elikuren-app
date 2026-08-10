@@ -19,8 +19,9 @@ async function loginWithCredentials(
     timeout: 60_000,
   });
 
-  await form.locator('input[name="email"]').fill(email);
-  await form.locator('input[name="password"]').fill(password);
+  // Prefer role locators — avoids strict-mode hits when hydration duplicates nodes briefly.
+  await form.getByRole("textbox", { name: /e-?mail/i }).first().fill(email);
+  await form.locator('input[name="password"]').first().fill(password);
   await Promise.all([
     page.waitForURL(/\/(dashboard|profile|admin)/, { timeout: 30_000 }),
     form.getByRole("button", { name: "Anmelden" }).click(),

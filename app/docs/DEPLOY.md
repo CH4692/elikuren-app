@@ -15,7 +15,7 @@
 |-------|------|-----------|--------|
 | **Production** (`main`) | Production Neon (real member data) | Production bucket | Live site |
 | **Preview** (`dev` / PRs) | Separate Preview Neon | Separate Preview bucket | Never point Preview DB/R2 at Production |
-| **GitHub CI** (full suite on `main`) | Same Preview/test Neon via secrets | not required for smoke | Secrets `CI_DATABASE_URL` (+ optional `CI_DATABASE_URL_UNPOOLED`) |
+| **GitHub CI** (full suite on push to `dev`/`main` and PRs to `main`) | Same Preview/test Neon via secrets | not required for smoke | Secrets `CI_DATABASE_URL` (+ optional `CI_DATABASE_URL_UNPOOLED`). PRs into `dev` run smoke only. See `docs/quality/testing-strategy.md`. |
 
 ### Env vars: split vs share
 

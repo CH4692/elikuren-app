@@ -1,0 +1,35 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "packageManager": "npm",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "npx tsx --test tests/unit/permissions.test.ts tests/unit/session-security.test.ts tests/unit/admin-access.test.ts tests/unit/invoice-permissions.test.ts"
+  },
+  "mutate": [
+    "lib/permissions.ts",
+    "lib/session-security-data.ts"
+  ],
+  "ignorePatterns": [
+    "test-results",
+    "playwright-report",
+    "coverage",
+    ".next",
+    "node_modules",
+    "reports"
+  ],
+  "ignoreStatic": true,
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": null
+  },
+  "reporters": ["clear-text", "progress", "html"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/mutation.html"
+  },
+  "timeoutMS": 60000,
+  "concurrency": 2,
+  "disableTypeChecks": "lib/**/*.ts",
+  "tempDirName": ".stryker-tmp",
+  "cleanTempDir": true
+}

@@ -22,7 +22,7 @@ const webServerEnv = {
 export default defineConfig({
   testDir: "./tests",
   testIgnore: ["**/unit/**"],
-  // CI default: public smoke only. CI_FULL=1 (main): full e2e suite.
+  // CI without CI_FULL: public smoke subset. CI_FULL=1 (dev/main CI): full e2e suite.
   ...(isCI && !isFullCI
     ? {
         testMatch: [
@@ -32,6 +32,8 @@ export default defineConfig({
           "**/smoke/security-authz.test.ts",
           "**/smoke/performance.test.ts",
           "**/smoke/a11y.test.ts",
+          "**/smoke/status-errors.test.ts",
+          "**/smoke/route-integrity.test.ts",
           "**/pages/home.test.ts",
           "**/pages/content.test.ts",
         ],
