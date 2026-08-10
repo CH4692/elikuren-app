@@ -28,6 +28,10 @@ export default defineConfig({
         testMatch: [
           "**/smoke/routes.test.ts",
           "**/smoke/health.test.ts",
+          "**/smoke/security-headers.test.ts",
+          "**/smoke/security-authz.test.ts",
+          "**/smoke/performance.test.ts",
+          "**/smoke/a11y.test.ts",
           "**/pages/home.test.ts",
           "**/pages/content.test.ts",
         ],
