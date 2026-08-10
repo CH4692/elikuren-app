@@ -45,8 +45,10 @@ jobs:
           npm run lint
 
       - name: Unit tests
-        if: env.CI_FULL == 'true'
         run: npm run test:unit
+
+      - name: Dependency audit
+        run: node ./scripts/ci-npm-audit.mjs
 
       - name: Require CI database for full suite
         if: env.CI_FULL == 'true'

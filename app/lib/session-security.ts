@@ -1,11 +1,22 @@
 import { prisma } from "@/lib/db";
 import type { Role } from "@/lib/generated/prisma/client";
+import {
+  changeUserRoleData,
+  sessionBumpData,
+  setUserActiveData,
+} from "@/lib/session-security-data";
+
+export {
+  changeUserRoleData,
+  sessionBumpData,
+  setUserActiveData,
+} from "@/lib/session-security-data";
 
 /** Bump sessionVersion so existing JWTs become invalid. */
 export async function bumpSessionVersion(userId: string) {
   return prisma.user.update({
     where: { id: userId },
-    data: { sessionVersion: { increment: 1 } },
+    data: sessionBumpData(),
   });
 }
 
@@ -16,10 +27,7 @@ export async function setUserActiveState(input: {
 }) {
   const updated = await prisma.user.update({
     where: { id: input.userId },
-    data: {
-      isActive: input.isActive,
-      sessionVersion: { increment: 1 },
-    },
+    data: setUserActiveData(input.isActive),
   });
 
   return updated;
@@ -32,10 +40,7 @@ export async function changeUserRole(input: {
 }) {
   const updated = await prisma.user.update({
     where: { id: input.userId },
-    data: {
-      role: input.role,
-      sessionVersion: { increment: 1 },
-    },
+    data: changeUserRoleData(input.role),
   });
 
   return updated;
